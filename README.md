@@ -1,7 +1,3 @@
-### **README for Blockchain-Based Academic Credential System**
-
----
-
 # Blockchain-Based Academic Credential System  
 A decentralized platform to securely store, manage, and verify academic credentials using blockchain technology. The system empowers students with ownership of their records, streamlines the verification process for institutions, and ensures tamper-proof documentation.
 
