@@ -35,3 +35,23 @@
     @apply bg-white rounded-lg shadow-md p-6;
   }
 }
+
+/* Custom scrollbar */
+@layer utilities {
+  .custom-scrollbar {
+    @apply scrollbar-thin scrollbar-thumb-primary-200 scrollbar-track-gray-100 hover:scrollbar-thumb-primary-300;
+  }
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary-200 rounded-full hover:bg-primary-300;
+}
