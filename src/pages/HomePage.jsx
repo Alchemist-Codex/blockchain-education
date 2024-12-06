@@ -5,15 +5,7 @@ function HomePage() {
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
-  }
-
-  const staggerContainer = {
-    animate: {
-      transition: {
-        staggerChildren: 0.2
-      }
-    }
+    transition: { duration: 0.3 }
   }
 
   const features = [
@@ -38,27 +30,60 @@ function HomePage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-800 dark:to-primary-900 text-white py-20">
+        {/* Add Animated background elements */}
+        <motion.div
+          className="absolute inset-0 opacity-20 z-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.2 }}
+        >
+          {[...Array(3)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute bg-white rounded-full"
+              style={{
+                width: Math.random() * 200 + 50,
+                height: Math.random() * 200 + 50,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                y: [0, Math.random() * 50 - 25],
+                x: [0, Math.random() * 50 - 25],
+              }}
+              transition={{
+                duration: Math.random() * 5 + 5,
+                repeat: Infinity,
+                repeatType: "reverse",
+              }}
+            />
+          ))}
+        </motion.div>
+
         {/* Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.h1 
             className="text-4xl sm:text-5xl font-bold text-center mb-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.3 }}
           >
             Secure Academic Credentials with Blockchain
           </motion.h1>
           
           <motion.p 
             className="text-xl mb-8 max-w-2xl mx-auto text-primary-100"
-            {...fadeIn}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
           >
             Issue, manage, and verify academic credentials with confidence using blockchain technology
           </motion.p>
 
           <motion.div 
             className="flex flex-col sm:flex-row gap-4 justify-center"
-            {...fadeIn}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
           >
             <Link 
               to="/upload" 
@@ -81,19 +106,23 @@ function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             className="text-center mb-16"
-            variants={staggerContainer}
-            initial="initial"
-            animate="animate"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
           >
             <motion.h2 
               className="text-3xl font-bold text-gray-900 dark:text-white mb-4"
-              variants={fadeIn}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
             >
               Why Choose Academic Chain?
             </motion.h2>
             <motion.p 
               className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"
-              variants={fadeIn}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
             >
               Our platform provides secure, efficient, and transparent credential management
             </motion.p>
@@ -104,10 +133,9 @@ function HomePage() {
               <motion.div
                 key={feature.title}
                 className="p-6 bg-gray-50 dark:bg-gray-700 rounded-xl"
-                variants={fadeIn}
-                initial="initial"
-                animate="animate"
-                transition={{ delay: index * 0.2 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
               >
                 <div className="w-12 h-12 bg-primary-600 dark:bg-primary-500 rounded-full flex items-center justify-center mb-4 mx-auto">
                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
