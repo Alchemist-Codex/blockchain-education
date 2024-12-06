@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 function Navbar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+
   return (
     <nav className="bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,28 +48,46 @@ function Navbar() {
       </div>
       
       {/* Mobile menu */}
-      <div className="sm:hidden">
-        <div className="px-2 pt-2 pb-3 space-y-1">
-          <Link to="/dashboard" className="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md">
-            Dashboard
-          </Link>
-          <Link to="/upload" className="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md">
-            Upload Credential
-          </Link>
-          <Link to="/verify" className="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md">
-            Verify Credential
-          </Link>
-          <Link to="/profile" className="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md">
-            Profile
-          </Link>
-          <Link to="/about" className="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md">
-            About
-          </Link>
-          <Link to="/faq" className="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md">
-            FAQ
-          </Link>
-        </div>
-      </div>
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div 
+            className="sm:hidden fixed inset-0 bg-gray-800/50 z-40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <motion.div 
+              className="absolute right-0 top-0 h-full w-64 bg-white shadow-lg"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 20 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-4 space-y-3">
+                {[
+                  ['Dashboard', '/dashboard'],
+                  ['Upload Credential', '/upload'],
+                  ['Verify Credential', '/verify'],
+                  ['Profile', '/profile'],
+                  ['About', '/about'],
+                  ['FAQ', '/faq']
+                ].map(([title, path]) => (
+                  <Link
+                    key={path}
+                    to={path}
+                    className="block px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 rounded-lg transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {title}
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   )
 }
