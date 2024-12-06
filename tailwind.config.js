@@ -4,6 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -20,9 +21,6 @@ export default {
           900: '#0c4a6e',
         },
       },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-      },
       animation: {
         'gradient': 'gradient 8s linear infinite',
         'pulse-slow': 'pulse 3s linear infinite',
@@ -38,7 +36,7 @@ export default {
             'background-position': 'right center'
           }
         }
-      },
+      }
     },
   },
   plugins: [],
