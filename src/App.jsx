@@ -13,7 +13,7 @@ import './App.css'
 function App() {
   return (
     <Router>
-      <div className="app-container">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
         <Navbar />
         <main className="main-content">
           <Routes>
