@@ -81,6 +81,11 @@ function CredentialUpload() {
       return;
     }
 
+    if (!account) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
     setUploading(true);
     
     try {
@@ -103,20 +108,34 @@ function CredentialUpload() {
       const certificateHash = ethers.keccak256(
         ethers.toUtf8Bytes(JSON.stringify(metadata))
       );
+
+      console.log('Sending transaction with params:', {
+        studentAddress: formData.studentAddress,
+        certificateHash,
+        imageHash: formData.imageHash,
+        metadataHash
+      });
       
       // Send to smart contract
-      const tx = await web3Service.contract.issueCredential(
+      const contract = await web3Service.getContract();
+      const tx = await contract.issueCredential(
         formData.studentAddress,
         certificateHash,
         formData.imageHash,
-        metadataHash
+        metadataHash,
+        { from: account }
       );
       
-      await tx.wait();
+      console.log('Transaction sent:', tx.hash);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait();
+      console.log('Transaction confirmed:', receipt);
+      
       setStep(2);
     } catch (error) {
       console.error('Error uploading credential:', error);
-      alert('Failed to issue credential. Please try again.');
+      alert(`Failed to issue credential: ${error.message}`);
     } finally {
       setUploading(false);
     }
