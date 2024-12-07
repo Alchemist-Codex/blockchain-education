@@ -1,98 +1,51 @@
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { Web3Provider } from './contexts/Web3Context';
-import { ThemeProvider } from './components/ThemeProvider';
-import MetaMaskConnect from './components/MetaMaskConnect';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import HomePage from './pages/HomePage';
-import Dashboard from './pages/Dashboard';
-import CredentialUpload from './pages/CredentialUpload';
-import CredentialVerification from './pages/CredentialVerification';
-import Profile from './pages/Profile';
-import About from './pages/About';
-import FAQ from './pages/FAQ';
-import SignIn from './pages/SignIn';
-import { useAuth } from './contexts/AuthContext';
+import { AnimatePresence } from 'framer-motion'
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
+import HomePage from './pages/HomePage'
+import Dashboard from './pages/Dashboard'
+import Profile from './pages/Profile'
+import About from './pages/About'
+import SignIn from './pages/SignIn'
+import CredentialUpload from './pages/CredentialUpload'
+import CredentialVerification from './pages/CredentialVerification'
+import FAQ from './pages/FAQ'
+import Navbar from './components/Navbar'
+import Footer from './components/Footer'
+import { AuthProvider } from './contexts/AuthContext'
+import { Web3Provider } from './contexts/Web3Context'
 
-// Protected Route Component
-function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
+function AnimatedRoutes() {
+  const location = useLocation()
   
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-  
-  if (!user) {
-    return <Navigate to="/signin" />;
-  }
-
-  return children;
-}
-
-function AppContent() {
-  const { user } = useAuth();
-
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      {user && <Navbar />}
-      <main className="flex-grow">
-        <Routes>
-          <Route path="/signin" element={!user ? <SignIn /> : <Navigate to="/" />} />
-          <Route path="/" element={
-            <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/upload" element={
-            <ProtectedRoute>
-              <CredentialUpload />
-            </ProtectedRoute>
-          } />
-          <Route path="/verify" element={
-            <ProtectedRoute>
-              <CredentialVerification />
-            </ProtectedRoute>
-          } />
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          } />
-          <Route path="/about" element={
-            <ProtectedRoute>
-              <About />
-            </ProtectedRoute>
-          } />
-          <Route path="/faq" element={
-            <ProtectedRoute>
-              <FAQ />
-            </ProtectedRoute>
-          } />
+    <>
+      <Navbar />
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/upload" element={<CredentialUpload />} />
+          <Route path="/verify" element={<CredentialVerification />} />
+          <Route path="/faq" element={<FAQ />} />
         </Routes>
-      </main>
-      {user && <Footer />}
-    </div>
-  );
+      </AnimatePresence>
+      <Footer />
+    </>
+  )
 }
 
 function App() {
   return (
-    <Router>
-      <ThemeProvider>
-        <AuthProvider>
-          <Web3Provider>
-            <AppContent />
-          </Web3Provider>
-        </AuthProvider>
-      </ThemeProvider>
-    </Router>
-  );
+    <AuthProvider>
+      <Web3Provider>
+        <Router>
+          <AnimatedRoutes />
+        </Router>
+      </Web3Provider>
+    </AuthProvider>
+  )
 }
 
-export default App;
+export default App
