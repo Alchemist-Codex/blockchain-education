@@ -15,6 +15,7 @@ import IPFSTest from './components/IPFSTest'
 import MetaMaskConnect from './components/MetaMaskConnect'
 import IPFSStatus from './components/IPFSStatus'
 import { AuthProvider } from './contexts/AuthContext'
+import SignIn from './pages/SignIn'
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/faq" element={<FAQ />} />
+                  <Route path="/signin" element={<SignIn />} />
                 </Routes>
               </main>
               <Footer />
