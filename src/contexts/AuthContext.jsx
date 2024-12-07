@@ -7,7 +7,6 @@ import {
   GoogleAuthProvider, 
   signInWithPopup 
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -21,17 +20,38 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    // Initialize from localStorage if available
+    const savedFirstName = localStorage.getItem('userFirstName');
+    const currentUser = auth.currentUser;
+    if (currentUser && savedFirstName) {
+      return {
+        ...currentUser,
+        firstName: savedFirstName
+      };
+    }
+    return null;
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+      if (user) {
+        // Get firstName from localStorage if available, otherwise from user
+        const firstName = localStorage.getItem('userFirstName') || user.displayName?.split(' ')[0] || 'User';
+        setUser({
+          ...user,
+          firstName
+        });
+      } else {
+        setUser(null);
+        localStorage.removeItem('userName');
+        localStorage.removeItem('userFirstName');
+      }
       setLoading(false);
     });
 
@@ -42,33 +62,19 @@ export function AuthProvider({ children }) {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      
-      // Get first name from displayName
       const firstName = result.user.displayName?.split(' ')[0] || 'User';
       
-      // Store additional user data in Firestore
-      await setDoc(doc(db, 'users', result.user.uid), {
-        firstName,
-        displayName: result.user.displayName,
-        email: result.user.email,
-        photoURL: result.user.photoURL,
-        createdAt: new Date().toISOString(),
-        role: 'user'
-      }, { merge: true });
-
+      // Store in localStorage
+      localStorage.setItem('userName', result.user.displayName);
+      localStorage.setItem('userFirstName', firstName);
+      
+      setUser({
+        ...result.user,
+        firstName
+      });
       return result.user;
     } catch (error) {
       console.error("Error signing in with Google:", error);
-      throw error;
-    }
-  };
-
-  const getUserProfile = async (userId) => {
-    try {
-      const userDoc = await getDoc(doc(db, 'users', userId));
-      return userDoc.exists() ? userDoc.data() : null;
-    } catch (error) {
-      console.error("Error getting user profile:", error);
       throw error;
     }
   };
@@ -77,9 +83,12 @@ export function AuthProvider({ children }) {
     user,
     loading,
     signInWithGoogle,
-    signOut: () => signOut(auth),
-    getCurrentUser: () => auth.currentUser,
-    getUserProfile
+    signOut: () => {
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userFirstName');
+      return signOut(auth);
+    },
+    getCurrentUser: () => auth.currentUser
   };
 
   return (

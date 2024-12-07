@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { getUserProfile } from '../services/userService'
 
 function Dashboard() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [userProfile, setUserProfile] = useState(null);
   const [activeTab, setActiveTab] = useState('issued')
 
@@ -69,9 +69,24 @@ function Dashboard() {
           </motion.div>
 
           <div className="relative z-10">
-            <h1 className="text-3xl font-bold mb-2">
-              Welcome back, {userProfile?.firstName || 'User'}!
-            </h1>
+            <AnimatePresence mode="wait">
+              <motion.h1 
+                key={user?.firstName || 'loading'} 
+                className="text-3xl font-bold mb-2"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                Welcome back, {loading ? (
+                  <motion.span
+                    className="inline-block w-24 h-8 bg-white/20 rounded animate-pulse"
+                  />
+                ) : (
+                  user?.firstName || 'User'
+                )}!
+              </motion.h1>
+            </AnimatePresence>
             <p className="text-primary-100 dark:text-primary-200">
               Here's what's happening with your credentials
             </p>
