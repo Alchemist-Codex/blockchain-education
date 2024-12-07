@@ -99,18 +99,27 @@ async function startTunnel() {
   try {
     const port = await setupProxy();
     
-    // Use npx to run localtunnel
-    const tunnel = exec(`npx localtunnel --port ${port} --subdomain blockchain-education-ipfs`, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Tunnel error: ${error}`);
-        return;
+    // Use debug mode with localtunnel
+    const tunnel = exec(
+      `export DEBUG="localtunnel:*" && npx localtunnel --port ${port} --print-requests --subdomain blockchain-education-ipfs`, 
+      {
+        env: {
+          ...process.env,
+          DEBUG: 'localtunnel:*'
+        }
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Tunnel error: ${error}`);
+          return;
+        }
+        if (stderr) {
+          console.error(`Tunnel stderr: ${stderr}`);
+          return;
+        }
+        console.log(`Tunnel stdout: ${stdout}`);
       }
-      if (stderr) {
-        console.error(`Tunnel stderr: ${stderr}`);
-        return;
-      }
-      console.log(`Tunnel stdout: ${stdout}`);
-    });
+    );
 
     tunnel.stdout.on('data', (data) => {
       console.log('Tunnel output:', data);
@@ -126,7 +135,8 @@ async function startTunnel() {
     });
 
     tunnel.stderr.on('data', (data) => {
-      console.error('Tunnel error:', data);
+      // Log all debug information
+      console.log('Debug info:', data.toString());
     });
 
     tunnel.on('close', (code) => {
