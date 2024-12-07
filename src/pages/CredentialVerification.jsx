@@ -1,10 +1,15 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useWeb3 } from '../contexts/Web3Context'
+import { ipfsService } from '../services/ipfsService'
 
 function CredentialVerification() {
-  const [verificationStatus, setVerificationStatus] = useState(null) // 'success', 'error', or null
+  const { web3Service } = useWeb3();
+  const [verificationStatus, setVerificationStatus] = useState(null)
   const [isVerifying, setIsVerifying] = useState(false)
   const [credentialId, setCredentialId] = useState('')
+  const [credentialDetails, setCredentialDetails] = useState(null)
+  const [error, setError] = useState(null)
 
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
@@ -15,10 +20,60 @@ function CredentialVerification() {
   const handleVerification = async (e) => {
     e.preventDefault()
     setIsVerifying(true)
-    // Simulate verification delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setVerificationStatus('success')
-    setIsVerifying(false)
+    setError(null)
+    
+    try {
+      // 1. Get credential data from smart contract
+      const credentialData = await web3Service.contract.getCredential(credentialId)
+      
+      if (!credentialData) {
+        throw new Error('Credential not found')
+      }
+
+      // 2. Fetch metadata from IPFS
+      const metadata = await ipfsService.getFile(credentialData.metadataHash)
+      const parsedMetadata = JSON.parse(metadata.toString())
+
+      // 3. Fetch certificate file from IPFS
+      const certificateFile = await ipfsService.getFile(credentialData.fileHash)
+
+      // 4. Set credential details for display
+      setCredentialDetails({
+        ...parsedMetadata,
+        certificateFile,
+        blockchainHash: credentialData.certificateHash,
+        verificationTime: new Date().toLocaleString()
+      })
+      
+      setVerificationStatus('success')
+    } catch (error) {
+      console.error('Error verifying credential:', error)
+      setError(error.message)
+      setVerificationStatus('error')
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  const handleDownload = async () => {
+    if (!credentialDetails?.certificateFile) return;
+
+    try {
+      // Create blob from certificate file
+      const blob = new Blob([credentialDetails.certificateFile], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      
+      // Create temporary link and trigger download
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `credential-${credentialId}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error downloading certificate:', error)
+    }
   }
 
   return (
@@ -59,6 +114,12 @@ function CredentialVerification() {
               />
             </div>
 
+            {error && (
+              <div className="text-red-500 text-sm">
+                {error}
+              </div>
+            )}
+
             <div className="flex justify-center">
               <motion.button
                 type="submit"
@@ -86,7 +147,7 @@ function CredentialVerification() {
 
           {/* Verification Result */}
           <AnimatePresence mode="wait">
-            {verificationStatus && (
+            {verificationStatus === 'success' && credentialDetails && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -110,11 +171,14 @@ function CredentialVerification() {
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 text-left">
                     <dl className="space-y-4">
                       {[
-                        ['Credential Type', 'Bachelor of Science'],
-                        ['Institution', 'Example University'],
-                        ['Issue Date', 'March 15, 2024'],
-                        ['Student Name', 'John Doe'],
-                        ['Blockchain Hash', '0x1234...5678']
+                        ['Credential Type', credentialDetails.credentialType],
+                        ['Institution', credentialDetails.institution],
+                        ['Issue Date', new Date(credentialDetails.issueDate).toLocaleDateString()],
+                        ['Student Name', credentialDetails.studentName],
+                        ['Student Address', credentialDetails.studentAddress],
+                        ['Issuer Address', credentialDetails.issuerAddress],
+                        ['Blockchain Hash', credentialDetails.blockchainHash],
+                        ['Verification Time', credentialDetails.verificationTime]
                       ].map(([label, value]) => (
                         <div key={label} className="flex justify-between">
                           <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">{label}</dt>
@@ -126,6 +190,7 @@ function CredentialVerification() {
 
                   {/* Download Button */}
                   <motion.button
+                    onClick={handleDownload}
                     className="mt-6 px-4 py-2 bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 
                              border border-primary-600 dark:border-primary-400 rounded-md
                              hover:bg-primary-50 dark:hover:bg-gray-600 transition-colors"
@@ -135,6 +200,17 @@ function CredentialVerification() {
                     Download Certificate
                   </motion.button>
                 </div>
+              </motion.div>
+            )}
+
+            {verificationStatus === 'error' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mt-8 text-center text-red-500"
+              >
+                <p>Failed to verify credential. Please check the ID and try again.</p>
               </motion.div>
             )}
           </AnimatePresence>

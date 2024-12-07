@@ -1,10 +1,20 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useWeb3 } from '../contexts/Web3Context'
+import { ipfsService } from '../services/ipfsService'
+import { ethers } from 'ethers'
 
 function CredentialUpload() {
+  const { account, web3Service } = useWeb3();
   const [step, setStep] = useState(1)
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState(null)
+  const [formData, setFormData] = useState({
+    studentAddress: '',
+    studentName: '',
+    credentialType: '',
+    institution: '',
+  })
 
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
@@ -23,13 +33,60 @@ function CredentialUpload() {
     }
   }
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setUploading(true)
-    // Simulate upload delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setUploading(false)
-    setStep(2)
+    
+    try {
+      const file = e.target.querySelector('input[type="file"]').files[0];
+      if (!file) throw new Error('No file selected');
+
+      // 1. Upload file to IPFS
+      const fileHash = await ipfsService.uploadFile(file)
+      
+      // 2. Create credential metadata
+      const metadata = {
+        studentName: formData.studentName,
+        studentAddress: formData.studentAddress,
+        credentialType: formData.credentialType,
+        institution: formData.institution,
+        issuerAddress: account,
+        fileHash: fileHash,
+        issueDate: new Date().toISOString()
+      }
+      
+      // 3. Upload metadata to IPFS
+      const metadataHash = await ipfsService.uploadJSON(metadata)
+      
+      // 4. Generate certificate hash for blockchain
+      const certificateHash = ethers.keccak256(
+        ethers.toUtf8Bytes(JSON.stringify(metadata))
+      )
+      
+      // 5. Send to smart contract
+      const tx = await web3Service.contract.issueCredential(
+        formData.studentAddress,
+        certificateHash,
+        fileHash,
+        metadataHash
+      )
+      
+      await tx.wait()
+      setStep(2)
+    } catch (error) {
+      console.error('Error uploading credential:', error)
+      // Show error message - you might want to add error state and display
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -94,6 +151,9 @@ function CredentialUpload() {
                     Credential Type
                   </label>
                   <select 
+                    name="credentialType"
+                    value={formData.credentialType}
+                    onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
                              bg-white dark:bg-gray-700 text-gray-900 dark:text-white
                              focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
@@ -108,10 +168,29 @@ function CredentialUpload() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Student Wallet Address
+                  </label>
+                  <input 
+                    type="text"
+                    name="studentAddress"
+                    value={formData.studentAddress}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
+                             bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                             focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Student Name
                   </label>
                   <input 
                     type="text"
+                    name="studentName"
+                    value={formData.studentName}
+                    onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
                              bg-white dark:bg-gray-700 text-gray-900 dark:text-white
                              focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"

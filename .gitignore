@@ -26,3 +26,6 @@ dist-ssr
 # .github folder
 /.github
 .github/CODEOWNERS
+
+cache
+.env
