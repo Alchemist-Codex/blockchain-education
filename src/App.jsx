@@ -36,7 +36,6 @@ function AppContent() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {user && <Navbar />}
-      {user && <MetaMaskConnect />}
       <main className="flex-grow">
         <Routes>
           <Route path="/signin" element={!user ? <SignIn /> : <Navigate to="/" />} />
