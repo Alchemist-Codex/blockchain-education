@@ -6,6 +6,7 @@ function IPFSTest() {
   const [testFile, setTestFile] = useState(null);
   const [uploadedHash, setUploadedHash] = useState('');
   const [retrievedData, setRetrievedData] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
 
   useEffect(() => {
     testConnection();
@@ -21,8 +22,22 @@ function IPFSTest() {
     }
   };
 
-  const handleFileChange = (e) => {
-    setTestFile(e.target.files[0]);
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setTestFile(file);
+
+    // Create preview for images
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFilePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setFilePreview(null);
+    }
   };
 
   const handleUpload = async () => {
@@ -70,14 +85,24 @@ function IPFSTest() {
           <input 
             type="file" 
             onChange={handleFileChange}
+            accept=".pdf,.jpg,.jpeg,.png,.gif"
             className="mb-2"
           />
+          {filePreview && (
+            <div className="mt-4">
+              <img 
+                src={filePreview} 
+                alt="Preview" 
+                className="max-w-xs rounded-lg shadow-md"
+              />
+            </div>
+          )}
           <button 
             onClick={handleUpload}
             disabled={!testFile}
             className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
           >
-            Upload Test File
+            Upload File
           </button>
         </div>
 
