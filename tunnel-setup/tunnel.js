@@ -8,22 +8,8 @@ const app = express();
 const AUTH_TOKEN = Math.random().toString(36).substring(7);
 
 async function setupProxy() {
-  // Enable CORS for all routes
-  app.use(cors({
-    origin: [
-      'https://blockchain-education.vercel.app',
-      'http://localhost:5173',
-      'http://localhost:3000'
-    ],
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
-    credentials: true
-  }));
-
+  app.use(cors());
   app.use(express.json());
-
-  // Handle preflight requests
-  app.options('*', cors());
 
   // Log requests
   app.use((req, res, next) => {
@@ -31,47 +17,41 @@ async function setupProxy() {
     next();
   });
 
-  // Add CORS headers to all responses
+  // Basic auth middleware
   app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-auth-token');
-    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', '*');
     
-    // Handle OPTIONS requests
+    // Skip auth for OPTIONS requests
     if (req.method === 'OPTIONS') {
       return res.sendStatus(200);
     }
     next();
   });
 
-  // IPFS proxy
+  // IPFS proxy with authentication
   const ipfsProxy = createProxyMiddleware({
     target: 'http://127.0.0.1:5001',
     changeOrigin: true,
     ws: true,
     onProxyReq: (proxyReq, req, res) => {
-      // Add auth token
-      proxyReq.setHeader('x-auth-token', AUTH_TOKEN);
-      
-      // Copy origin
-      if (req.headers.origin) {
-        proxyReq.setHeader('origin', req.headers.origin);
-      }
-
       // Remove problematic headers
       proxyReq.removeHeader('authorization');
       proxyReq.removeHeader('www-authenticate');
+      
+      // Add custom headers
+      proxyReq.setHeader('X-Custom-Auth', 'true');
     },
     onProxyRes: (proxyRes, req, res) => {
       // Set CORS headers
-      proxyRes.headers['access-control-allow-origin'] = req.headers.origin || '*';
+      proxyRes.headers['access-control-allow-origin'] = '*';
       proxyRes.headers['access-control-allow-methods'] = 'GET,POST,OPTIONS';
-      proxyRes.headers['access-control-allow-headers'] = 'Content-Type, Authorization, x-auth-token';
-      proxyRes.headers['access-control-allow-credentials'] = 'true';
+      proxyRes.headers['access-control-allow-headers'] = '*';
       
-      // Remove auth headers
+      // Remove auth headers that might cause issues
       delete proxyRes.headers['www-authenticate'];
+      delete proxyRes.headers['proxy-authenticate'];
     },
     pathRewrite: {
       '^/api/v0': '/api/v0'
@@ -101,23 +81,12 @@ async function startTunnel() {
     
     // Use debug mode with localtunnel
     const tunnel = exec(
-      `export DEBUG="localtunnel:*" && npx localtunnel --port ${port} --print-requests --subdomain blockchain-education-ipfs`, 
+      `export DEBUG="localtunnel:*" && npx localtunnel --port ${port} --subdomain blockchain-education-ipfs`, 
       {
         env: {
           ...process.env,
           DEBUG: 'localtunnel:*'
         }
-      },
-      (error, stdout, stderr) => {
-        if (error) {
-          console.error(`Tunnel error: ${error}`);
-          return;
-        }
-        if (stderr) {
-          console.error(`Tunnel stderr: ${stderr}`);
-          return;
-        }
-        console.log(`Tunnel stdout: ${stdout}`);
       }
     );
 
@@ -128,15 +97,13 @@ async function startTunnel() {
         console.log('\n=== IPFS Tunnel Started ===');
         console.log('Local URL: http://localhost:5002');
         console.log('Tunnel URL:', url);
-        console.log('Auth Token:', AUTH_TOKEN);
         console.log('\nUse this URL in your Vercel env:', url);
         console.log('===========================\n');
       }
     });
 
     tunnel.stderr.on('data', (data) => {
-      // Log all debug information
-      console.log('Debug info:', data.toString());
+      console.error('Tunnel error:', data);
     });
 
     tunnel.on('close', (code) => {
@@ -151,7 +118,7 @@ async function startTunnel() {
   }
 }
 
-// Install dependencies
+// Install dependencies if needed
 try {
   require('express');
   require('http-proxy-middleware');
