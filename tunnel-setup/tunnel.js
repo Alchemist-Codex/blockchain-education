@@ -92,8 +92,8 @@ async function startTunnel() {
   try {
     const port = await setupProxy();
     
-    // Windows-compatible command
-    const command = `npx localtunnel --port ${port} --subdomain blockchain-education-ipfs`;
+    // Force HTTP by adding --host http://localtunnel.me
+    const command = `npx localtunnel --port ${port} --host http://localtunnel.me --subdomain blockchain-education-ipfs`;
     
     const tunnel = exec(command, (error, stdout, stderr) => {
       if (error) {
@@ -108,11 +108,14 @@ async function startTunnel() {
     tunnel.stdout.on('data', (data) => {
       console.log('Tunnel output:', data);
       if (data.includes('your url is:')) {
-        const url = data.split('your url is: ')[1].trim();
+        let url = data.split('your url is: ')[1].trim();
+        // Force HTTP by replacing https with http
+        url = url.replace('https://', 'http://');
+        
         console.log('\n=== IPFS Tunnel Started ===');
         console.log('Local URL: http://localhost:' + port);
         console.log('Tunnel URL:', url);
-        console.log('\nUse this URL in your Vercel env:', url);
+        console.log('\nIMPORTANT: Use HTTP URL in your Vercel env:', url);
         console.log('===========================\n');
       }
     });
