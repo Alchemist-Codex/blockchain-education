@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useWeb3 } from '../contexts/Web3Context';
+import UserProfile from './UserProfile';
 
 function MetaMaskConnect() {
   const { account, connect } = useWeb3();
@@ -38,7 +39,9 @@ function MetaMaskConnect() {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50">
+    <div className="fixed top-4 right-4 z-50 flex items-center space-x-4">
+      <UserProfile />
+      
       {!window.ethereum ? (
         <a 
           href="https://metamask.io/download/"
@@ -50,6 +53,8 @@ function MetaMaskConnect() {
         </a>
       ) : account ? (
         <div className="flex items-center space-x-2">
+          <div className="h-2 w-2 rounded-full bg-green-500"></div>
+          <span className="text-gray-700 dark:text-gray-300">Connected</span>
         </div>
       ) : (
         <div className="flex flex-col items-end">
