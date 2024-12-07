@@ -53,9 +53,7 @@ function MetaMaskConnect() {
           Install MetaMask
         </a>
       ) : account ? (
-        <div className="flex items-center space-x-2">
-          <div className="h-2 w-2 rounded-full bg-green-500"></div>
-          <span className="text-gray-700 dark:text-gray-300">Connected</span>
+        <div className="flex items-center space-x-2">  
         </div>
       ) : (
         <motion.button
