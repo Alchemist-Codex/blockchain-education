@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useWeb3 } from '../contexts/Web3Context';
-import UserProfile from './UserProfile';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import UserProfile from './UserProfile';
 
 function MetaMaskConnect() {
   const { account, connect } = useWeb3();
@@ -17,28 +17,6 @@ function MetaMaskConnect() {
       await connect();
     } catch (err) {
       setError(err.message);
-    }
-  };
-
-  const addGanacheNetwork = async () => {
-    try {
-      await window.ethereum.request({
-        method: 'wallet_addEthereumChain',
-        params: [{
-          chainId: '0x539', // 1337 in hex
-          chainName: 'Ganache',
-          nativeCurrency: {
-            name: 'ETH',
-            symbol: 'ETH',
-            decimals: 18
-          },
-          rpcUrls: ['http://127.0.0.1:7545'],
-          blockExplorerUrls: null
-        }]
-      });
-    } catch (error) {
-      console.error('Error adding Ganache network:', error);
-      setError('Failed to add Ganache network');
     }
   };
 
@@ -80,27 +58,18 @@ function MetaMaskConnect() {
           <span className="text-gray-700 dark:text-gray-300">Connected</span>
         </div>
       ) : (
-        <div className="flex flex-col items-end">
-          <motion.button
-            onClick={handleConnect}
-            className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Connect Wallet
-          </motion.button>
-          <motion.button
-            onClick={addGanacheNetwork}
-            className="mt-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Add Ganache Network
-          </motion.button>
-          {error && (
-            <p className="mt-2 text-sm text-red-500">{error}</p>
-          )}
-        </div>
+        <motion.button
+          onClick={handleConnect}
+          className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          Connect Wallet
+        </motion.button>
+      )}
+      
+      {error && (
+        <p className="text-sm text-red-500">{error}</p>
       )}
     </div>
   );

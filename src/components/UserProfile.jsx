@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { firebaseService } from '../services/firebaseService';
 
 function UserProfile() {
-  const { user } = useAuth();
+  const { user, getUserProfile } = useAuth();
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {
@@ -14,7 +13,7 @@ function UserProfile() {
 
   const loadUserProfile = async () => {
     try {
-      const userProfile = await firebaseService.getUserProfile(user.uid);
+      const userProfile = await getUserProfile(user.uid);
       setProfile(userProfile);
     } catch (error) {
       console.error('Error loading profile:', error);
