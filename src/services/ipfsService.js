@@ -4,7 +4,7 @@ import { Buffer } from 'buffer';
 class IPFSService {
   constructor() {
     try {
-      this.ipfsEndpoint = process.env.VITE_IPFS_ENDPOINT || 'http://blockchain-education-ipfs.loca.lt';
+      this.ipfsEndpoint = process.env.VITE_IPFS_ENDPOINT || 'https://pretty-termite-87.loca.lt';
       console.log('IPFS service initialized with endpoint:', this.ipfsEndpoint);
       
       // No need to create IPFS client, we'll use fetch directly
