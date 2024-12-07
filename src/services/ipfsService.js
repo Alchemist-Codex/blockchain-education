@@ -4,12 +4,14 @@ import { Buffer } from 'buffer';
 class IPFSService {
   constructor() {
     try {
+      // Use environment variable or localtunnel URL
+      this.ipfsEndpoint = process.env.VITE_IPFS_ENDPOINT || 'https://blockchain-education.loca.lt';
       this.ipfs = create({
-        host: 'localhost',
-        port: 5001,
-        protocol: 'http'
+        host: new URL(this.ipfsEndpoint).hostname,
+        port: 443, // localtunnel uses HTTPS
+        protocol: 'https'
       });
-      console.log('IPFS service initialized');
+      console.log('IPFS service initialized with endpoint:', this.ipfsEndpoint);
     } catch (error) {
       console.error('IPFS initialization failed:', error);
       throw error;
@@ -25,18 +27,15 @@ class IPFSService {
       console.log('Starting file upload to IPFS...', {
         fileName: file.name,
         fileSize: file.size,
-        fileType: file.type
+        fileType: file.type,
+        endpoint: this.ipfsEndpoint
       });
 
-      // Convert file to buffer
       const buffer = await file.arrayBuffer();
-
-      // Create form data
       const formData = new FormData();
       formData.append('file', new Blob([buffer]));
 
-      // Make the request
-      const response = await fetch('http://localhost:5001/api/v0/add', {
+      const response = await fetch(`${this.ipfsEndpoint}/api/v0/add`, {
         method: 'POST',
         body: formData
       });
@@ -45,7 +44,6 @@ class IPFSService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // IPFS returns one JSON object per line, we need to parse the last line
       const text = await response.text();
       const lines = text.trim().split('\n');
       const lastLine = lines[lines.length - 1];
@@ -54,12 +52,12 @@ class IPFSService {
       console.log('Upload result:', result);
 
       // Pin the file
-      await fetch(`http://localhost:5001/api/v0/pin/add?arg=${result.Hash}`, {
+      await fetch(`${this.ipfsEndpoint}/api/v0/pin/add?arg=${result.Hash}`, {
         method: 'POST'
       });
 
-      // Log the gateway URL
-      const gatewayUrl = `http://localhost:8080/ipfs/${result.Hash}`;
+      // Get the gateway URL - use Infura or other public gateway as fallback
+      const gatewayUrl = `https://ipfs.io/ipfs/${result.Hash}`;
       console.log('File available at:', gatewayUrl);
 
       return result.Hash;
@@ -77,13 +75,10 @@ class IPFSService {
 
     try {
       const jsonString = JSON.stringify(jsonData);
-      
-      // Create form data
       const formData = new FormData();
       formData.append('file', new Blob([jsonString], { type: 'application/json' }));
 
-      // Make the request
-      const response = await fetch('http://localhost:5001/api/v0/add', {
+      const response = await fetch(`${this.ipfsEndpoint}/api/v0/add`, {
         method: 'POST',
         body: formData
       });
@@ -92,7 +87,6 @@ class IPFSService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Parse the response the same way as file upload
       const text = await response.text();
       const lines = text.trim().split('\n');
       const lastLine = lines[lines.length - 1];
@@ -100,8 +94,7 @@ class IPFSService {
 
       console.log('JSON upload successful:', result);
 
-      // Pin the JSON
-      await fetch(`http://localhost:5001/api/v0/pin/add?arg=${result.Hash}`, {
+      await fetch(`${this.ipfsEndpoint}/api/v0/pin/add?arg=${result.Hash}`, {
         method: 'POST'
       });
 
@@ -120,7 +113,7 @@ class IPFSService {
     try {
       console.log('Retrieving file with hash:', hash);
       
-      const response = await fetch(`http://localhost:5001/api/v0/cat?arg=${hash}`, {
+      const response = await fetch(`${this.ipfsEndpoint}/api/v0/cat?arg=${hash}`, {
         method: 'POST'
       });
 
@@ -138,7 +131,7 @@ class IPFSService {
 
   async testConnection() {
     try {
-      const response = await fetch('http://localhost:5001/api/v0/id', {
+      const response = await fetch(`${this.ipfsEndpoint}/api/v0/id`, {
         method: 'POST'
       });
       
