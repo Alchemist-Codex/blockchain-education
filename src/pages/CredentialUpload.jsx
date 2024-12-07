@@ -8,12 +8,14 @@ function CredentialUpload() {
   const { account, web3Service } = useWeb3();
   const [step, setStep] = useState(1)
   const [uploading, setUploading] = useState(false)
-  const [preview, setPreview] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
   const [formData, setFormData] = useState({
     studentAddress: '',
     studentName: '',
     credentialType: '',
     institution: '',
+    imageHash: '',
+    imageUrl: ''
   })
 
   const fadeIn = {
@@ -22,16 +24,32 @@ function CredentialUpload() {
     transition: { duration: 0.6 }
   }
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0]
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader()
+      // Show preview
+      const reader = new FileReader();
       reader.onloadend = () => {
-        setPreview(reader.result)
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+
+      try {
+        setUploading(true);
+        // Upload to IPFS
+        const { hash, url } = await ipfsService.uploadImage(file);
+        setFormData(prev => ({
+          ...prev,
+          imageHash: hash,
+          imageUrl: url
+        }));
+      } catch (error) {
+        console.error('Image upload failed:', error);
+      } finally {
+        setUploading(false);
       }
-      reader.readAsDataURL(file)
     }
-  }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -46,46 +64,40 @@ function CredentialUpload() {
     setUploading(true)
     
     try {
-      const file = e.target.querySelector('input[type="file"]').files[0];
-      if (!file) throw new Error('No file selected');
-
-      // 1. Upload file to IPFS
-      const fileHash = await ipfsService.uploadFile(file)
-      
-      // 2. Create credential metadata
+      // Create credential metadata with image
       const metadata = {
         studentName: formData.studentName,
         studentAddress: formData.studentAddress,
         credentialType: formData.credentialType,
         institution: formData.institution,
         issuerAddress: account,
-        fileHash: fileHash,
+        imageHash: formData.imageHash,
+        imageUrl: formData.imageUrl,
         issueDate: new Date().toISOString()
-      }
+      };
       
-      // 3. Upload metadata to IPFS
-      const metadataHash = await ipfsService.uploadJSON(metadata)
+      // Upload metadata to IPFS
+      const metadataHash = await ipfsService.uploadJSON(metadata);
       
-      // 4. Generate certificate hash for blockchain
+      // Generate certificate hash
       const certificateHash = ethers.keccak256(
         ethers.toUtf8Bytes(JSON.stringify(metadata))
-      )
+      );
       
-      // 5. Send to smart contract
+      // Send to smart contract
       const tx = await web3Service.contract.issueCredential(
         formData.studentAddress,
         certificateHash,
-        fileHash,
+        formData.imageHash,
         metadataHash
-      )
+      );
       
-      await tx.wait()
-      setStep(2)
+      await tx.wait();
+      setStep(2);
     } catch (error) {
-      console.error('Error uploading credential:', error)
-      // Show error message - you might want to add error state and display
+      console.error('Error uploading credential:', error);
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
   }
 
@@ -224,7 +236,7 @@ function CredentialUpload() {
                           <input 
                             type="file" 
                             className="sr-only" 
-                            onChange={handleFileChange}
+                            onChange={handleImageChange}
                             accept=".pdf,.doc,.docx"
                           />
                         </label>
@@ -235,6 +247,33 @@ function CredentialUpload() {
                       </p>
                     </div>
                   </div>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Certificate Image
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="mt-1 block w-full"
+                    disabled={uploading}
+                  />
+                  {imagePreview && (
+                    <div className="mt-2">
+                      <img
+                        src={imagePreview}
+                        alt="Certificate preview"
+                        className="max-w-md rounded-lg shadow-lg"
+                      />
+                    </div>
+                  )}
+                  {uploading && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      Uploading image...
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex justify-end">
