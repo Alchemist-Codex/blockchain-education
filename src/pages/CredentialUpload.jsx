@@ -74,11 +74,17 @@ function CredentialUpload() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setUploading(true)
+    e.preventDefault();
+    
+    if (!formData.imageHash) {
+      alert('Please upload a certificate file first');
+      return;
+    }
+
+    setUploading(true);
     
     try {
-      // Create credential metadata with image
+      // Create credential metadata
       const metadata = {
         studentName: formData.studentName,
         studentAddress: formData.studentAddress,
@@ -110,10 +116,11 @@ function CredentialUpload() {
       setStep(2);
     } catch (error) {
       console.error('Error uploading credential:', error);
+      alert('Failed to issue credential. Please try again.');
     } finally {
       setUploading(false);
     }
-  }
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -279,49 +286,55 @@ function CredentialUpload() {
                 </div>
               )}
 
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-md
-                           hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
-                  disabled={uploading}
-                >
-                  {uploading ? 'Processing...' : 'Continue'}
-                </button>
-              </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-md
+                             hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
+                    disabled={uploading}
+                  >
+                    {uploading ? 'Processing...' : 'Continue'}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           )}
 
           {step === 2 && (
             <motion.div
-              key="step2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 text-center"
+              key="success"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center py-8"
             >
-              <div className="mb-4">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900">
-                  <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
+              <div className="text-green-500 mb-4">
+                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Upload Successful!
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Your credential has been successfully uploaded to the blockchain
+              <h3 className="text-xl font-bold mb-2">Certificate Issued Successfully!</h3>
+              <p className="text-gray-600 mb-4">
+                The certificate has been uploaded to IPFS and recorded on the blockchain.
               </p>
-              <motion.button
-                onClick={() => setStep(1)}
-                className="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-md
-                          hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
+                onClick={() => {
+                  setStep(1);
+                  setFormData({
+                    studentAddress: '',
+                    studentName: '',
+                    credentialType: '',
+                    institution: '',
+                    imageHash: '',
+                    imageUrl: ''
+                  });
+                  setImagePreview(null);
+                }}
+                className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
               >
-                Upload Another
-              </motion.button>
+                Issue Another Certificate
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
