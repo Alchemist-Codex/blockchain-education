@@ -1,12 +1,55 @@
 const localtunnel = require('localtunnel');
-const fs = require('fs');
+const express = require('express');
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const cors = require('cors');
+const app = express();
+
+// Create Express server with proxy
+async function setupProxy() {
+  // Enable CORS
+  app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  }));
+
+  // Proxy middleware configuration
+  const proxyMiddleware = createProxyMiddleware({
+    target: 'http://localhost:5001',
+    changeOrigin: true,
+    pathRewrite: {
+      '^/api/v0': '/api/v0'  // keep the API path
+    },
+    onProxyRes: function (proxyRes, req, res) {
+      proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+    },
+    onError: function(err, req, res) {
+      console.error('Proxy Error:', err);
+      res.status(500).send('Proxy Error');
+    }
+  });
+
+  // Use the proxy middleware
+  app.use('/api/v0', proxyMiddleware);
+
+  // Start the proxy server
+  const port = 5002;
+  app.listen(port, () => {
+    console.log(`Proxy server running on port ${port}`);
+  });
+
+  return port;
+}
 
 async function startTunnel() {
   try {
-    // Use a fixed subdomain for consistency
+    // Start the proxy first
+    const proxyPort = await setupProxy();
+
+    // Create tunnel to the proxy instead of directly to IPFS
     const tunnel = await localtunnel({ 
-      port: 5001,
-      subdomain: 'blockchain-education-ipfs'  // This will give you a consistent URL
+      port: proxyPort,
+      subdomain: 'blockchain-education-ipfs'
     });
 
     console.log('\n=== IPFS Tunnel Started ===');
@@ -16,7 +59,6 @@ async function startTunnel() {
     console.log('\nVercel deployment should use:', tunnel.url);
     console.log('===========================\n');
 
-    // Handle tunnel events
     tunnel.on('close', () => {
       console.log('\nTunnel closed, attempting to restart...');
       setTimeout(startTunnel, 1000);
@@ -35,6 +77,20 @@ async function startTunnel() {
   }
 }
 
+// Install required dependencies
+console.log('Checking dependencies...');
+try {
+  require('express');
+  require('http-proxy-middleware');
+  require('cors');
+} catch (err) {
+  console.error('\nMissing dependencies. Installing...');
+  require('child_process').execSync('npm install express http-proxy-middleware cors', {
+    stdio: 'inherit'
+  });
+  console.log('Dependencies installed successfully!\n');
+}
+
 // Start the tunnel
-console.log('Starting IPFS tunnel...');
+console.log('Starting IPFS tunnel with proxy...');
 startTunnel();

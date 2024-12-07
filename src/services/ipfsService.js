@@ -4,14 +4,10 @@ import { Buffer } from 'buffer';
 class IPFSService {
   constructor() {
     try {
-      // Use environment variable or localtunnel URL
-      this.ipfsEndpoint = process.env.VITE_IPFS_ENDPOINT || 'https://blockchain-education.loca.lt';
-      this.ipfs = create({
-        host: new URL(this.ipfsEndpoint).hostname,
-        port: 443, // localtunnel uses HTTPS
-        protocol: 'https'
-      });
+      this.ipfsEndpoint = process.env.VITE_IPFS_ENDPOINT || 'http://localhost:5002';
       console.log('IPFS service initialized with endpoint:', this.ipfsEndpoint);
+      
+      // No need to create IPFS client, we'll use fetch directly
     } catch (error) {
       console.error('IPFS initialization failed:', error);
       throw error;
@@ -132,15 +128,17 @@ class IPFSService {
   async testConnection() {
     try {
       const response = await fetch(`${this.ipfsEndpoint}/api/v0/id`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+        }
       });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const text = await response.text();
-      const data = JSON.parse(text.trim());
+      const data = await response.json();
       console.log('IPFS node info:', data);
       return true;
     } catch (error) {
