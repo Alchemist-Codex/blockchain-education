@@ -7,6 +7,7 @@ export function Web3Provider({ children }) {
   const [account, setAccount] = useState(null)
   const [isInstitution, setIsInstitution] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [contract, setContract] = useState(null)
 
   useEffect(() => {
     initWeb3()
@@ -20,8 +21,9 @@ export function Web3Provider({ children }) {
   const initWeb3 = async () => {
     try {
       setLoading(true)
-      const { address } = await web3Service.connect()
+      const { address, contract: web3Contract } = await web3Service.connect()
       setAccount(address)
+      setContract(web3Contract)
       const institutionStatus = await web3Service.isInstitution(address)
       setIsInstitution(institutionStatus)
     } catch (error) {
@@ -39,6 +41,7 @@ export function Web3Provider({ children }) {
     } else {
       setAccount(null)
       setIsInstitution(false)
+      setContract(null)
     }
   }
 
@@ -47,6 +50,7 @@ export function Web3Provider({ children }) {
       account, 
       isInstitution, 
       loading,
+      contract,
       web3Service,
       connect: initWeb3
     }}>
