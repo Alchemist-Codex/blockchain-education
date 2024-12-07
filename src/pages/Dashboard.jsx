@@ -1,8 +1,22 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '../contexts/AuthContext'
+import { getUserProfile } from '../services/userService'
 
 function Dashboard() {
+  const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState(null);
   const [activeTab, setActiveTab] = useState('issued')
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        const profile = await getUserProfile(user.uid);
+        setUserProfile(profile);
+      }
+    };
+    fetchUserProfile();
+  }, [user]);
 
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
@@ -55,8 +69,12 @@ function Dashboard() {
           </motion.div>
 
           <div className="relative z-10">
-            <h1 className="text-3xl font-bold mb-2">Welcome back, Ritaban!</h1>
-            <p className="text-primary-100 dark:text-primary-200">Here's what's happening with your credentials</p>
+            <h1 className="text-3xl font-bold mb-2">
+              Welcome back, {userProfile?.firstName || 'User'}!
+            </h1>
+            <p className="text-primary-100 dark:text-primary-200">
+              Here's what's happening with your credentials
+            </p>
           </div>
         </motion.div>
 

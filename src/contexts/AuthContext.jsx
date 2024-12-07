@@ -43,8 +43,12 @@ export function AuthProvider({ children }) {
     try {
       const result = await signInWithPopup(auth, provider);
       
+      // Get first name from displayName
+      const firstName = result.user.displayName?.split(' ')[0] || 'User';
+      
       // Store additional user data in Firestore
       await setDoc(doc(db, 'users', result.user.uid), {
+        firstName,
         displayName: result.user.displayName,
         email: result.user.email,
         photoURL: result.user.photoURL,
