@@ -28,16 +28,26 @@ function CredentialUpload() {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload an image (JPEG, PNG, GIF), PDF, or DOCX file');
+      return;
+    }
+
     try {
       setUploading(true);
 
-      // Show preview if it's an image
+      // Show preview only for images
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onloadend = () => {
           setImagePreview(reader.result);
         };
         reader.readAsDataURL(file);
+      } else {
+        // For non-image files, show file name or icon
+        setImagePreview(null);
       }
 
       // Upload to IPFS
@@ -225,13 +235,13 @@ function CredentialUpload() {
                           type="file" 
                           className="sr-only" 
                           onChange={handleFileChange}
-                          accept="image/*,.pdf,.doc,.docx"
+                          accept=".jpg,.jpeg,.png,.gif,.pdf,.docx"
                         />
                       </label>
                       <p className="pl-1">or drag and drop</p>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Image or PDF/DOC up to 10MB
+                      Supported formats: Images (JPEG, PNG, GIF), PDF, or DOCX up to 10MB
                     </p>
                   </div>
                 </div>
