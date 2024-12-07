@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { PageTransition } from '../components/PageTransition'
 import Background3D from '../components/Background3D'
 
 function HomePage() {
@@ -28,59 +29,23 @@ function HomePage() {
   ]
 
   return (
-    <>
+    <PageTransition>
       <Background3D />
       <div className="relative min-h-screen">
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-800 dark:to-primary-900 text-white py-20">
-          {/* Add Animated background elements */}
           <motion.div
-            className="absolute inset-0 opacity-20 z-0"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.2 }}
+            className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
           >
-            {[...Array(3)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute bg-white rounded-full"
-                style={{
-                  width: Math.random() * 200 + 50,
-                  height: Math.random() * 200 + 50,
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                }}
-                animate={{
-                  y: [0, Math.random() * 50 - 25],
-                  x: [0, Math.random() * 50 - 25],
-                }}
-                transition={{
-                  duration: Math.random() * 5 + 5,
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                }}
-              />
-            ))}
-          </motion.div>
-
-          {/* Content */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <motion.h1 
-              className="text-4xl sm:text-5xl font-bold text-center mb-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              Secure Academic Credentials with Blockchain
-            </motion.h1>
-            
-            <motion.p 
-              className="text-xl mb-8 max-w-2xl mx-auto text-primary-100"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-            >
+            <h1 className="text-4xl sm:text-5xl font-bold text-center mb-6">
+              Welcome to Academic Chain
+            </h1>
+            <p className="text-xl mb-8 max-w-2xl mx-auto text-primary-100">
               Issue, manage, and verify academic credentials with confidence using blockchain technology
-            </motion.p>
+            </p>
 
             <motion.div 
               className="flex flex-col sm:flex-row gap-4 justify-center"
@@ -101,7 +66,7 @@ function HomePage() {
                 Verify Credential
               </Link>
             </motion.div>
-          </div>
+          </motion.div>
         </section>
 
         {/* Features Section */}
@@ -153,7 +118,7 @@ function HomePage() {
           </div>
         </section>
       </div>
-    </>
+    </PageTransition>
   )
 }
 
