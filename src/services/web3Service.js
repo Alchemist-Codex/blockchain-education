@@ -18,9 +18,20 @@ class Web3Service {
       this.provider = new ethers.BrowserProvider(window.ethereum);
       this.signer = await this.provider.getSigner();
       
-      // Initialize contract
+      // Initialize contract with proper error handling
+      const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+      if (!contractAddress) {
+        throw new Error("Contract address not found in environment variables");
+      }
+
+      console.log('Initializing contract with:', {
+        address: contractAddress,
+        hasABI: !!AcademicCredentials.abi,
+        signer: this.signer
+      });
+
       this.contract = new ethers.Contract(
-        import.meta.env.VITE_CONTRACT_ADDRESS,
+        contractAddress,
         AcademicCredentials.abi,
         this.signer
       );
@@ -44,6 +55,14 @@ class Web3Service {
       console.error("Error checking institution status:", error);
       return false;
     }
+  }
+
+  // Add a method to get the contract instance
+  getContract() {
+    if (!this.contract) {
+      throw new Error("Contract not initialized. Please connect first.");
+    }
+    return this.contract;
   }
 }
 
