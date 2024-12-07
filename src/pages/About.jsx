@@ -29,10 +29,9 @@ function About() {
   const teamMembers = [
     {
       name: "Ritaban Ghosh",
-      role: "Founder & Lead Developer",
-      image: "/path/to/image.jpg"
-    },
-    // Add more team members as needed
+      role: "Frontend Developer",
+      image: "/ritaban.jpg",
+    }
   ]
 
   return (
@@ -96,13 +95,8 @@ function About() {
             ))}
           </motion.div>
 
-          {/* Team Section */}
-          <motion.div
-            className="text-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-          >
+          {/* Team Section with error handling */}
+          <motion.div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-12">
               Our Team
             </h2>
@@ -114,8 +108,16 @@ function About() {
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="w-32 h-32 rounded-full bg-gray-200 mx-auto mb-4">
-                    {/* Add member image here */}
+                  <div className="relative w-32 h-32 mx-auto mb-4 group">
+                    <img
+                      src={member.image}
+                      alt={member.name}
+                      className="w-full h-full rounded-full object-cover shadow-lg"
+                      onError={(e) => {
+                        console.error('Image failed to load:', member.image);
+                        e.target.src = 'https://via.placeholder.com/150'; // Fallback image
+                      }}
+                    />
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                     {member.name}
