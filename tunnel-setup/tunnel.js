@@ -5,72 +5,68 @@ const cors = require('cors');
 const app = express();
 
 async function setupProxy() {
-  // Enable CORS
-  app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-  }));
+  // Basic middleware
+  app.use(cors());
+  app.use(express.json());
 
-  // Add OPTIONS handling
-  app.options('*', cors());
-
-  // Basic auth middleware (optional)
+  // Simple request logger
   app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', '*');
+    console.log(`${req.method} ${req.path}`);
     next();
   });
 
-  // Proxy middleware configuration
-  const proxyMiddleware = createProxyMiddleware({
+  // Direct proxy to IPFS
+  const ipfsProxy = createProxyMiddleware({
     target: 'http://127.0.0.1:5001',
     changeOrigin: true,
-    ws: true,
-    pathRewrite: {
-      '^/api/v0': '/api/v0'
+    onProxyReq: (proxyReq, req, res) => {
+      // Remove authentication headers that might cause issues
+      proxyReq.removeHeader('authorization');
     },
-    onProxyRes: function (proxyRes, req, res) {
-      proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+    onProxyRes: (proxyRes, req, res) => {
+      // Remove headers that might cause CORS issues
+      proxyRes.headers['access-control-allow-origin'] = '*';
       delete proxyRes.headers['www-authenticate'];
     },
-    onError: function(err, req, res) {
-      console.error('Proxy Error:', err);
-      res.status(500).send('Proxy Error');
+    pathRewrite: {
+      '^/api/v0': '/api/v0'
     }
   });
 
-  // Use the proxy middleware
-  app.use('/api/v0', proxyMiddleware);
+  // Mount proxy
+  app.use('/api/v0', ipfsProxy);
 
-  // Start the proxy server
-  const port = 5002;
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`Proxy server running on port ${port}`);
+  // Error handler
+  app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
   });
 
-  return port;
+  return new Promise((resolve) => {
+    const server = app.listen(5002, '127.0.0.1', () => {
+      console.log('Proxy server started on port 5002');
+      resolve(5002);
+    });
+  });
 }
 
 async function startTunnel() {
   try {
-    const proxyPort = await setupProxy();
+    const port = await setupProxy();
     
     const tunnel = await localtunnel({ 
-      port: proxyPort,
+      port,
       subdomain: 'blockchain-education-ipfs'
     });
 
     console.log('\n=== IPFS Tunnel Started ===');
+    console.log('Local URL: http://localhost:5002');
     console.log('Tunnel URL:', tunnel.url);
-    console.log('Proxy Port:', proxyPort);
-    console.log('\nVercel env should be:', tunnel.url);
+    console.log('\nUse this URL in your Vercel env:', tunnel.url);
     console.log('===========================\n');
 
     tunnel.on('close', () => {
-      console.log('\nTunnel closed, restarting...');
+      console.log('Tunnel closed, restarting...');
       setTimeout(startTunnel, 1000);
     });
 
@@ -80,24 +76,22 @@ async function startTunnel() {
     });
 
   } catch (err) {
-    console.error('Failed to create tunnel:', err);
+    console.error('Error:', err);
     setTimeout(startTunnel, 5000);
   }
 }
 
-// Install dependencies if needed
-console.log('Checking dependencies...');
+// Check and install dependencies
 try {
   require('express');
   require('http-proxy-middleware');
   require('cors');
 } catch (err) {
-  console.error('\nInstalling dependencies...');
+  console.log('Installing dependencies...');
   require('child_process').execSync('npm install express http-proxy-middleware cors', {
     stdio: 'inherit'
   });
-  console.log('Dependencies installed!\n');
 }
 
-console.log('Starting IPFS tunnel with proxy...');
+console.log('Starting IPFS tunnel...');
 startTunnel();
