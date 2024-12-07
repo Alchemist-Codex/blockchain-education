@@ -14,6 +14,8 @@
     "@emotion/styled": "^11.13.5",
     "@headlessui/react": "^1.7.17",
     "@openzeppelin/contracts": "^4.9.3",
+    "@react-three/drei": "^9.120.2",
+    "@react-three/fiber": "^8.17.10",
     "buffer": "^6.0.3",
     "ethers": "^6.13.4",
     "firebase": "^11.0.2",
@@ -24,6 +26,7 @@
     "react-icons": "^5.4.0",
     "react-router-dom": "^7.0.2",
     "tailwind-scrollbar": "^3.0.5",
+    "three": "^0.171.0",
     "web3modal": "^1.9.12"
   },
   "devDependencies": {
