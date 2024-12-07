@@ -3,14 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
 import { ipfsService } from '../services/ipfsService'
 import { ethers } from 'ethers'
-import toast from 'react-hot-toast'
 
 function CredentialUpload() {
   const { account, web3Service } = useWeb3();
   const [step, setStep] = useState(1)
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState(null)
-  const [fileError, setFileError] = useState('')
   const [formData, setFormData] = useState({
     studentAddress: '',
     studentName: '',
@@ -26,35 +24,12 @@ function CredentialUpload() {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0]
-    setFileError('')
-    
     if (file) {
-      // Check file type
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf']
-      if (!validTypes.includes(file.type)) {
-        setFileError('Please upload a PDF or image file (JPEG, PNG, GIF)')
-        setPreview(null)
-        return
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPreview(reader.result)
       }
-
-      // Check file size (10MB limit)
-      if (file.size > 10 * 1024 * 1024) {
-        setFileError('File size must be less than 10MB')
-        setPreview(null)
-        return
-      }
-
-      // Create preview for images
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          setPreview(reader.result)
-        }
-        reader.readAsDataURL(file)
-      } else {
-        // For PDFs, show an icon or placeholder
-        setPreview('/pdf-icon.png') // Add a PDF icon to your public folder
-      }
+      reader.readAsDataURL(file)
     }
   }
 
@@ -67,19 +42,15 @@ function CredentialUpload() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setUploading(true);
+    e.preventDefault()
+    setUploading(true)
     
     try {
       const file = e.target.querySelector('input[type="file"]').files[0];
       if (!file) throw new Error('No file selected');
 
-      // Show upload starting toast
-      toast.loading('Uploading credential...');
-
       // 1. Upload file to IPFS
-      const fileHash = await ipfsService.uploadFile(file);
-      console.log('File uploaded to IPFS:', fileHash);
+      const fileHash = await ipfsService.uploadFile(file)
       
       // 2. Create credential metadata
       const metadata = {
@@ -89,19 +60,16 @@ function CredentialUpload() {
         institution: formData.institution,
         issuerAddress: account,
         fileHash: fileHash,
-        issueDate: new Date().toISOString(),
-        fileName: file.name,
-        fileType: file.type
-      };
+        issueDate: new Date().toISOString()
+      }
       
       // 3. Upload metadata to IPFS
-      const metadataHash = await ipfsService.uploadJSON(metadata);
-      console.log('Metadata uploaded to IPFS:', metadataHash);
+      const metadataHash = await ipfsService.uploadJSON(metadata)
       
       // 4. Generate certificate hash for blockchain
       const certificateHash = ethers.keccak256(
         ethers.toUtf8Bytes(JSON.stringify(metadata))
-      );
+      )
       
       // 5. Send to smart contract
       const tx = await web3Service.contract.issueCredential(
@@ -109,20 +77,17 @@ function CredentialUpload() {
         certificateHash,
         fileHash,
         metadataHash
-      );
+      )
       
-      await tx.wait();
-      toast.dismiss();
-      toast.success('Credential uploaded successfully!');
-      setStep(2);
+      await tx.wait()
+      setStep(2)
     } catch (error) {
-      console.error('Error uploading credential:', error);
-      toast.dismiss();
-      toast.error(error.message || 'Error uploading credential');
+      console.error('Error uploading credential:', error)
+      // Show error message - you might want to add error state and display
     } finally {
-      setUploading(false);
+      setUploading(false)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 transition-colors duration-200">
@@ -240,37 +205,19 @@ function CredentialUpload() {
                   <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed 
                                 border-gray-300 dark:border-gray-600 rounded-md">
                     <div className="space-y-1 text-center">
-                      {preview ? (
-                        <div className="mb-4">
-                          {preview.startsWith('data:image') ? (
-                            <img
-                              src={preview}
-                              alt="Preview"
-                              className="mx-auto h-32 w-auto rounded-lg"
-                            />
-                          ) : (
-                            <img
-                              src={preview}
-                              alt="PDF"
-                              className="mx-auto h-16 w-auto"
-                            />
-                          )}
-                        </div>
-                      ) : (
-                        <svg
-                          className="mx-auto h-12 w-12 text-gray-400"
-                          stroke="currentColor"
-                          fill="none"
-                          viewBox="0 0 48 48"
-                        >
-                          <path
-                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
+                      <svg
+                        className="mx-auto h-12 w-12 text-gray-400"
+                        stroke="currentColor"
+                        fill="none"
+                        viewBox="0 0 48 48"
+                      >
+                        <path
+                          d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
                       <div className="flex text-sm text-gray-600 dark:text-gray-400">
                         <label className="relative cursor-pointer rounded-md font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 focus-within:outline-none">
                           <span>Upload a file</span>
@@ -278,17 +225,14 @@ function CredentialUpload() {
                             type="file" 
                             className="sr-only" 
                             onChange={handleFileChange}
-                            accept=".pdf,.jpg,.jpeg,.png,.gif"
+                            accept=".pdf,.doc,.docx"
                           />
                         </label>
                         <p className="pl-1">or drag and drop</p>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        PDF or Image up to 10MB
+                        PDF, DOC up to 10MB
                       </p>
-                      {fileError && (
-                        <p className="text-red-500 text-xs mt-2">{fileError}</p>
-                      )}
                     </div>
                   </div>
                 </div>
