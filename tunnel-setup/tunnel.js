@@ -8,8 +8,22 @@ const app = express();
 const AUTH_TOKEN = Math.random().toString(36).substring(7);
 
 async function setupProxy() {
-  app.use(cors());
+  // Enable CORS for all routes
+  app.use(cors({
+    origin: [
+      'https://blockchain-education.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ],
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+    credentials: true
+  }));
+
   app.use(express.json());
+
+  // Handle preflight requests
+  app.options('*', cors());
 
   // Log requests
   app.use((req, res, next) => {
@@ -17,9 +31,17 @@ async function setupProxy() {
     next();
   });
 
-  // Add auth token to all IPFS requests
+  // Add CORS headers to all responses
   app.use((req, res, next) => {
-    req.headers['x-auth-token'] = AUTH_TOKEN;
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-auth-token');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    
+    // Handle OPTIONS requests
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
     next();
   });
 
@@ -29,14 +51,26 @@ async function setupProxy() {
     changeOrigin: true,
     ws: true,
     onProxyReq: (proxyReq, req, res) => {
+      // Add auth token
       proxyReq.setHeader('x-auth-token', AUTH_TOKEN);
+      
+      // Copy origin
+      if (req.headers.origin) {
+        proxyReq.setHeader('origin', req.headers.origin);
+      }
+
+      // Remove problematic headers
       proxyReq.removeHeader('authorization');
       proxyReq.removeHeader('www-authenticate');
     },
     onProxyRes: (proxyRes, req, res) => {
-      proxyRes.headers['access-control-allow-origin'] = '*';
+      // Set CORS headers
+      proxyRes.headers['access-control-allow-origin'] = req.headers.origin || '*';
       proxyRes.headers['access-control-allow-methods'] = 'GET,POST,OPTIONS';
-      proxyRes.headers['access-control-allow-headers'] = '*';
+      proxyRes.headers['access-control-allow-headers'] = 'Content-Type, Authorization, x-auth-token';
+      proxyRes.headers['access-control-allow-credentials'] = 'true';
+      
+      // Remove auth headers
       delete proxyRes.headers['www-authenticate'];
     },
     pathRewrite: {
