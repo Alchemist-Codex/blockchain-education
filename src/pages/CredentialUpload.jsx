@@ -5,7 +5,7 @@ import { ipfsService } from '../services/ipfsService'
 import { ethers } from 'ethers'
 
 function CredentialUpload() {
-  const { account, web3Service } = useWeb3();
+  const { account, contract } = useWeb3();
   const [step, setStep] = useState(1)
   const [uploading, setUploading] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
@@ -86,6 +86,11 @@ function CredentialUpload() {
       return;
     }
 
+    if (!contract) {
+      alert('Contract not initialized');
+      return;
+    }
+
     setUploading(true);
     
     try {
@@ -117,7 +122,6 @@ function CredentialUpload() {
       });
       
       // Send to smart contract
-      const contract = await web3Service.getContract();
       const tx = await contract.issueCredential(
         formData.studentAddress,
         certificateHash,
