@@ -131,7 +131,10 @@ class IPFSService {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
-        }
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors',
+        credentials: 'omit'
       });
       
       if (!response.ok) {
