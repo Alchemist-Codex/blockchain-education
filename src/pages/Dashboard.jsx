@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 import { getUserProfile } from '../services/userService'
 import { PageTransition } from '../components/PageTransition'
-import Background3D from '../components/Background3D'
+
 
 function Dashboard() {
   const { user, loading } = useAuth();
@@ -35,7 +35,6 @@ function Dashboard() {
 
   return (
     <PageTransition>
-      <Background3D />
       <div className="relative min-h-screen p-6">
         <motion.div
           className="max-w-7xl mx-auto"

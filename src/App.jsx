@@ -9,6 +9,7 @@ import CredentialUpload from './pages/CredentialUpload'
 import CredentialVerification from './pages/CredentialVerification'
 import FAQ from './pages/FAQ'
 import Navbar from './components/Navbar'
+import Footer from './components/Footer'
 import { AuthProvider } from './contexts/AuthContext'
 import { Web3Provider } from './contexts/Web3Context'
 
@@ -30,6 +31,7 @@ function AnimatedRoutes() {
           <Route path="/faq" element={<FAQ />} />
         </Routes>
       </AnimatePresence>
+      <Footer />
     </>
   )
 }

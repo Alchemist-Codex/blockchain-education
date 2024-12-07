@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PageTransition } from '../components/PageTransition'
-import Background3D from '../components/Background3D'
 import { useAuth } from '../contexts/AuthContext'
 import { useWeb3 } from '../contexts/Web3Context'
 
@@ -27,7 +26,6 @@ function Profile() {
 
   return (
     <PageTransition>
-      <Background3D />
       <div className="relative min-h-screen py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <motion.div

@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion'
 import { PageTransition } from '../components/PageTransition'
-import Background3D from '../components/Background3D'
 
 function About() {
   const features = [
@@ -36,7 +35,7 @@ function About() {
 
   return (
     <PageTransition>
-      <Background3D />
+      
       <div className="relative min-h-screen py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Hero Section */}

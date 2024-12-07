@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { PageTransition } from '../components/PageTransition'
-import Background3D from '../components/Background3D'
 
 function HomePage() {
   const fadeIn = {
@@ -30,7 +29,6 @@ function HomePage() {
 
   return (
     <PageTransition>
-      <Background3D />
       <div className="relative min-h-screen">
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-800 dark:to-primary-900 text-white py-20">
