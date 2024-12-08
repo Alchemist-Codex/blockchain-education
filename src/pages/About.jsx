@@ -38,12 +38,12 @@ function About() {
     },
     {
       name: "Sougata Mondal",
-      role: "Not yet contributed",
-      image: "/sougata.png",
+      role: "Backend Developer",
+      image: "/sougata.jpeg",
     },
     {
       name: "Anjali Ray",
-      role: "Not yet contributed",
+      role: "Frontend Developer",
       image: "/anjali.jpeg",
     }
   ]
