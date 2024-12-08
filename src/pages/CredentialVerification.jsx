@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
 import { pinataService } from '../services/pinataService'
 
-function CredentialVerification() {
+export default function CredentialVerification() {
   const { web3Service } = useWeb3();
   const [verificationStatus, setVerificationStatus] = useState(null)
   const [isVerifying, setIsVerifying] = useState(false)
@@ -17,51 +17,36 @@ function CredentialVerification() {
     setError(null)
     
     try {
-      // Check if input is an IPFS hash
-      if (credentialId.startsWith('bafy')) {
-        try {
-          console.log('Fetching from Pinata:', credentialId)
-          const metadata = await pinataService.getMetadata(credentialId)
-          
-          if (!metadata) {
-            throw new Error('No metadata found')
-          }
+      // Check if input is a valid metadata CID
+      if (!credentialId.startsWith('bafk')) {
+        throw new Error('Please enter a valid metadata CID (starts with "bafk")')
+      }
 
-          setCredentialDetails({
-            ...metadata,
-            blockchainHash: 'Verified from IPFS',
-            verificationTime: new Date().toLocaleString()
-          })
-          
-          setVerificationStatus('success')
-        } catch (pinataError) {
-          console.error('Pinata Error:', pinataError)
-          throw new Error(`Pinata Error: ${pinataError.message || 'Content not found or invalid'}`)
-        }
-      } else {
-        // Blockchain verification logic
-        const credentialData = await web3Service.contract.getCredential(credentialId)
+      console.log('Fetching metadata from Pinata:', credentialId)
+      
+      try {
+        // Fetch the metadata using the CID
+        const metadata = await pinataService.main(credentialId)
         
-        if (!credentialData) {
-          throw new Error('Credential not found on blockchain')
-        }
-
-        const metadataHash = credentialData.metadataHash.toString()
-        
-        console.log('Fetching metadata from Pinata:', metadataHash)
-        const metadata = await pinataService.getMetadata(metadataHash)
-
         if (!metadata) {
-          throw new Error('Invalid metadata format')
+          throw new Error('No metadata found')
+        }
+
+        // Verify that the image hash starts with bafy
+        if (!metadata.imageHash?.startsWith('bafy')) {
+          console.warn('Image hash format unexpected:', metadata.imageHash)
         }
 
         setCredentialDetails({
           ...metadata,
-          blockchainHash: credentialData.certificateHash.toString(),
+          blockchainHash: 'Verified from IPFS',
           verificationTime: new Date().toLocaleString()
         })
         
         setVerificationStatus('success')
+      } catch (pinataError) {
+        console.error('Pinata Error:', pinataError)
+        throw new Error(`Pinata Error: ${pinataError.message || 'Content not found or invalid'}`)
       }
     } catch (error) {
       console.error('Error verifying credential:', error)
@@ -130,7 +115,7 @@ function CredentialVerification() {
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
                          bg-white dark:bg-gray-700 text-gray-900 dark:text-white
                          focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
-                placeholder="Enter credential ID or hash"
+                placeholder="Enter metadata CID (starts with bafk...)"
                 required
               />
             </div>
@@ -287,5 +272,3 @@ function CredentialVerification() {
     </div>
   )
 }
-
-export default CredentialVerification
