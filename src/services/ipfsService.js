@@ -37,11 +37,16 @@ class IPFSService {
       const formData = new FormData();
       formData.append('file', file);
 
+      // Keep original filename but clean it
+      const originalFileName = file.name;
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
+
       // Add metadata for Pinata
       const metadata = JSON.stringify({
-        name: `certificate_image_${Date.now()}`,
+        name: cleanFileName,
         keyvalues: {
           type: 'certificate_image',
+          originalFileName: originalFileName,
           timestamp: new Date().toISOString()
         }
       });
@@ -70,7 +75,8 @@ class IPFSService {
       const result = await response.json();
       return {
         hash: result.IpfsHash,
-        url: this.getFileUrl(result.IpfsHash)
+        url: this.getFileUrl(result.IpfsHash),
+        originalFileName: originalFileName
       };
     } catch (error) {
       console.error('Image upload error:', error);

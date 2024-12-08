@@ -4,8 +4,13 @@ import { useWeb3 } from '../contexts/Web3Context'
 import { pinataService } from '../services/pinataService'
 
 const GATEWAY_URL = 'rose-hollow-mollusk-554.mypinata.cloud';
+const CORS_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://cors.eu.org/'
+];
 
-export default function CredentialVerification() {
+function CredentialVerification() {
   const { web3Service } = useWeb3();
   const [verificationStatus, setVerificationStatus] = useState(null)
   const [isVerifying, setIsVerifying] = useState(false)
@@ -35,8 +40,8 @@ export default function CredentialVerification() {
           throw new Error('No metadata found')
         }
 
-        // Verify that the image hash starts with bafy
-        if (!metadata.imageHash?.startsWith('bafy')) {
+        // Accept both bafy and bafk prefixes for image hashes
+        if (!metadata.imageHash?.startsWith('baf')) {
           console.warn('Image hash format unexpected:', metadata.imageHash)
         }
 
@@ -61,42 +66,106 @@ export default function CredentialVerification() {
   }
 
   const handleDownload = async () => {
-    if (!credentialDetails?.imageHash) return;
+    if (!credentialDetails?.imageHash || isDownloading) return;
     setIsDownloading(true);
+    setError(null);
     
+    let downloadError = null;
+    let activeLink = null;
+    let activeUrl = null;
+
     try {
-      // Use CORS proxy for downloading
-      const corsProxy = 'https://api.allorigins.win/raw?url=';
-      const downloadUrl = `https://${GATEWAY_URL}/ipfs/${credentialDetails.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
-      const proxyUrl = `${corsProxy}${encodeURIComponent(downloadUrl)}`;
-      
-      // Fetch the image through proxy
-      const response = await fetch(proxyUrl);
-      
-      if (!response.ok) {
-        throw new Error(`Download failed: ${response.status}`);
+      // Try each CORS proxy until one works
+      for (const proxy of CORS_PROXIES) {
+        try {
+          const downloadUrl = `https://${GATEWAY_URL}/ipfs/${credentialDetails.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
+          const proxyUrl = `${proxy}${encodeURIComponent(downloadUrl)}`;
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+          const response = await fetch(proxyUrl, {
+            signal: controller.signal,
+            headers: {
+              'Accept': 'image/jpeg, image/png, image/*, application/octet-stream'
+            }
+          });
+
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) {
+            throw new Error(`Download failed: ${response.status}`);
+          }
+
+          const contentType = response.headers.get('content-type');
+          console.log('Content type:', contentType); // Debug log
+
+          // More specific content type checking
+          let fileExtension;
+          if (contentType?.includes('jpeg') || contentType?.includes('jpg')) {
+            fileExtension = 'jpg';
+          } else if (contentType?.includes('png')) {
+            fileExtension = 'png';
+          } else if (contentType?.includes('pdf')) {
+            fileExtension = 'pdf';
+          } else {
+            // Try to get extension from original filename if available
+            fileExtension = credentialDetails.originalFileName?.split('.').pop() || 'file';
+          }
+
+          const blob = await response.blob();
+          
+          // Create download link
+          activeUrl = window.URL.createObjectURL(blob);
+          activeLink = document.createElement('a');
+          activeLink.href = activeUrl;
+          
+          // Use original filename if available, otherwise generate one
+          const fileName = credentialDetails.originalFileName || 
+            `${credentialDetails.institution}_${credentialDetails.credentialType}_${credentialDetails.studentName}`
+              .replace(/[^a-zA-Z0-9]/g, '_')
+              .toLowerCase() + '.' + fileExtension;
+          
+          activeLink.download = fileName;
+          
+          // Trigger download
+          document.body.appendChild(activeLink);
+          activeLink.click();
+          
+          // Success - break the loop
+          break;
+        } catch (error) {
+          console.warn(`Download failed with proxy ${proxy}:`, error);
+          downloadError = error;
+          
+          // Cleanup on error
+          if (activeUrl) {
+            window.URL.revokeObjectURL(activeUrl);
+            activeUrl = null;
+          }
+          if (activeLink && activeLink.parentNode) {
+            activeLink.parentNode.removeChild(activeLink);
+            activeLink = null;
+          }
+          continue;
+        }
       }
 
-      const blob = await response.blob();
-      
-      // Create a download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `certificate-${credentialDetails.studentName.replace(/\s+/g, '-')}.png`;
-      
-      // Trigger download
-      document.body.appendChild(link);
-      link.click();
-      
-      // Cleanup
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading certificate:', error);
-      setError('Failed to download certificate. Please try again.');
+      if (downloadError && !activeLink) {
+        console.error('All download attempts failed:', downloadError);
+        setError('Failed to download certificate. Please try again.');
+      }
     } finally {
-      setIsDownloading(false);
+      // Ensure cleanup happens after a delay
+      setTimeout(() => {
+        if (activeUrl) {
+          window.URL.revokeObjectURL(activeUrl);
+        }
+        if (activeLink && activeLink.parentNode) {
+          activeLink.parentNode.removeChild(activeLink);
+        }
+        setIsDownloading(false);
+      }, 1500); // Increased delay to ensure download starts
     }
   };
 
@@ -296,3 +365,5 @@ export default function CredentialVerification() {
     </div>
   )
 }
+
+export default CredentialVerification;

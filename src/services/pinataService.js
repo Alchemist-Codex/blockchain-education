@@ -1,48 +1,77 @@
 const GATEWAY_URL = 'rose-hollow-mollusk-554.mypinata.cloud';
 const GATEWAY_TOKEN = import.meta.env.VITE_GATEWAY_KEY;
-const PUBLIC_GATEWAY = 'https://ipfs.io/ipfs/';
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+// Multiple IPFS gateways for redundancy
+const GATEWAYS = [
+  'https://ipfs.io/ipfs/',
+  'https://cloudflare-ipfs.com/ipfs/',
+  'https://gateway.pinata.cloud/ipfs/',
+  'https://dweb.link/ipfs/',
+  'https://ipfs.fleek.co/ipfs/'
+];
+
+// Different CORS proxies in case one fails
+const CORS_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://cors.eu.org/'
+];
 
 export const pinataService = {
   async main(cid) {
     try {
       console.log('Starting fetch from gateway:', new Date().toISOString());
       
-      // Try multiple gateway options with CORS proxy
-      const gateways = [
-        // Option 1: Public IPFS gateway with CORS proxy
-        `${CORS_PROXY}${encodeURIComponent(`${PUBLIC_GATEWAY}${cid}`)}`,
-        // Option 2: Pinata gateway with token
-        `https://${GATEWAY_URL}/ipfs/${cid}?pinataGatewayToken=${GATEWAY_TOKEN}`,
-        // Option 3: Cloudflare IPFS gateway
-        `https://cloudflare-ipfs.com/ipfs/${cid}`
-      ];
-
       let metadata = null;
-      let error = null;
+      let lastError = null;
 
-      // Try each gateway until one works
-      for (const gateway of gateways) {
-        try {
-          const response = await fetch(gateway, {
-            headers: {
-              'Accept': 'application/json'
+      // Try each combination of gateway and proxy with timeout
+      for (const gateway of GATEWAYS) {
+        for (const proxy of CORS_PROXIES) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+            const response = await fetch(
+              `${proxy}${encodeURIComponent(`${gateway}${cid}`)}`, 
+              {
+                signal: controller.signal,
+                headers: {
+                  'Accept': 'application/json'
+                }
+              }
+            );
+
+            clearTimeout(timeoutId);
+
+            if (response.ok) {
+              metadata = await response.json();
+              break;
             }
-          });
+          } catch (error) {
+            console.warn(`Gateway ${gateway} with proxy ${proxy} failed:`, error);
+            lastError = error;
+            continue;
+          }
+        }
+        if (metadata) break;
+      }
 
+      // If all proxies fail, try direct Pinata gateway
+      if (!metadata) {
+        try {
+          const response = await fetch(`https://${GATEWAY_URL}/ipfs/${cid}?pinataGatewayToken=${GATEWAY_TOKEN}`);
           if (response.ok) {
             metadata = await response.json();
-            break;
           }
-        } catch (e) {
-          error = e;
-          console.warn(`Gateway ${gateway} failed:`, e);
-          continue;
+        } catch (error) {
+          console.warn('Pinata gateway failed:', error);
+          lastError = error;
         }
       }
 
       if (!metadata) {
-        throw error || new Error('Failed to fetch metadata from all gateways');
+        throw lastError || new Error('Failed to fetch metadata from all gateways');
       }
 
       console.log('Received metadata:', new Date().toISOString());
@@ -61,7 +90,8 @@ export const pinataService = {
         studentAddress: metadata.studentAddress,
         issuerAddress: metadata.issuerAddress,
         imageHash: metadata.imageHash,
-        imageUrl: imageUrl
+        imageUrl: imageUrl,
+        originalFileName: metadata.originalFileName
       };
 
     } catch (error) {
