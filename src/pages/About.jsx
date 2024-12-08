@@ -29,7 +29,7 @@ function About() {
     {
       name: "Ritaban Ghosh",
       role: "Frontend Developer",
-      image: "/ritaban.jpg",
+      image: "/ritaban.jpeg",
     },
     {
       name: "Koustav Singh",
