@@ -28,22 +28,22 @@ function About() {
   const teamMembers = [
     {
       name: "Ritaban Ghosh",
-      role: "Frontend Developer",
+      role: "Senior Frontend Developer",
       image: "/ritaban.jpeg",
     },
     {
       name: "Koustav Singh",
-      role: "Backend Developer",
+      role: "Senior Backend Developer",
       image: "/koustav.jpg",
     },
     {
       name: "Sougata Mondal",
-      role: "Backend Developer",
-      image: "/sougata.jpeg",
+      role: "Junior Backend Developer",
+      image: "/sougata.png",
     },
     {
       name: "Anjali Ray",
-      role: "Frontend Developer",
+      role: "Junior Frontend Developer",
       image: "/anjali.jpeg",
     }
   ]
