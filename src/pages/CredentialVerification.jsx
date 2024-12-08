@@ -58,25 +58,34 @@ export default function CredentialVerification() {
   }
 
   const handleDownload = async () => {
-    if (!credentialDetails?.certificateFile) return;
-
+    if (!credentialDetails?.imageHash) return;
+    
     try {
-      // Create blob from certificate file
-      const blob = new Blob([credentialDetails.certificateFile], { type: 'application/pdf' })
-      const url = window.URL.createObjectURL(blob)
+      // Create the download URL with the gateway token
+      const downloadUrl = `https://rose-hollow-mollusk-554.mypinata.cloud/ipfs/${credentialDetails.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
       
-      // Create temporary link and trigger download
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `credential-${credentialId}.pdf`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
+      // Fetch the image
+      const response = await fetch(downloadUrl);
+      const blob = await response.blob();
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `certificate-${credentialDetails.studentName.replace(/\s+/g, '-')}.png`; // or .pdf based on your file type
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error downloading certificate:', error)
+      console.error('Error downloading certificate:', error);
+      setError('Failed to download certificate');
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 transition-colors duration-200">
