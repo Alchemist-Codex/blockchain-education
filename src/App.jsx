@@ -18,7 +18,7 @@ function AnimatedRoutes() {
   
   return (
     <>
-      {/* <Navbar />
+      <Navbar />
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<HomePage />} />
@@ -31,7 +31,7 @@ function AnimatedRoutes() {
           <Route path="/faq" element={<FAQ />} />
         </Routes>
       </AnimatePresence>
-      <Footer /> */}
+      <Footer />
     </>
   )
 }
