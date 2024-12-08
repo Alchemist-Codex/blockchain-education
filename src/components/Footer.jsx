@@ -32,15 +32,15 @@ function Footer() {
             <h4 className="text-lg font-semibold mb-4">Connect With Us</h4>
             <div className="space-y-2">
               <a 
-                href="#" 
+                href="https://www.instagram.com/_koustaavs_" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
                 rel="noopener noreferrer"
               >
-                Twitter
+                Instagram
               </a>
               <a 
-                href="#" 
+                href="https://www.linkedin.com/in/koustav-singh" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
                 rel="noopener noreferrer"
