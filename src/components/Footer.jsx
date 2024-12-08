@@ -32,7 +32,7 @@ function Footer() {
             <h4 className="text-lg font-semibold mb-4">Connect With Us</h4>
             <div className="space-y-2">
               <a 
-                href="https://www.instagram.com/_koustaavs_" 
+                href="/instagram.html" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
                 rel="noopener noreferrer"
@@ -40,7 +40,7 @@ function Footer() {
                 Instagram
               </a>
               <a 
-                href="https://www.linkedin.com/in/koustav-singh" 
+                href="/linkedin.html" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
                 rel="noopener noreferrer"
@@ -48,7 +48,7 @@ function Footer() {
                 LinkedIn
               </a>
               <a 
-                href="https://github.com/ritaban06/blockchain-education" 
+                href="/github.html" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
                 rel="noopener noreferrer"
