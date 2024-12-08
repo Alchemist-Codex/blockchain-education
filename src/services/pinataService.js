@@ -1,33 +1,30 @@
-import { PinataSDK } from 'pinata';
-
-const PINATA_JWT = import.meta.env.VITE_PINATA_JWT;
 const GATEWAY_URL = 'rose-hollow-mollusk-554.mypinata.cloud';
-
-const pinata = new PinataSDK({
-  pinataJwt: PINATA_JWT,
-  pinataGateway: GATEWAY_URL,
-});
+const GATEWAY_TOKEN = import.meta.env.VITE_GATEWAY_KEY;
+const PUBLIC_GATEWAY = 'https://ipfs.io/ipfs/';
 
 export const pinataService = {
   async main(cid) {
     try {
       console.log('Starting fetch from gateway:', new Date().toISOString());
       
-      // Get the data directly from Pinata gateway
-      const metadata = await pinata.gateways.get(cid);
+      // Try public gateway first
+      const response = await fetch(`${PUBLIC_GATEWAY}${cid}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch metadata: ${response.status}`);
+      }
+
+      const metadata = await response.json();
       console.log('Received metadata:', new Date().toISOString());
 
       if (!metadata) {
         throw new Error('No metadata found');
       }
 
-      // Create a signed URL for the image that will be valid for 30 minutes
+      // Use Pinata gateway for images since they're loaded directly by img tag
       let imageUrl = '';
       if (metadata.imageHash) {
-        imageUrl = await pinata.gateways.createSignedURL({
-          cid: metadata.imageHash,
-          expires: 1800 // 30 minutes
-        });
+        imageUrl = `https://${GATEWAY_URL}/ipfs/${metadata.imageHash}?pinataGatewayToken=${GATEWAY_TOKEN}`;
       }
 
       return {
