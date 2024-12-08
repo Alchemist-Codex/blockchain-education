@@ -12,5 +12,15 @@ export default defineConfig({
   define: {
     global: {},
     'process.env': {}
-  }
+  },
+  server: {
+    historyApiFallback: true,
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
 })
