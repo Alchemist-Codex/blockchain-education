@@ -3,10 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
 import { pinataService } from '../services/pinataService'
 
+const GATEWAY_URL = 'rose-hollow-mollusk-554.mypinata.cloud';
+
 export default function CredentialVerification() {
   const { web3Service } = useWeb3();
   const [verificationStatus, setVerificationStatus] = useState(null)
   const [isVerifying, setIsVerifying] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
   const [credentialId, setCredentialId] = useState('')
   const [credentialDetails, setCredentialDetails] = useState(null)
   const [error, setError] = useState(null)
@@ -59,20 +62,28 @@ export default function CredentialVerification() {
 
   const handleDownload = async () => {
     if (!credentialDetails?.imageHash) return;
+    setIsDownloading(true);
     
     try {
-      // Create the download URL with the gateway token
-      const downloadUrl = `https://rose-hollow-mollusk-554.mypinata.cloud/ipfs/${credentialDetails.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
+      // Use CORS proxy for downloading
+      const corsProxy = 'https://api.allorigins.win/raw?url=';
+      const downloadUrl = `https://${GATEWAY_URL}/ipfs/${credentialDetails.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
+      const proxyUrl = `${corsProxy}${encodeURIComponent(downloadUrl)}`;
       
-      // Fetch the image
-      const response = await fetch(downloadUrl);
+      // Fetch the image through proxy
+      const response = await fetch(proxyUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status}`);
+      }
+
       const blob = await response.blob();
       
       // Create a download link
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `certificate-${credentialDetails.studentName.replace(/\s+/g, '-')}.png`; // or .pdf based on your file type
+      link.download = `certificate-${credentialDetails.studentName.replace(/\s+/g, '-')}.png`;
       
       // Trigger download
       document.body.appendChild(link);
@@ -83,7 +94,9 @@ export default function CredentialVerification() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading certificate:', error);
-      setError('Failed to download certificate');
+      setError('Failed to download certificate. Please try again.');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -206,13 +219,15 @@ export default function CredentialVerification() {
                   {/* Download Button */}
                   <motion.button
                     onClick={handleDownload}
+                    disabled={isDownloading}
                     className="mt-6 px-4 py-2 bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 
                              border border-primary-600 dark:border-primary-400 rounded-md
-                             hover:bg-primary-50 dark:hover:bg-gray-600 transition-colors"
+                             hover:bg-primary-50 dark:hover:bg-gray-600 transition-colors
+                             disabled:opacity-50 disabled:cursor-not-allowed"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    Download Certificate
+                    {isDownloading ? 'Downloading...' : 'Download Certificate'}
                   </motion.button>
                 </div>
               </motion.div>
