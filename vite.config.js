@@ -23,5 +23,4 @@ export default defineConfig({
       },
     },
   },
-  base: '/blockchain-education/',
 })
