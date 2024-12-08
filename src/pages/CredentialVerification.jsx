@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
-import { ipfsService } from '../services/ipfsService'
+import { pinataService } from '../services/pinataService'
 
-function CredentialVerification() {
+export default function CredentialVerification() {
   const { web3Service } = useWeb3();
   const [verificationStatus, setVerificationStatus] = useState(null)
   const [isVerifying, setIsVerifying] = useState(false)
@@ -11,44 +11,46 @@ function CredentialVerification() {
   const [credentialDetails, setCredentialDetails] = useState(null)
   const [error, setError] = useState(null)
 
-  const fadeIn = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
-  }
-
   const handleVerification = async (e) => {
     e.preventDefault()
     setIsVerifying(true)
     setError(null)
     
     try {
-      // 1. Get credential data from smart contract
-      const credentialData = await web3Service.contract.getCredential(credentialId)
-      
-      if (!credentialData) {
-        throw new Error('Credential not found')
+      // Check if input is a valid metadata CID
+      if (!credentialId.startsWith('bafk')) {
+        throw new Error('Please enter a valid metadata CID (starts with "bafk")')
       }
 
-      // 2. Fetch metadata from IPFS
-      const metadata = await ipfsService.getFile(credentialData.metadataHash)
-      const parsedMetadata = JSON.parse(metadata.toString())
-
-      // 3. Fetch certificate file from IPFS
-      const certificateFile = await ipfsService.getFile(credentialData.fileHash)
-
-      // 4. Set credential details for display
-      setCredentialDetails({
-        ...parsedMetadata,
-        certificateFile,
-        blockchainHash: credentialData.certificateHash,
-        verificationTime: new Date().toLocaleString()
-      })
+      console.log('Fetching metadata from Pinata:', credentialId)
       
-      setVerificationStatus('success')
+      try {
+        // Fetch the metadata using the CID
+        const metadata = await pinataService.main(credentialId)
+        
+        if (!metadata) {
+          throw new Error('No metadata found')
+        }
+
+        // Verify that the image hash starts with bafy
+        if (!metadata.imageHash?.startsWith('bafy')) {
+          console.warn('Image hash format unexpected:', metadata.imageHash)
+        }
+
+        setCredentialDetails({
+          ...metadata,
+          blockchainHash: 'Verified from IPFS',
+          verificationTime: new Date().toLocaleString()
+        })
+        
+        setVerificationStatus('success')
+      } catch (pinataError) {
+        console.error('Pinata Error:', pinataError)
+        throw new Error(`Pinata Error: ${pinataError.message || 'Content not found or invalid'}`)
+      }
     } catch (error) {
       console.error('Error verifying credential:', error)
-      setError(error.message)
+      setError(error.message || 'Failed to verify credential')
       setVerificationStatus('error')
     } finally {
       setIsVerifying(false)
@@ -82,7 +84,9 @@ function CredentialVerification() {
         {/* Header Section */}
         <motion.div 
           className="text-center mb-12"
-          {...fadeIn}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
             Verify Academic Credential
@@ -95,7 +99,9 @@ function CredentialVerification() {
         {/* Verification Form */}
         <motion.div 
           className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8"
-          {...fadeIn}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
           <form onSubmit={handleVerification} className="space-y-6">
             <div>
@@ -109,7 +115,7 @@ function CredentialVerification() {
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
                          bg-white dark:bg-gray-700 text-gray-900 dark:text-white
                          focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
-                placeholder="Enter credential ID or hash"
+                placeholder="Enter metadata CID (starts with bafk...)"
                 required
               />
             </div>
@@ -266,5 +272,3 @@ function CredentialVerification() {
     </div>
   )
 }
-
-export default CredentialVerification

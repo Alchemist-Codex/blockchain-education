@@ -20,6 +20,7 @@
     "ethers": "^6.13.4",
     "firebase": "^11.0.2",
     "framer-motion": "^11.13.1",
+    "pinata": "^1.9.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.4.1",
