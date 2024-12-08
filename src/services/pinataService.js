@@ -1,25 +1,51 @@
 const GATEWAY_URL = 'rose-hollow-mollusk-554.mypinata.cloud';
 const GATEWAY_TOKEN = import.meta.env.VITE_GATEWAY_KEY;
 const PUBLIC_GATEWAY = 'https://ipfs.io/ipfs/';
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 
 export const pinataService = {
   async main(cid) {
     try {
       console.log('Starting fetch from gateway:', new Date().toISOString());
       
-      // Try public gateway first
-      const response = await fetch(`${PUBLIC_GATEWAY}${cid}`);
+      // Try multiple gateway options with CORS proxy
+      const gateways = [
+        // Option 1: Public IPFS gateway with CORS proxy
+        `${CORS_PROXY}${encodeURIComponent(`${PUBLIC_GATEWAY}${cid}`)}`,
+        // Option 2: Pinata gateway with token
+        `https://${GATEWAY_URL}/ipfs/${cid}?pinataGatewayToken=${GATEWAY_TOKEN}`,
+        // Option 3: Cloudflare IPFS gateway
+        `https://cloudflare-ipfs.com/ipfs/${cid}`
+      ];
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch metadata: ${response.status}`);
+      let metadata = null;
+      let error = null;
+
+      // Try each gateway until one works
+      for (const gateway of gateways) {
+        try {
+          const response = await fetch(gateway, {
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+
+          if (response.ok) {
+            metadata = await response.json();
+            break;
+          }
+        } catch (e) {
+          error = e;
+          console.warn(`Gateway ${gateway} failed:`, e);
+          continue;
+        }
       }
-
-      const metadata = await response.json();
-      console.log('Received metadata:', new Date().toISOString());
 
       if (!metadata) {
-        throw new Error('No metadata found');
+        throw error || new Error('Failed to fetch metadata from all gateways');
       }
+
+      console.log('Received metadata:', new Date().toISOString());
 
       // Use Pinata gateway for images since they're loaded directly by img tag
       let imageUrl = '';
