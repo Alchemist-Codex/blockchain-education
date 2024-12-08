@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
-import { ipfsService } from '../services/ipfsService'
+import { pinataService } from '../services/pinataService'
 import { ethers } from 'ethers'
 
 function CredentialUpload() {
