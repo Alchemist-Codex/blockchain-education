@@ -29,14 +29,21 @@ function Navbar() {
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          {/* Logo */}
-          <div className="flex items-center">
-            <Link to="/" className="text-xl font-bold text-primary-600 dark:text-primary-400">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex justify-between h-16">
+        {/* Logo */}
+        <div className="flex items-center">
+          <Link to="/" className="flex items-center">
+            <img
+              src="/logo.png" // Replace with your logo's file path
+              alt="Academic Chain Logo"
+              className="h-8 w-8 mr-2" // Adjust height, width, and spacing as needed
+            />
+            <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
               Academic Chain
-            </Link>
-          </div>
+            </span>
+          </Link>
+        </div>
 
           {/* Desktop Navigation */}
           <div className="hidden sm:flex sm:items-center sm:space-x-8">
