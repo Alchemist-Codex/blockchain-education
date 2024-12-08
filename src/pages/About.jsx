@@ -39,7 +39,7 @@ function About() {
     {
       name: "Sougata Mondal",
       role: "Not yet contributed",
-      image: "/sougata.jpeg",
+      image: "/sougata.png",
     },
     {
       name: "Anjali Ray",
