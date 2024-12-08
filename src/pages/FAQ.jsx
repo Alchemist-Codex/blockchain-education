@@ -50,7 +50,7 @@ function FAQ() {
       questions: [
         {
           question: "How is my data protected?",
-          answer: "We implement state-of-the-art encryption and follow strict data protection protocols. Personal information is stored securely and only shared with explicit consent and permission."
+          answer: "We implement state-of-the-art encryption and follow strict data protection protocols. Personal information is stored securely and only shared with explicit consent."
         },
         {
           question: "Who can access my credentials?",
