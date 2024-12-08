@@ -90,7 +90,8 @@ export const pinataService = {
         studentAddress: metadata.studentAddress,
         issuerAddress: metadata.issuerAddress,
         imageHash: metadata.imageHash,
-        imageUrl: imageUrl
+        imageUrl: imageUrl,
+        originalFileName: metadata.originalFileName
       };
 
     } catch (error) {
