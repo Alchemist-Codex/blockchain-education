@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
-import { ipfsService } from '../services/ipfsService'
+import { pinataService } from '../services/pinataService'
 
 function CredentialVerification() {
   const { web3Service } = useWeb3();
@@ -11,44 +11,61 @@ function CredentialVerification() {
   const [credentialDetails, setCredentialDetails] = useState(null)
   const [error, setError] = useState(null)
 
-  const fadeIn = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
-  }
-
   const handleVerification = async (e) => {
     e.preventDefault()
     setIsVerifying(true)
     setError(null)
     
     try {
-      // 1. Get credential data from smart contract
-      const credentialData = await web3Service.contract.getCredential(credentialId)
-      
-      if (!credentialData) {
-        throw new Error('Credential not found')
+      // Check if input is an IPFS hash
+      if (credentialId.startsWith('bafy')) {
+        try {
+          console.log('Fetching from Pinata:', credentialId)
+          const metadata = await pinataService.getMetadata(credentialId)
+          
+          if (!metadata) {
+            throw new Error('No metadata found')
+          }
+
+          setCredentialDetails({
+            ...metadata,
+            blockchainHash: 'Verified from IPFS',
+            verificationTime: new Date().toLocaleString()
+          })
+          
+          setVerificationStatus('success')
+        } catch (pinataError) {
+          console.error('Pinata Error:', pinataError)
+          throw new Error(`Pinata Error: ${pinataError.message || 'Content not found or invalid'}`)
+        }
+      } else {
+        // Blockchain verification logic
+        const credentialData = await web3Service.contract.getCredential(credentialId)
+        
+        if (!credentialData) {
+          throw new Error('Credential not found on blockchain')
+        }
+
+        const metadataHash = credentialData.metadataHash.toString()
+        
+        console.log('Fetching metadata from Pinata:', metadataHash)
+        const metadata = await pinataService.getMetadata(metadataHash)
+
+        if (!metadata) {
+          throw new Error('Invalid metadata format')
+        }
+
+        setCredentialDetails({
+          ...metadata,
+          blockchainHash: credentialData.certificateHash.toString(),
+          verificationTime: new Date().toLocaleString()
+        })
+        
+        setVerificationStatus('success')
       }
-
-      // 2. Fetch metadata from IPFS
-      const metadata = await ipfsService.getFile(credentialData.metadataHash)
-      const parsedMetadata = JSON.parse(metadata.toString())
-
-      // 3. Fetch certificate file from IPFS
-      const certificateFile = await ipfsService.getFile(credentialData.fileHash)
-
-      // 4. Set credential details for display
-      setCredentialDetails({
-        ...parsedMetadata,
-        certificateFile,
-        blockchainHash: credentialData.certificateHash,
-        verificationTime: new Date().toLocaleString()
-      })
-      
-      setVerificationStatus('success')
     } catch (error) {
       console.error('Error verifying credential:', error)
-      setError(error.message)
+      setError(error.message || 'Failed to verify credential')
       setVerificationStatus('error')
     } finally {
       setIsVerifying(false)
@@ -82,7 +99,9 @@ function CredentialVerification() {
         {/* Header Section */}
         <motion.div 
           className="text-center mb-12"
-          {...fadeIn}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
             Verify Academic Credential
@@ -95,7 +114,9 @@ function CredentialVerification() {
         {/* Verification Form */}
         <motion.div 
           className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8"
-          {...fadeIn}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
           <form onSubmit={handleVerification} className="space-y-6">
             <div>
