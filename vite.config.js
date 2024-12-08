@@ -1,18 +1,18 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import restrictHTMLInPublic from './plugins/restrictHTMLInPublic';
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), restrictHTMLInPublic()],
   base: './',
   resolve: {
     alias: {
-      buffer: 'buffer'
-    }
+      buffer: 'buffer',
+    },
   },
   define: {
     global: {},
-    'process.env': {}
+    'process.env': {},
   },
   server: {
     historyApiFallback: true,
@@ -24,4 +24,4 @@ export default defineConfig({
       },
     },
   },
-})
+});
