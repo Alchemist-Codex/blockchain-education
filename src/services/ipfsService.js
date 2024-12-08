@@ -37,11 +37,15 @@ class IPFSService {
       const formData = new FormData();
       formData.append('file', file);
 
+      // Keep original filename but remove spaces and special characters
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
+
       // Add metadata for Pinata
       const metadata = JSON.stringify({
-        name: `certificate_image_${Date.now()}`,
+        name: cleanFileName,
         keyvalues: {
           type: 'certificate_image',
+          originalName: file.name,
           timestamp: new Date().toISOString()
         }
       });

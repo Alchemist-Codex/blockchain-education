@@ -5,7 +5,7 @@ import { pinataService } from '../services/pinataService'
 
 const GATEWAY_URL = 'rose-hollow-mollusk-554.mypinata.cloud';
 
-export default function CredentialVerification() {
+function CredentialVerification() {
   const { web3Service } = useWeb3();
   const [verificationStatus, setVerificationStatus] = useState(null)
   const [isVerifying, setIsVerifying] = useState(false)
@@ -77,13 +77,24 @@ export default function CredentialVerification() {
         throw new Error(`Download failed: ${response.status}`);
       }
 
+      // Get content type from response
+      const contentType = response.headers.get('content-type');
+      const fileExtension = contentType?.includes('png') ? 'png' : 
+                           contentType?.includes('jpeg') ? 'jpg' : 
+                           contentType?.includes('pdf') ? 'pdf' : 'file';
+
       const blob = await response.blob();
       
-      // Create a download link
+      // Create a download link with original filename format
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `certificate-${credentialDetails.studentName.replace(/\s+/g, '-')}.png`;
+      
+      // Format filename: institution_credentialType_studentName.extension
+      const fileName = `${credentialDetails.institution}_${credentialDetails.credentialType}_${credentialDetails.studentName}`
+        .replace(/[^a-zA-Z0-9]/g, '_')
+        .toLowerCase();
+      link.download = `${fileName}.${fileExtension}`;
       
       // Trigger download
       document.body.appendChild(link);
@@ -296,3 +307,5 @@ export default function CredentialVerification() {
     </div>
   )
 }
+
+export default CredentialVerification;
