@@ -30,6 +30,21 @@ function About() {
       name: "Ritaban Ghosh",
       role: "Frontend Developer",
       image: "/ritaban.jpg",
+    },
+    {
+      name: "Koustav Singh",
+      role: "Backend Developer",
+      image: "/koustav.jpg",
+    },
+    {
+      name: "Sougata Mondal",
+      role: "Not yet contributed",
+      image: "/sougata.jpeg",
+    },
+    {
+      name: "Anjali Ray",
+      role: "Not yet contributed",
+      image: "/anjali.jpeg",
     }
   ]
 
@@ -94,12 +109,12 @@ function About() {
             ))}
           </motion.div>
 
-          {/* Team Section with error handling */}
+          {/* Team Section */}
           <motion.div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-12">
               Our Team
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 max-w-7xl mx-auto px-4">
               {teamMembers.map((member, index) => (
                 <motion.div
                   key={member.name}
@@ -114,7 +129,7 @@ function About() {
                       className="w-full h-full rounded-full object-cover shadow-lg"
                       onError={(e) => {
                         console.error('Image failed to load:', member.image);
-                        e.target.src = 'https://via.placeholder.com/150'; // Fallback image
+                        e.target.src = 'https://via.placeholder.com/150';
                       }}
                     />
                   </div>
