@@ -4,9 +4,6 @@ on:
   # Runs on pushes to main branch
   push:
     branches: [ main ]
-  # Runs every day at midnight UTC
-  schedule:
-    - cron: '0 0 * * *'
   # Manual trigger
   workflow_dispatch:
 
