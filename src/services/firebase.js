@@ -13,14 +13,27 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
+
 export const firebaseService = {
   auth,
   async signInWithGoogle() {
-    const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
+      console.log('Starting Google sign in...');
+      console.log('Auth domain:', firebaseConfig.authDomain);
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('Sign in successful:', result.user);
       return result.user;
     } catch (error) {
+      console.error('Detailed sign in error:', {
+        code: error.code,
+        message: error.message,
+        email: error.email,
+        credential: error.credential
+      });
       throw error;
     }
   },
@@ -29,6 +42,7 @@ export const firebaseService = {
     try {
       await signOut(auth);
     } catch (error) {
+      console.error('Sign out error:', error);
       throw error;
     }
   }

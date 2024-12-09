@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { firebaseService } from '../services/firebase';
+import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
@@ -11,12 +12,14 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(firebaseService.auth, (user) => {
+      console.log('Auth state changed:', user);
       setUser(user);
       setLoading(false);
     }, (error) => {
       console.error("Auth state change error:", error);
       setError(error);
       setLoading(false);
+      toast.error('Authentication error: ' + error.message);
     });
 
     return unsubscribe;
@@ -25,10 +28,14 @@ export function AuthProvider({ children }) {
   const signInWithGoogle = async () => {
     setError(null);
     try {
-      return await firebaseService.signInWithGoogle();
+      console.log('Attempting Google sign in...');
+      const user = await firebaseService.signInWithGoogle();
+      console.log('Sign in successful:', user);
+      return user;
     } catch (error) {
       console.error("Google sign in error:", error);
       setError(error);
+      toast.error('Sign in failed: ' + error.message);
       throw error;
     }
   };
@@ -37,9 +44,11 @@ export function AuthProvider({ children }) {
     setError(null);
     try {
       await firebaseService.signOut();
+      toast.success('Signed out successfully');
     } catch (error) {
       console.error("Sign out error:", error);
       setError(error);
+      toast.error('Sign out failed: ' + error.message);
       throw error;
     }
   };
