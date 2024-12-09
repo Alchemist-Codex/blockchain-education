@@ -42,6 +42,3 @@ node_modules
 dist
 build
 .cache
-
-# Docker
-ganache_data/

@@ -13,11 +13,6 @@ module.exports = {
     }
   },
   networks: {
-    ganache: {
-      url: "http://127.0.0.1:7545",
-      chainId: 1337,
-      accounts: [`0x${process.env.PRIVATE_KEY}`]
-    },
     hardhat: {
       chainId: 1337
     },

@@ -7,12 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "reset-chain": "docker-compose down -v && docker-compose up -d",
-    "deploy": "npm run reset-chain && sleep 5 && npx hardhat run scripts/deploy.js --network ganache",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "reset-and-test": "npm run reset-chain && npm run deploy && npm run test"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@emotion/react": "^11.13.5",
