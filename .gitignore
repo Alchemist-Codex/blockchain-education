@@ -30,3 +30,18 @@ dist-ssr
 cache
 .env
 .vercel
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Development
+node_modules
+dist
+build
+.cache
+
+# Docker
+ganache_data/
