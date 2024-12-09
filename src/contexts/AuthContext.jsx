@@ -1,54 +1,70 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { firebaseService } from '../services/firebase';
-import toast from 'react-hot-toast';
+import { initializeApp } from 'firebase/app';
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  signOut,
+  GoogleAuthProvider, 
+  signInWithPopup 
+} from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(firebaseService.auth, (user) => {
-      console.log('Auth state changed:', user);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
-    }, (error) => {
-      console.error("Auth state change error:", error);
-      setError(error);
-      setLoading(false);
-      toast.error('Authentication error: ' + error.message);
     });
 
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
 
   const signInWithGoogle = async () => {
-    setError(null);
+    const provider = new GoogleAuthProvider();
     try {
-      console.log('Attempting Google sign in...');
-      const user = await firebaseService.signInWithGoogle();
-      console.log('Sign in successful:', user);
-      return user;
+      const result = await signInWithPopup(auth, provider);
+      
+      // Store additional user data in Firestore
+      await setDoc(doc(db, 'users', result.user.uid), {
+        displayName: result.user.displayName,
+        email: result.user.email,
+        photoURL: result.user.photoURL,
+        createdAt: new Date().toISOString(),
+        role: 'user'
+      }, { merge: true });
+
+      return result.user;
     } catch (error) {
-      console.error("Google sign in error:", error);
-      setError(error);
-      toast.error('Sign in failed: ' + error.message);
+      console.error("Error signing in with Google:", error);
       throw error;
     }
   };
 
-  const signOut = async () => {
-    setError(null);
+  const getUserProfile = async (userId) => {
     try {
-      await firebaseService.signOut();
-      toast.success('Signed out successfully');
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      return userDoc.exists() ? userDoc.data() : null;
     } catch (error) {
-      console.error("Sign out error:", error);
-      setError(error);
-      toast.error('Sign out failed: ' + error.message);
+      console.error("Error getting user profile:", error);
       throw error;
     }
   };
@@ -56,30 +72,23 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     loading,
-    error,
     signInWithGoogle,
-    signOut
+    signOut: () => signOut(auth),
+    getCurrentUser: () => auth.currentUser,
+    getUserProfile
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-} 
+}; 

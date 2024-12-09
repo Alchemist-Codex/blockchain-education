@@ -14,15 +14,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Create Google Auth Provider with specific configuration
+// Create Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('https://www.googleapis.com/auth/userinfo.email');
 googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
+
+// Get current domain
+const currentDomain = window.location.hostname;
+
+// Set custom parameters based on environment
 googleProvider.setCustomParameters({
   prompt: 'select_account',
-  login_hint: 'user@example.com',
-  // Make sure this matches your authorized domain
-  hd: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN
+  // Use current domain for local development
+  hd: currentDomain === 'localhost' ? 'localhost' : firebaseConfig.authDomain
 });
 
 export const firebaseService = {
@@ -30,13 +34,8 @@ export const firebaseService = {
   async signInWithGoogle() {
     try {
       console.log('Starting Google sign in...');
-      console.log('Current config:', {
-        authDomain: firebaseConfig.authDomain,
-        projectId: firebaseConfig.projectId
-      });
-      
-      // Force auth domain to match Firebase settings
-      auth.config.authDomain = firebaseConfig.authDomain;
+      console.log('Current domain:', currentDomain);
+      console.log('Auth domain:', firebaseConfig.authDomain);
       
       const result = await signInWithPopup(auth, googleProvider);
       console.log('Sign in successful:', result.user);
@@ -47,6 +46,7 @@ export const firebaseService = {
         message: error.message,
         email: error.email,
         credential: error.credential,
+        currentDomain,
         authDomain: firebaseConfig.authDomain
       });
       throw error;
@@ -63,7 +63,11 @@ export const firebaseService = {
   }
 };
 
-// Log configuration on initialization
-console.log('Firebase initialized with auth domain:', firebaseConfig.authDomain);
+// Log initialization details
+console.log('Firebase initialized:', {
+  currentDomain,
+  authDomain: firebaseConfig.authDomain,
+  projectId: firebaseConfig.projectId
+});
 
 export default app; 
