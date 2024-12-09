@@ -4,7 +4,7 @@ import { useWeb3 } from '../contexts/Web3Context'
 import { ethers } from 'ethers'
 import { toast } from 'react-hot-toast'
 import { ipfsService } from '../services/ipfsService'
-import BlockchainAnimation from '../components/BlockchainAnimation'
+import BlockchainVideo from '../components/BlockchainVideo'
 
 function CredentialUpload() {
   const { account, contract } = useWeb3();
@@ -16,8 +16,7 @@ function CredentialUpload() {
     studentName: '',
     credentialType: '',
     institution: '',
-    imageHash: '',
-    imageUrl: ''
+    file: null
   })
   const [isBlockchainUploading, setIsBlockchainUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -32,40 +31,43 @@ function CredentialUpload() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    // Validate file type with more explicit formats
+    const validTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'application/pdf'
+    ];
+    
     if (!validTypes.includes(file.type)) {
-      alert('Please upload an image (JPEG, PNG, GIF), PDF, or DOCX file');
+      toast.error('Please upload a valid file (JPG, JPEG, PNG, or PDF)');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      toast.error('File size should be less than 5MB');
       return;
     }
 
     try {
-      setUploading(true);
+      // Only create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
 
-      // Show preview only for images
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImagePreview(reader.result);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        // For non-image files, show file name or icon
-        setImagePreview(null);
-      }
-
-      // Upload to IPFS
-      const { hash, url } = await ipfsService.uploadImage(file);
+      // Store file for later upload
       setFormData(prev => ({
         ...prev,
-        imageHash: hash,
-        imageUrl: url
+        file: file
       }));
     } catch (error) {
-      console.error('File upload failed:', error);
+      console.error('File preview failed:', error);
       setImagePreview(null);
-    } finally {
-      setUploading(false);
+      toast.error('Failed to preview file');
     }
   };
 
@@ -80,10 +82,10 @@ function CredentialUpload() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (isSubmitting) return; // Prevent double submission
+    if (isSubmitting) return;
     
-    if (!formData.imageHash) {
-      toast.error('Please upload a certificate file first');
+    if (!formData.file) {
+      toast.error('Please select a certificate file first');
       return;
     }
 
@@ -92,16 +94,20 @@ function CredentialUpload() {
       return;
     }
 
-    if (!contract) {
-      toast.error('Contract not initialized');
-      return;
-    }
-
     setIsSubmitting(true);
-    setUploading(true);
     setIsBlockchainUploading(true);
     
     try {
+      // First upload file to IPFS
+      const { hash, url } = await toast.promise(
+        ipfsService.uploadImage(formData.file),
+        {
+          loading: 'Uploading file to IPFS...',
+          success: 'File uploaded successfully',
+          error: 'Failed to upload file'
+        }
+      );
+
       // Create credential metadata
       const metadata = {
         studentName: formData.studentName,
@@ -109,8 +115,8 @@ function CredentialUpload() {
         credentialType: formData.credentialType,
         institution: formData.institution,
         issuerAddress: account,
-        imageHash: formData.imageHash,
-        imageUrl: formData.imageUrl,
+        imageHash: hash,
+        imageUrl: url,
         issueDate: new Date().toISOString()
       };
       
@@ -134,7 +140,7 @@ function CredentialUpload() {
         contract.issueCredential(
           formData.studentAddress,
           certificateHash,
-          formData.imageHash,
+          hash,
           metadataHash,
           { from: account }
         ),
@@ -157,11 +163,10 @@ function CredentialUpload() {
       
       setStep(2);
     } catch (error) {
-      console.error('Error uploading credential:', error);
-      toast.error(`Failed to issue credential: ${error.message}`);
+      console.error('Error:', error);
+      toast.error(`Failed: ${error.message}`);
     } finally {
       setIsSubmitting(false);
-      setUploading(false);
       setIsBlockchainUploading(false);
     }
   };
@@ -263,81 +268,81 @@ function CredentialUpload() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Upload Certificate
                 </label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed 
-                              border-gray-300 dark:border-gray-600 rounded-md">
-                  <div className="space-y-1 text-center">
-                    <svg
-                      className="mx-auto h-12 w-12 text-gray-400"
-                      stroke="currentColor"
-                      fill="none"
-                      viewBox="0 0 48 48"
-                    >
-                      <path
-                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <div className="flex text-sm text-gray-600 dark:text-gray-400">
-                      <label className="relative cursor-pointer rounded-md font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 focus-within:outline-none">
-                        <span>Upload a file</span>
-                        <input 
-                          type="file" 
-                          className="sr-only" 
-                          onChange={handleFileChange}
-                          accept=".jpg,.jpeg,.png,.gif,.pdf,.docx"
-                        />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
+                {isBlockchainUploading ? (
+                  // Show video during upload
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md">
+                    <div className="w-full">
+                      <BlockchainVideo />
+                      <div className="text-center text-sm text-gray-500 mt-2">
+                        Uploading to Blockchain...
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Supported formats: Images (JPEG, PNG, GIF), PDF, or DOCX up to 10MB
-                    </p>
                   </div>
-                </div>
+                ) : (
+                  // Show regular upload box when not uploading
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md relative">
+                    <div className="space-y-1 text-center">
+                      {imagePreview ? (
+                        <div className="relative">
+                          <img
+                            src={imagePreview}
+                            alt="Certificate Preview"
+                            className="mx-auto h-32 object-contain"
+                          />
+                          <button
+                            onClick={() => {
+                              setImagePreview(null);
+                              setFormData(prev => ({ ...prev, file: null }));
+                            }}
+                            className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <svg
+                            className="mx-auto h-12 w-12 text-gray-400"
+                            stroke="currentColor"
+                            fill="none"
+                            viewBox="0 0 48 48"
+                          >
+                            <path
+                              d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          <div className="flex text-sm text-gray-600 dark:text-gray-400">
+                            <label
+                              htmlFor="file-upload"
+                              className="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
+                            >
+                              <span>Upload a file</span>
+                              <input
+                                id="file-upload"
+                                name="file-upload"
+                                type="file"
+                                className="sr-only"
+                                accept=".jpg,.jpeg,.png,.pdf"
+                                onChange={handleFileChange}
+                                disabled={isSubmitting}
+                              />
+                            </label>
+                            <p className="pl-1">or drag and drop</p>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Supported formats: JPG, JPEG, PNG, or PDF up to 5MB
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-
-              {imagePreview && (
-                <div className="mt-2 relative inline-block">
-                  <img
-                    src={imagePreview}
-                    alt="Certificate preview"
-                    className="max-h-48 rounded shadow-lg"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setImagePreview(null);
-                      setFormData(prev => ({
-                        ...prev,
-                        imageHash: '',
-                        imageUrl: ''
-                      }));
-                    }}
-                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-
-              {uploading && (
-                <div className="text-sm text-gray-500">
-                  Uploading...
-                </div>
-              )}
-
-              {isBlockchainUploading && (
-                <div className="text-center my-4">
-                  <BlockchainAnimation type="upload" />
-                  <div className="text-sm text-gray-500 mt-2">
-                    Uploading to Blockchain...
-                  </div>
-                </div>
-              )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="flex justify-end">
@@ -390,8 +395,7 @@ function CredentialUpload() {
                     studentName: '',
                     credentialType: '',
                     institution: '',
-                    imageHash: '',
-                    imageUrl: ''
+                    file: null
                   });
                   setImagePreview(null);
                 }}
