@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
-import { pinataService } from '../services/pinataService'
 import { ethers } from 'ethers'
+import { toast } from 'react-hot-toast'
+import { ipfsService } from '../services/ipfsService'
+import BlockchainAnimation from '../components/BlockchainAnimation'
 
 function CredentialUpload() {
   const { account, contract } = useWeb3();
@@ -17,6 +19,8 @@ function CredentialUpload() {
     imageHash: '',
     imageUrl: ''
   })
+  const [isBlockchainUploading, setIsBlockchainUploading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
@@ -76,22 +80,26 @@ function CredentialUpload() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (isSubmitting) return; // Prevent double submission
+    
     if (!formData.imageHash) {
-      alert('Please upload a certificate file first');
+      toast.error('Please upload a certificate file first');
       return;
     }
 
     if (!account) {
-      alert('Please connect your wallet first');
+      toast.error('Please connect your wallet first');
       return;
     }
 
     if (!contract) {
-      alert('Contract not initialized');
+      toast.error('Contract not initialized');
       return;
     }
 
+    setIsSubmitting(true);
     setUploading(true);
+    setIsBlockchainUploading(true);
     
     try {
       // Create credential metadata
@@ -106,42 +114,55 @@ function CredentialUpload() {
         issueDate: new Date().toISOString()
       };
       
-      // Upload metadata to IPFS
-      const metadataHash = await ipfsService.uploadJSON(metadata);
+      // Upload metadata to IPFS with a loading state
+      const metadataHash = await toast.promise(
+        ipfsService.uploadJSON(metadata),
+        {
+          loading: 'Uploading metadata...',
+          success: 'Metadata uploaded successfully',
+          error: 'Failed to upload metadata'
+        }
+      );
       
       // Generate certificate hash
       const certificateHash = ethers.keccak256(
         ethers.toUtf8Bytes(JSON.stringify(metadata))
       );
 
-      console.log('Sending transaction with params:', {
-        studentAddress: formData.studentAddress,
-        certificateHash,
-        imageHash: formData.imageHash,
-        metadataHash
-      });
-      
-      // Send to smart contract
-      const tx = await contract.issueCredential(
-        formData.studentAddress,
-        certificateHash,
-        formData.imageHash,
-        metadataHash,
-        { from: account }
+      // Send to smart contract with a loading state
+      const tx = await toast.promise(
+        contract.issueCredential(
+          formData.studentAddress,
+          certificateHash,
+          formData.imageHash,
+          metadataHash,
+          { from: account }
+        ),
+        {
+          loading: 'Confirming transaction...',
+          success: 'Transaction sent successfully',
+          error: 'Transaction failed'
+        }
       );
       
-      console.log('Transaction sent:', tx.hash);
-      
-      // Wait for transaction confirmation
-      const receipt = await tx.wait();
-      console.log('Transaction confirmed:', receipt);
+      // Wait for confirmation with a loading state
+      await toast.promise(
+        tx.wait(),
+        {
+          loading: 'Waiting for blockchain confirmation...',
+          success: 'Credential issued successfully!',
+          error: 'Transaction failed'
+        }
+      );
       
       setStep(2);
     } catch (error) {
       console.error('Error uploading credential:', error);
-      alert(`Failed to issue credential: ${error.message}`);
+      toast.error(`Failed to issue credential: ${error.message}`);
     } finally {
+      setIsSubmitting(false);
       setUploading(false);
+      setIsBlockchainUploading(false);
     }
   };
 
@@ -309,15 +330,35 @@ function CredentialUpload() {
                 </div>
               )}
 
+              {isBlockchainUploading && (
+                <div className="text-center my-4">
+                  <BlockchainAnimation type="upload" />
+                  <div className="text-sm text-gray-500 mt-2">
+                    Uploading to Blockchain...
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-md
-                             hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
-                    disabled={uploading}
+                    className={`px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-md
+                             hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors
+                             ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={isSubmitting || uploading}
                   >
-                    {uploading ? 'Processing...' : 'Continue'}
+                    {isSubmitting ? (
+                      <div className="flex items-center space-x-2">
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Processing...</span>
+                      </div>
+                    ) : (
+                      'Continue'
+                    )}
                   </button>
                 </div>
               </form>
