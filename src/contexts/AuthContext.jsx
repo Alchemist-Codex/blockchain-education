@@ -5,17 +5,8 @@ import {
   onAuthStateChanged, 
   signOut,
   GoogleAuthProvider, 
-  signInWithPopup 
+  signInWithPopup
 } from 'firebase/auth';
-import { 
-  getFirestore, 
-  doc, 
-  setDoc, 
-  getDoc,
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager
-} from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 const firebaseConfig = {
@@ -31,12 +22,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Initialize Firestore with persistence
-const db = initializeFirestore(app, {
-  cache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
+// Configure Google Auth Provider
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
 });
+googleProvider.addScope('profile');
+googleProvider.addScope('email');
 
 const AuthContext = createContext();
 
@@ -54,31 +46,8 @@ function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          // Get user profile from Firestore
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (!userDoc.exists()) {
-            // Create user profile if it doesn't exist
-            await setDoc(doc(db, 'users', user.uid), {
-              displayName: user.displayName,
-              email: user.email,
-              photoURL: user.photoURL,
-              createdAt: new Date().toISOString(),
-              role: 'user'
-            });
-          }
-        } catch (error) {
-          console.error('Error handling user profile:', error);
-          // Don't throw error here, just log it
-        }
-      }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      setLoading(false);
-    }, (error) => {
-      console.error('Auth state change error:', error);
-      setError(error);
       setLoading(false);
     });
 
@@ -86,28 +55,28 @@ function AuthProvider({ children }) {
   }, []);
 
   const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
-      
-      // User profile is handled in the onAuthStateChanged listener
+      setLoading(true);
+      setError(null);
+      const result = await signInWithPopup(auth, googleProvider);
       toast.success('Successfully signed in!');
       return result.user;
     } catch (error) {
-      console.error("Error signing in with Google:", error);
-      toast.error(error.message || 'Failed to sign in with Google');
+      console.error('Google sign in error:', error);
+      let errorMessage = 'Failed to sign in with Google';
+      
+      if (error.code === 'auth/popup-blocked') {
+        errorMessage = 'Please allow popups for this website';
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Sign in cancelled';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Please check your connection';
+      }
+      
+      toast.error(errorMessage);
+      setError(error);
+      setLoading(false);
       throw error;
-    }
-  };
-
-  const getUserProfile = async (userId) => {
-    try {
-      const userDoc = await getDoc(doc(db, 'users', userId));
-      return userDoc.exists() ? userDoc.data() : null;
-    } catch (error) {
-      console.error("Error getting user profile:", error);
-      // Return null instead of throwing error
-      return null;
     }
   };
 
@@ -117,27 +86,8 @@ function AuthProvider({ children }) {
     error,
     signInWithGoogle,
     signOut: () => signOut(auth),
-    getCurrentUser: () => auth.currentUser,
-    getUserProfile
+    getCurrentUser: () => auth.currentUser
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-red-500">
-          Error: {error.message}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <AuthContext.Provider value={value}>

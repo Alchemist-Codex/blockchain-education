@@ -8,60 +8,59 @@ import { FcGoogle } from 'react-icons/fc';
 
 function SignIn() {
   const navigate = useNavigate();
-  const { signInWithGoogle, user } = useAuth();
+  const { user, signInWithGoogle, loading } = useAuth();
 
-  // Redirect if already logged in
   useEffect(() => {
-    if (user) {
-      navigate('/');
+    if (user && !loading) {
+      navigate('/', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
 
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
-      toast.success('Successfully signed in!');
-      navigate('/');
+      // Don't navigate here, let the useEffect handle it
     } catch (error) {
       console.error('Sign in error:', error);
-      toast.error(error.message || 'Failed to sign in with Google');
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  if (user) return null;
+
   return (
     <PageTransition>
-      <div className="relative min-h-screen flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
         <motion.div
-          className="max-w-md w-full"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
+          className="max-w-md w-full space-y-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-            <h2 className="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-white">
-              Welcome to Academic Chain
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+              Sign in to your account
             </h2>
-
-            <div className="mt-8">
-              <motion.button
-                onClick={handleGoogleSignIn}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full py-3 px-4 bg-white hover:bg-gray-50 
-                         text-gray-600 rounded-lg border border-gray-300
-                         transition-all duration-300 font-medium
-                         flex items-center justify-center space-x-2
-                         dark:bg-gray-700 dark:border-gray-600 
-                         dark:text-gray-200 dark:hover:bg-gray-600"
-              >
-                <FcGoogle className="text-2xl" />
-                <span>Continue with Google</span>
-              </motion.button>
-            </div>
-
-            <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-              By signing in, you agree to our Terms of Service and Privacy Policy
-            </p>
+          </div>
+          
+          <div className="mt-8 space-y-6">
+            <button
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+            >
+              <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                <FcGoogle className="h-5 w-5" />
+              </span>
+              {loading ? 'Signing in...' : 'Sign in with Google'}
+            </button>
           </div>
         </motion.div>
       </div>

@@ -7,11 +7,19 @@ function UserProfile() {
 
   return (
     <div className="flex items-center space-x-2">
-      <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-        {user.firstName?.charAt(0).toUpperCase() || user.displayName?.charAt(0).toUpperCase() || 'U'}
-      </div>
+      {user.photoURL ? (
+        <img 
+          src={user.photoURL} 
+          alt={user.displayName} 
+          className="h-8 w-8 rounded-full"
+        />
+      ) : (
+        <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
+          {user.displayName?.charAt(0).toUpperCase() || 'U'}
+        </div>
+      )}
       <span className="text-gray-700 dark:text-gray-300">
-        {user.firstName || user.displayName?.split(' ')[0] || 'User'}
+        {user.displayName || 'User'}
       </span>
     </div>
   );

@@ -25,13 +25,14 @@ function MetaMaskConnect() {
       await signOut();
       navigate('/signin');
     } catch (error) {
-      setError(error.message);
+      console.error('Sign out error:', error);
+      setError('Failed to sign out');
     }
   };
 
   return (
     <div className="fixed top-4 right-4 z-50 flex items-center space-x-4">
-      <UserProfile />
+      {user && <UserProfile />}
       
       {user && (
         <button
@@ -53,7 +54,10 @@ function MetaMaskConnect() {
           Install MetaMask
         </a>
       ) : account ? (
-        <div className="flex items-center space-x-2">  
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-700 dark:text-gray-300">
+            {`${account.slice(0, 6)}...${account.slice(-4)}`}
+          </span>
         </div>
       ) : (
         <motion.button
