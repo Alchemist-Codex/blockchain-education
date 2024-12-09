@@ -48,7 +48,7 @@ function Footer() {
                 Ritaban's Socials
               </a>
               <a 
-                href="" 
+                href="https://linktr.ee/koustaavs" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
                 rel="noopener noreferrer"
