@@ -18,7 +18,7 @@ function App() {
     <Router>
       <AuthProvider>
         <Web3Provider>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
             <Routes>
               {/* Public Routes */}
               <Route path="/signin" element={<SignIn />} />
@@ -28,9 +28,12 @@ function App() {
                 path="/"
                 element={
                   <ProtectedRoute>
-                    <div>
+                    <div className="flex flex-col min-h-screen">
                       <Navbar />
-                      <HomePage />
+                      <div className="flex-grow">
+                        <HomePage />
+                      </div>
+                      <Footer />
                     </div>
                   </ProtectedRoute>
                 }
@@ -39,9 +42,12 @@ function App() {
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <div>
+                    <div className="flex flex-col min-h-screen">
                       <Navbar />
-                      <Dashboard />
+                      <div className="flex-grow">
+                        <Dashboard />
+                      </div>
+                      <Footer />
                     </div>
                   </ProtectedRoute>
                 }
@@ -50,9 +56,12 @@ function App() {
                 path="/profile"
                 element={
                   <ProtectedRoute>
-                    <div>
+                    <div className="flex flex-col min-h-screen">
                       <Navbar />
-                      <Profile />
+                      <div className="flex-grow">
+                        <Profile />
+                      </div>
+                      <Footer />
                     </div>
                   </ProtectedRoute>
                 }
@@ -61,9 +70,12 @@ function App() {
                 path="/about"
                 element={
                   <ProtectedRoute>
-                    <div>
+                    <div className="flex flex-col min-h-screen">
                       <Navbar />
-                      <About />
+                      <div className="flex-grow">
+                        <About />
+                      </div>
+                      <Footer />
                     </div>
                   </ProtectedRoute>
                 }
@@ -72,9 +84,12 @@ function App() {
                 path="/upload"
                 element={
                   <ProtectedRoute>
-                    <div>
+                    <div className="flex flex-col min-h-screen">
                       <Navbar />
-                      <CredentialUpload />
+                      <div className="flex-grow">
+                        <CredentialUpload />
+                      </div>
+                      <Footer />
                     </div>
                   </ProtectedRoute>
                 }
@@ -83,9 +98,12 @@ function App() {
                 path="/verify"
                 element={
                   <ProtectedRoute>
-                    <div>
+                    <div className="flex flex-col min-h-screen">
                       <Navbar />
-                      <CredentialVerification />
+                      <div className="flex-grow">
+                        <CredentialVerification />
+                      </div>
+                      <Footer />
                     </div>
                   </ProtectedRoute>
                 }
@@ -94,9 +112,12 @@ function App() {
                 path="/faq"
                 element={
                   <ProtectedRoute>
-                    <div>
+                    <div className="flex flex-col min-h-screen">
                       <Navbar />
-                      <FAQ />
+                      <div className="flex-grow">
+                        <FAQ />
+                      </div>
+                      <Footer />
                     </div>
                   </ProtectedRoute>
                 }
