@@ -1,27 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
-  onAuthStateChanged, 
-  signOut,
-  GoogleAuthProvider, 
-  signInWithPopup 
-} from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { firebaseService } from '../services/firebase';
+import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
@@ -30,7 +11,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(firebaseService.auth, (user) => {
       setUser(user);
       setLoading(false);
     });
@@ -39,32 +20,21 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
+      const user = await firebaseService.signInWithGoogle();
       
-      // Store additional user data in Firestore
-      await setDoc(doc(db, 'users', result.user.uid), {
-        displayName: result.user.displayName,
-        email: result.user.email,
-        photoURL: result.user.photoURL,
-        createdAt: new Date().toISOString(),
-        role: 'user'
+      // Store user data in Firestore
+      await setDoc(doc(firebaseService.db, 'users', user.uid), {
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        lastLogin: new Date().toISOString()
       }, { merge: true });
 
-      return result.user;
+      return user;
     } catch (error) {
-      console.error("Error signing in with Google:", error);
-      throw error;
-    }
-  };
-
-  const getUserProfile = async (userId) => {
-    try {
-      const userDoc = await getDoc(doc(db, 'users', userId));
-      return userDoc.exists() ? userDoc.data() : null;
-    } catch (error) {
-      console.error("Error getting user profile:", error);
+      console.error('Sign in error:', error);
+      toast.error(error.message || 'Failed to sign in with Google');
       throw error;
     }
   };
@@ -73,9 +43,7 @@ export function AuthProvider({ children }) {
     user,
     loading,
     signInWithGoogle,
-    signOut: () => signOut(auth),
-    getCurrentUser: () => auth.currentUser,
-    getUserProfile
+    signOut: firebaseService.signOut
   };
 
   return (
@@ -85,10 +53,10 @@ export function AuthProvider({ children }) {
   );
 }
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+} 

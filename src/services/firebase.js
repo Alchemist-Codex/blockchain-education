@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,61 +14,35 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 // Create Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
-googleProvider.addScope('https://www.googleapis.com/auth/userinfo.email');
-googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
 
-// Get current domain
-const currentDomain = window.location.hostname;
-
-// Set custom parameters based on environment
+// Configure provider settings
 googleProvider.setCustomParameters({
-  prompt: 'select_account',
-  // Use current domain for local development
-  hd: currentDomain === 'localhost' ? 'localhost' : firebaseConfig.authDomain
+  prompt: 'select_account'
 });
 
 export const firebaseService = {
+  app,
   auth,
+  db,
   async signInWithGoogle() {
     try {
-      console.log('Starting Google sign in...');
-      console.log('Current domain:', currentDomain);
-      console.log('Auth domain:', firebaseConfig.authDomain);
-      
       const result = await signInWithPopup(auth, googleProvider);
-      console.log('Sign in successful:', result.user);
       return result.user;
     } catch (error) {
-      console.error('Detailed sign in error:', {
+      console.error('Firebase auth error:', {
         code: error.code,
         message: error.message,
-        email: error.email,
-        credential: error.credential,
-        currentDomain,
+        domain: window.location.hostname,
         authDomain: firebaseConfig.authDomain
       });
       throw error;
     }
   },
-
-  async signOut() {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error('Sign out error:', error);
-      throw error;
-    }
-  }
+  signOut: () => signOut(auth)
 };
 
-// Log initialization details
-console.log('Firebase initialized:', {
-  currentDomain,
-  authDomain: firebaseConfig.authDomain,
-  projectId: firebaseConfig.projectId
-});
-
-export default app; 
+export default firebaseService; 
