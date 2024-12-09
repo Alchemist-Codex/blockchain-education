@@ -15,7 +15,7 @@ async function main() {
   }
 
   // Deploy contract
-  const YourContract = await ethers.getContractFactory("AcademicCredentials");
+  const YourContract = await ethers.getContractFactory("YourContract");
   const contract = await YourContract.deploy();
   await contract.waitForDeployment();
 
