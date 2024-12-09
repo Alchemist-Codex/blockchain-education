@@ -8,7 +8,6 @@ function BlockchainVideo() {
     let playAttempt;
 
     if (video) {
-      // Wait for video to be loaded before playing
       const handleCanPlay = () => {
         playAttempt = setInterval(() => {
           video.play()
@@ -17,14 +16,12 @@ function BlockchainVideo() {
             })
             .catch(error => {
               console.log("Play attempt failed:", error);
-              // Will try again in next interval
             });
         }, 300);
       };
 
       video.addEventListener('canplay', handleCanPlay);
 
-      // Cleanup
       return () => {
         if (playAttempt) {
           clearInterval(playAttempt);
@@ -37,10 +34,10 @@ function BlockchainVideo() {
   }, []);
 
   return (
-    <div className="w-full h-48 flex items-center justify-center">
+    <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
       <video
         ref={videoRef}
-        className="w-full h-full object-cover rounded-lg"
+        className="absolute top-0 left-0 w-full h-full object-contain bg-black rounded-lg"
         autoPlay
         loop
         muted
