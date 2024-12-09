@@ -7,7 +7,14 @@ import {
   GoogleAuthProvider, 
   signInWithPopup 
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  getDoc,
+  enableIndexedDbPersistence,
+  CACHE_SIZE_UNLIMITED
+} from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 const firebaseConfig = {
@@ -23,6 +30,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// Enable offline persistence
+try {
+  enableIndexedDbPersistence(db, {
+    cacheSizeBytes: CACHE_SIZE_UNLIMITED
+  }).catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+    } else if (err.code === 'unimplemented') {
+      console.warn('The current browser does not support persistence.');
+    }
+  });
+} catch (error) {
+  console.warn('Error enabling persistence:', error);
+}
 
 const AuthContext = createContext();
 
@@ -40,9 +62,26 @@ function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    console.log('AuthProvider mounted');
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('Auth state changed:', user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          // Get user profile from Firestore
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (!userDoc.exists()) {
+            // Create user profile if it doesn't exist
+            await setDoc(doc(db, 'users', user.uid), {
+              displayName: user.displayName,
+              email: user.email,
+              photoURL: user.photoURL,
+              createdAt: new Date().toISOString(),
+              role: 'user'
+            });
+          }
+        } catch (error) {
+          console.error('Error handling user profile:', error);
+          // Don't throw error here, just log it
+        }
+      }
       setUser(user);
       setLoading(false);
     }, (error) => {
@@ -57,18 +96,9 @@ function AuthProvider({ children }) {
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      console.log('Attempting Google sign in...');
       const result = await signInWithPopup(auth, provider);
       
-      // Store additional user data in Firestore
-      await setDoc(doc(db, 'users', result.user.uid), {
-        displayName: result.user.displayName,
-        email: result.user.email,
-        photoURL: result.user.photoURL,
-        createdAt: new Date().toISOString(),
-        role: 'user'
-      }, { merge: true });
-
+      // User profile is handled in the onAuthStateChanged listener
       toast.success('Successfully signed in!');
       return result.user;
     } catch (error) {
@@ -84,7 +114,8 @@ function AuthProvider({ children }) {
       return userDoc.exists() ? userDoc.data() : null;
     } catch (error) {
       console.error("Error getting user profile:", error);
-      throw error;
+      // Return null instead of throwing error
+      return null;
     }
   };
 
@@ -98,7 +129,6 @@ function AuthProvider({ children }) {
     getUserProfile
   };
 
-  // Show loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -107,7 +137,6 @@ function AuthProvider({ children }) {
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
