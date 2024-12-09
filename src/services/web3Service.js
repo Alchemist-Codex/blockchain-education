@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import AcademicCredentials from '../../artifacts/contracts/AcademicCredentials.sol/AcademicCredentials.json';
+import AcademicCredentials from '../../artifacts/contracts/AcademicCredentials/AcademicCredentials.json';
 
 class Web3Service {
   constructor() {
