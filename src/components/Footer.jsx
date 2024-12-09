@@ -48,7 +48,7 @@ function Footer() {
                 LinkedIn
               </a>
               <a 
-                href="/github.html" 
+                href="https://github.com/ritaban06/blockchain-education" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
                 rel="noopener noreferrer"
