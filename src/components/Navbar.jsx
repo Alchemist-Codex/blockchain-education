@@ -35,9 +35,14 @@ function Navbar() {
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
               <img
-                src="/logo.png"
+                src="/logo-white.png"
                 alt="Academic Chain Logo"
-                className="h-8 w-8 mr-2"
+                className="h-8 w-8 mr-2 dark:hidden"
+              />
+              <img
+                src="/logo-dark.png"
+                alt="Academic Chain Logo"
+                className="h-8 w-8 mr-2 hidden dark:block"
               />
               <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
                 Academic Chain
