@@ -10,12 +10,19 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+// Create Google Auth Provider with specific configuration
 const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('https://www.googleapis.com/auth/userinfo.email');
+googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
 googleProvider.setCustomParameters({
-  prompt: 'select_account'
+  prompt: 'select_account',
+  login_hint: 'user@example.com',
+  // Make sure this matches your authorized domain
+  hd: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN
 });
 
 export const firebaseService = {
@@ -23,7 +30,14 @@ export const firebaseService = {
   async signInWithGoogle() {
     try {
       console.log('Starting Google sign in...');
-      console.log('Auth domain:', firebaseConfig.authDomain);
+      console.log('Current config:', {
+        authDomain: firebaseConfig.authDomain,
+        projectId: firebaseConfig.projectId
+      });
+      
+      // Force auth domain to match Firebase settings
+      auth.config.authDomain = firebaseConfig.authDomain;
+      
       const result = await signInWithPopup(auth, googleProvider);
       console.log('Sign in successful:', result.user);
       return result.user;
@@ -32,7 +46,8 @@ export const firebaseService = {
         code: error.code,
         message: error.message,
         email: error.email,
-        credential: error.credential
+        credential: error.credential,
+        authDomain: firebaseConfig.authDomain
       });
       throw error;
     }
@@ -47,5 +62,8 @@ export const firebaseService = {
     }
   }
 };
+
+// Log configuration on initialization
+console.log('Firebase initialized with auth domain:', firebaseConfig.authDomain);
 
 export default app; 
