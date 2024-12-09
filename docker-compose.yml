@@ -4,7 +4,7 @@ services:
   ganache:
     image: trufflesuite/ganache:latest
     ports:
-      - "7545:7545"
+      - "8545:8545"
     volumes:
       - ganache_data:/ganache/data
     command:
@@ -15,7 +15,7 @@ services:
       - --wallet.deterministic=true
       - --database.dbPath=/ganache/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7545"]
+      test: ["CMD", "curl", "-f", "http://localhost:8545"]
       interval: 30s
       timeout: 10s
       retries: 3
