@@ -9,10 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "reset-chain": "docker-compose down -v && docker-compose up -d",
-    "deploy": "npm run reset-chain && sleep 5 && npx hardhat run scripts/deploy.js --network ganache",
+    "deploy": "npx hardhat run scripts/deploy.js --network ganache",
     "test": "vitest run",
     "test:watch": "vitest",
-    "reset-and-test": "npm run reset-chain && npm run deploy && npm run test"
+    "reset-and-deploy": "npm run reset-chain && timeout 5 && npm run deploy"
   },
   "dependencies": {
     "@emotion/react": "^11.13.5",
