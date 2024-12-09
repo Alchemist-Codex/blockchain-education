@@ -32,28 +32,44 @@ function Footer() {
             <h4 className="text-lg font-semibold mb-4">Connect With Us</h4>
             <div className="space-y-2">
               <a 
-                href="/instagram.html" 
-                className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
-                Instagram
-              </a>
-              <a 
-                href="/linkedin.html" 
-                className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
-                LinkedIn
-              </a>
-              <a 
                 href="https://github.com/ritaban06/blockchain-education" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
                 rel="noopener noreferrer"
               >
-                GitHub
+                Github
+              </a>
+              <a 
+                href="https://linktr.ee/ritaban06" 
+                className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                Ritaban's Socials
+              </a>
+              <a 
+                href="" 
+                className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                Koustav's Socials
+              </a>
+              <a 
+                href="" 
+                className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                Sougata's Socials
+              </a>
+              <a 
+                href="" 
+                className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                Anjali's Socials
               </a>
             </div>
           </div>
