@@ -1,80 +1,56 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
+import { auth } from '../services/firebase';
 import { 
-  getAuth, 
-  onAuthStateChanged, 
-  signOut,
   GoogleAuthProvider, 
-  signInWithPopup 
+  signInWithPopup,
+  signOut as firebaseSignOut,
+  onAuthStateChanged 
 } from 'firebase/auth';
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    // Initialize from localStorage if available
-    const savedFirstName = localStorage.getItem('userFirstName');
-    const currentUser = auth.currentUser;
-    if (currentUser && savedFirstName) {
-      return {
-        ...currentUser,
-        firstName: savedFirstName
-      };
-    }
-    return null;
-  });
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // Get firstName from localStorage if available, otherwise from user
-        const firstName = localStorage.getItem('userFirstName') || user.displayName?.split(' ')[0] || 'User';
-        setUser({
-          ...user,
-          firstName
-        });
-      } else {
-        setUser(null);
-        localStorage.removeItem('userName');
-        localStorage.removeItem('userFirstName');
-      }
+      setUser(user);
+      setLoading(false);
+    }, (error) => {
+      console.error("Auth state change error:", error);
+      setError(error);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return unsubscribe;
   }, []);
 
   const signInWithGoogle = async () => {
+    setError(null);
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
+    
     try {
       const result = await signInWithPopup(auth, provider);
-      const firstName = result.user.displayName?.split(' ')[0] || 'User';
-      
-      // Store in localStorage
-      localStorage.setItem('userName', result.user.displayName);
-      localStorage.setItem('userFirstName', firstName);
-      
-      setUser({
-        ...result.user,
-        firstName
-      });
       return result.user;
     } catch (error) {
-      console.error("Error signing in with Google:", error);
+      console.error("Google sign in error:", error);
+      setError(error);
+      throw error;
+    }
+  };
+
+  const signOut = async () => {
+    setError(null);
+    try {
+      await firebaseSignOut(auth);
+    } catch (error) {
+      console.error("Sign out error:", error);
+      setError(error);
       throw error;
     }
   };
@@ -82,26 +58,30 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     loading,
+    error,
     signInWithGoogle,
-    signOut: () => {
-      localStorage.removeItem('userName');
-      localStorage.removeItem('userFirstName');
-      return signOut(auth);
-    },
-    getCurrentUser: () => auth.currentUser
+    signOut
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+} 
