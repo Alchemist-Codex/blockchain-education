@@ -12,8 +12,9 @@ import {
   doc, 
   setDoc, 
   getDoc,
-  enableIndexedDbPersistence,
-  CACHE_SIZE_UNLIMITED
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager
 } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
@@ -29,22 +30,13 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 
-// Enable offline persistence
-try {
-  enableIndexedDbPersistence(db, {
-    cacheSizeBytes: CACHE_SIZE_UNLIMITED
-  }).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-    } else if (err.code === 'unimplemented') {
-      console.warn('The current browser does not support persistence.');
-    }
-  });
-} catch (error) {
-  console.warn('Error enabling persistence:', error);
-}
+// Initialize Firestore with persistence
+const db = initializeFirestore(app, {
+  cache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+});
 
 const AuthContext = createContext();
 
