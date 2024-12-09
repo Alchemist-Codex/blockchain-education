@@ -1,6 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,36 +12,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 
 export const firebaseService = {
-  async signIn(email, password) {
+  auth,
+  async signInWithGoogle() {
+    const provider = new GoogleAuthProvider();
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return userCredential.user;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  async signUp(email, password, displayName) {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Update auth profile with display name
-      await updateProfile(userCredential.user, {
-        displayName: displayName
-      });
-
-      // Store additional user data in Firestore
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
-        displayName: displayName,
-        email: email,
-        createdAt: new Date().toISOString(),
-        role: 'user'
-      });
-
-      return userCredential.user;
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
     } catch (error) {
       throw error;
     }
@@ -54,18 +31,7 @@ export const firebaseService = {
     } catch (error) {
       throw error;
     }
-  },
-
-  getCurrentUser() {
-    return auth.currentUser;
-  },
-
-  async getUserProfile(userId) {
-   try {
-      const userDoc = await getDoc(doc(db, 'users', userId));
-      return userDoc.exists() ? userDoc.data() : null;
-    } catch (error) {
-      throw error;
-    }
   }
-}; 
+};
+
+export default app; 

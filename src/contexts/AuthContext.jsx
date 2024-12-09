@@ -1,11 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { auth } from '../services/firebase';
-import { 
-  GoogleAuthProvider, 
-  signInWithPopup,
-  signOut as firebaseSignOut,
-  onAuthStateChanged 
-} from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
+import { firebaseService } from '../services/firebase';
 
 const AuthContext = createContext();
 
@@ -15,7 +10,7 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(firebaseService.auth, (user) => {
       setUser(user);
       setLoading(false);
     }, (error) => {
@@ -29,14 +24,8 @@ export function AuthProvider({ children }) {
 
   const signInWithGoogle = async () => {
     setError(null);
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({
-      prompt: 'select_account'
-    });
-    
     try {
-      const result = await signInWithPopup(auth, provider);
-      return result.user;
+      return await firebaseService.signInWithGoogle();
     } catch (error) {
       console.error("Google sign in error:", error);
       setError(error);
@@ -47,7 +36,7 @@ export function AuthProvider({ children }) {
   const signOut = async () => {
     setError(null);
     try {
-      await firebaseSignOut(auth);
+      await firebaseService.signOut();
     } catch (error) {
       console.error("Sign out error:", error);
       setError(error);
