@@ -1,5 +1,4 @@
-import { AnimatePresence } from 'framer-motion'
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import HomePage from './pages/HomePage'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
@@ -12,39 +11,104 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import { AuthProvider } from './contexts/AuthContext'
 import { Web3Provider } from './contexts/Web3Context'
-
-function AnimatedRoutes() {
-  const location = useLocation()
-  
-  return (
-    <>
-      <Navbar />
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/upload" element={<CredentialUpload />} />
-          <Route path="/verify" element={<CredentialVerification />} />
-          <Route path="/faq" element={<FAQ />} />
-        </Routes>
-      </AnimatePresence>
-      <Footer />
-    </>
-  )
-}
+import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
   return (
-    <AuthProvider>
-      <Web3Provider>
-        <Router>
-          <AnimatedRoutes />
-        </Router>
-      </Web3Provider>
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <Web3Provider>
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/signin" element={<SignIn />} />
+
+              {/* Protected Routes */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <div>
+                      <Navbar />
+                      <HomePage />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <div>
+                      <Navbar />
+                      <Dashboard />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <div>
+                      <Navbar />
+                      <Profile />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/about"
+                element={
+                  <ProtectedRoute>
+                    <div>
+                      <Navbar />
+                      <About />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/upload"
+                element={
+                  <ProtectedRoute>
+                    <div>
+                      <Navbar />
+                      <CredentialUpload />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/verify"
+                element={
+                  <ProtectedRoute>
+                    <div>
+                      <Navbar />
+                      <CredentialVerification />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/faq"
+                element={
+                  <ProtectedRoute>
+                    <div>
+                      <Navbar />
+                      <FAQ />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Redirect unknown routes to home */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+        </Web3Provider>
+      </AuthProvider>
+    </Router>
   )
 }
 
