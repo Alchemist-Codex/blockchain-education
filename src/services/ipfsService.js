@@ -149,4 +149,5 @@ class IPFSService {
   }
 }
 
-export const ipfsService = new IPFSService();
+const ipfsService = new IPFSService();
+export { ipfsService };
