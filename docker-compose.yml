@@ -13,7 +13,6 @@ services:
       - --wallet.defaultBalance=1000000
       - --server.host=0.0.0.0
       - --wallet.deterministic=true
-      - --mnemonic="lab fever idea turn sound fragile merit mosquito wrestle document energy permit"
       - --database.dbPath=/ganache/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7545"]
