@@ -69,10 +69,10 @@ function Navbar() {
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                    {user.email?.charAt(0).toUpperCase() || 'U'}
+                    {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <span className="text-gray-700 dark:text-gray-300 hidden sm:inline">
-                    {user.email}
+                    {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}
                   </span>
                 </div>
                 <motion.button
