@@ -1,7 +1,7 @@
 import { expect, describe, it, beforeEach } from 'vitest';
 import { ethers } from 'ethers';
 import config from '../config';
-import contractABI from '../artifacts/contracts/AcademicCredentials.sol/AcademicCredentials.json';
+import contractABI from '../artifacts/contracts/AcademicCredentials/AcademicCredentials.json';
 
 describe('Development Environment Tests', () => {
   let provider;
