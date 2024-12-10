@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isUserAuthenticated(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Allow access to test collection during development
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isUserAuthenticated(userId);
+      allow delete: if false; // Prevent deletion
+    }
+
+    // Students Collection
+    match /students/{studentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isUserAuthenticated(studentId);
+      allow delete: if false;
+    }
+
+    // Institutions Collection
+    match /institutions/{institutionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isUserAuthenticated(institutionId);
+      allow delete: if false;
+    }
+
+    // Credentials Collection
+    match /credentials/{credentialId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if false;
+    }
+
+    // Default rule - deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

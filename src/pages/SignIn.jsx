@@ -1,39 +1,38 @@
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { useWeb3 } from '../contexts/Web3Context';
+import { userTypes } from '../utils/schema';
 import { PageTransition } from '../components/PageTransition';
 import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
 import { FcGoogle } from 'react-icons/fc';
 
 function SignIn() {
   const navigate = useNavigate();
-  const { user, signInWithGoogle, loading } = useAuth();
+  const { signInWithGoogle, loading } = useAuth();
+  const { account, connect } = useWeb3();
+  const [selectedUserType, setSelectedUserType] = useState(userTypes.STUDENT);
 
-  useEffect(() => {
-    if (user && !loading) {
-      navigate('/', { replace: true });
+  const handleWalletConnect = async () => {
+    try {
+      await connect();
+    } catch (error) {
+      toast.error('Failed to connect wallet');
     }
-  }, [user, loading, navigate]);
+  };
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithGoogle();
-      // Don't navigate here, let the useEffect handle it
+      if (!account) {
+        await handleWalletConnect();
+      }
+      await signInWithGoogle(selectedUserType);
+      navigate('/dashboard');
     } catch (error) {
       console.error('Sign in error:', error);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
-
-  if (user) return null;
 
   return (
     <PageTransition>
@@ -42,7 +41,7 @@ function SignIn() {
           className="max-w-md w-full space-y-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.5 }}
         >
           <div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
@@ -50,7 +49,30 @@ function SignIn() {
             </h2>
           </div>
           
-          <div className="mt-8 space-y-6">
+          <div className="space-y-6">
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={() => setSelectedUserType(userTypes.STUDENT)}
+                className={`px-4 py-2 rounded-md transition-colors ${
+                  selectedUserType === userTypes.STUDENT
+                    ? 'bg-primary-600 text-white dark:bg-primary-500'
+                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                Student
+              </button>
+              <button
+                onClick={() => setSelectedUserType(userTypes.INSTITUTE)}
+                className={`px-4 py-2 rounded-md transition-colors ${
+                  selectedUserType === userTypes.INSTITUTE
+                    ? 'bg-primary-600 text-white dark:bg-primary-500'
+                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                Institution
+              </button>
+            </div>
+
             <button
               onClick={handleGoogleSignIn}
               disabled={loading}
