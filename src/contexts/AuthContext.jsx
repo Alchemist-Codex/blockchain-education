@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+// Firebase imports
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
@@ -23,6 +24,9 @@ import { useWeb3 } from './Web3Context';
 import { userTypes } from '../utils/schema';
 import toast from 'react-hot-toast';
 
+/**
+ * Firebase configuration from environment variables
+ */
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -32,12 +36,18 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+// Initialize Firebase services
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Create context for authentication
 const AuthContext = createContext();
 
+/**
+ * Custom hook to use authentication context
+ * @throws {Error} If used outside of AuthProvider
+ */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
@@ -46,24 +56,32 @@ export function useAuth() {
   return context;
 }
 
+/**
+ * AuthProvider Component
+ * Manages authentication state and provides auth-related functionality
+ */
 export function AuthProvider({ children }) {
+  // State management
   const [user, setUser] = useState(null);
   const [userType, setUserType] = useState(null);
   const [loading, setLoading] = useState(true);
   const { account, connect } = useWeb3();
 
+  // Monitor authentication state changes
   useEffect(() => {
     console.log('AuthProvider mounted');
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       console.log('Auth state changed:', user);
       if (user) {
         try {
+          // Fetch user data and verify wallet address
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
             console.log('User data:', userData);
             setUserType(userData.userType);
             
+            // Verify wallet address match
             if (account && userData.walletAddress !== account) {
               await signOut(auth);
               toast.error('Wallet address mismatch');
@@ -84,26 +102,27 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, [account]);
 
+  /**
+   * Handle Google Sign In
+   * Creates user profile if new user
+   */
   const signInWithGoogle = async (selectedUserType) => {
     try {
+      // Ensure wallet is connected
       if (!account) {
         await connect();
       }
 
-      // Basic Google Provider configuration
       const provider = new GoogleAuthProvider();
-      
-      // Use signInWithPopup with minimal configuration
       const result = await signInWithPopup(auth, provider.setCustomParameters({
         prompt: 'select_account'
       }));
 
-      // Handle successful sign-in
       if (result.user) {
         const userDoc = await getDoc(doc(db, 'users', result.user.uid));
         
         if (userDoc.exists()) {
-          // Verify wallet address
+          // Verify existing user's wallet
           const userData = userDoc.data();
           if (userData.walletAddress !== account) {
             await signOut(auth);
@@ -112,15 +131,6 @@ export function AuthProvider({ children }) {
           setUserType(userData.userType);
         } else {
           // Create new user profile
-          await setDoc(doc(db, 'users', result.user.uid), {
-            email: result.user.email,
-            displayName: result.user.displayName,
-            userType: selectedUserType,
-            walletAddress: account,
-            createdAt: serverTimestamp()
-          });
-
-          // Create type-specific profile
           const profileData = {
             userId: result.user.uid,
             email: result.user.email,
@@ -129,6 +139,13 @@ export function AuthProvider({ children }) {
             createdAt: serverTimestamp()
           };
 
+          // Create user document
+          await setDoc(doc(db, 'users', result.user.uid), {
+            ...profileData,
+            userType: selectedUserType,
+          });
+
+          // Create type-specific profile
           if (selectedUserType === userTypes.STUDENT) {
             await setDoc(doc(db, 'students', result.user.uid), profileData);
           } else {
@@ -157,7 +174,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Add this useEffect to handle redirect result
+  // Handle redirect result after authentication
   useEffect(() => {
     const handleRedirectResult = async () => {
       try {
@@ -174,7 +191,6 @@ export function AuthProvider({ children }) {
             }
             setUserType(userData.userType);
           }
-          // Note: New user creation will be handled in the onAuthStateChanged listener
         }
       } catch (error) {
         console.error('Redirect result error:', error);
@@ -183,8 +199,11 @@ export function AuthProvider({ children }) {
     };
 
     handleRedirectResult();
-  }, [account]); // Add account as dependency
+  }, [account]);
 
+  /**
+   * Handle user sign out
+   */
   const signOutUser = async () => {
     try {
       await signOut(auth);
@@ -197,6 +216,9 @@ export function AuthProvider({ children }) {
     }
   };
 
+  /**
+   * Test Firebase database connection
+   */
   const testDatabaseConnection = async () => {
     try {
       const testDoc = await addDoc(collection(db, 'test'), {
@@ -206,7 +228,6 @@ export function AuthProvider({ children }) {
       console.log('Database connection successful, test document ID:', testDoc.id);
       toast.success('Firebase connection successful!');
       
-      // Clean up test document
       await deleteDoc(doc(db, 'test', testDoc.id));
     } catch (error) {
       console.error('Database connection failed:', error);
@@ -214,6 +235,7 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Context value
   const value = {
     user,
     userType,
