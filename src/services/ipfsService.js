@@ -1,10 +1,13 @@
+// IPFS Service class for handling interactions with Pinata IPFS
 class IPFSService {
+  // Initialize service with Pinata API credentials
   constructor() {
     this.apiKey = import.meta.env.VITE_PINATA_API_KEY;
     this.apiSecret = import.meta.env.VITE_PINATA_API_SECRET;
     this.gateway = 'https://gateway.pinata.cloud/ipfs/';
   }
 
+  // Test the connection to Pinata API
   async testConnection() {
     try {
       const response = await fetch('https://api.pinata.cloud/data/testAuthentication', {
@@ -27,21 +30,23 @@ class IPFSService {
     }
   }
 
+  // Upload an image file to IPFS through Pinata
   async uploadImage(file) {
     try {
-      // Validate file type
+      // Ensure the file is an image
       if (!file.type.startsWith('image/')) {
         throw new Error('File must be an image');
       }
 
+      // Prepare form data for upload
       const formData = new FormData();
       formData.append('file', file);
 
-      // Keep original filename but clean it
+      // Clean filename for storage
       const originalFileName = file.name;
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
 
-      // Add metadata for Pinata
+      // Create metadata for the file
       const metadata = JSON.stringify({
         name: cleanFileName,
         keyvalues: {
@@ -52,13 +57,14 @@ class IPFSService {
       });
       formData.append('pinataMetadata', metadata);
 
-      // Add options for Pinata
+      // Set Pinata-specific options
       const options = JSON.stringify({
         cidVersion: 1,
         wrapWithDirectory: false
       });
       formData.append('pinataOptions', options);
 
+      // Make the upload request
       const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
         method: 'POST',
         headers: {
@@ -72,6 +78,7 @@ class IPFSService {
         throw new Error(`Upload failed: ${response.status}`);
       }
 
+      // Return upload results with file information
       const result = await response.json();
       return {
         hash: result.IpfsHash,
@@ -84,8 +91,10 @@ class IPFSService {
     }
   }
 
+  // Upload JSON data to IPFS through Pinata
   async uploadJSON(jsonData) {
     try {
+      // Make request to pin JSON data
       const response = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
         method: 'POST',
         headers: {
@@ -121,6 +130,7 @@ class IPFSService {
     }
   }
 
+  // Retrieve a file from IPFS using its hash
   async retrieveFile(hash) {
     try {
       const response = await fetch(this.getFileUrl(hash));
@@ -134,6 +144,7 @@ class IPFSService {
     }
   }
 
+  // Retrieve and parse JSON data from IPFS
   async retrieveJSON(hash) {
     try {
       const response = await this.retrieveFile(hash);
@@ -144,10 +155,12 @@ class IPFSService {
     }
   }
 
+  // Generate the full IPFS gateway URL for a file
   getFileUrl(hash) {
     return `${this.gateway}${hash}`;
   }
 }
 
+// Create and export a singleton instance of the service
 const ipfsService = new IPFSService();
 export { ipfsService };
