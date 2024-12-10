@@ -41,7 +41,7 @@ function SignIn() {
           className="max-w-md w-full space-y-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6 }}
         >
           <div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
@@ -49,24 +49,24 @@ function SignIn() {
             </h2>
           </div>
           
-          <div className="space-y-6">
-            <div className="flex justify-center space-x-4">
+          <div className="mt-8 space-y-6">
+            <div className="flex justify-center space-x-4 mb-4">
               <button
                 onClick={() => setSelectedUserType(userTypes.STUDENT)}
-                className={`px-4 py-2 rounded-md transition-colors ${
+                className={`px-4 py-2 rounded-md ${
                   selectedUserType === userTypes.STUDENT
-                    ? 'bg-primary-600 text-white dark:bg-primary-500'
-                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-200 text-gray-700'
                 }`}
               >
                 Student
               </button>
               <button
                 onClick={() => setSelectedUserType(userTypes.INSTITUTE)}
-                className={`px-4 py-2 rounded-md transition-colors ${
+                className={`px-4 py-2 rounded-md ${
                   selectedUserType === userTypes.INSTITUTE
-                    ? 'bg-primary-600 text-white dark:bg-primary-500'
-                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-200 text-gray-700'
                 }`}
               >
                 Institution
