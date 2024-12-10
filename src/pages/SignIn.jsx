@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 
 function SignIn() {
   const navigate = useNavigate();
-  const { signInWithEmail, signInWithGoogle, loading } = useAuth();
+  const { signInWithEmail, signInWithGoogle, loading, testDatabaseConnection } = useAuth();
   const { account, connect } = useWeb3();
   const [isSignUp, setIsSignUp] = useState(false);
   const [userType, setUserType] = useState(userTypes.STUDENT);
@@ -71,6 +71,17 @@ function SignIn() {
 
   // Rest of the component with form UI
   // ...
+
+  return (
+    <div>
+      <button
+        onClick={testDatabaseConnection}
+        className="text-sm text-primary-600 hover:text-primary-500"
+      >
+        Test Database Connection
+      </button>
+    </div>
+  );
 }
 
 export default SignIn; 

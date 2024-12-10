@@ -14,7 +14,11 @@ import {
   getDoc,
   initializeFirestore,
   persistentLocalCache,
-  persistentSingleTabManager
+  persistentSingleTabManager,
+  collection,
+  addDoc,
+  serverTimestamp,
+  deleteDoc
 } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
@@ -123,13 +127,31 @@ function AuthProvider({ children }) {
     }
   };
 
+  const testDatabaseConnection = async () => {
+    try {
+      const testDoc = await addDoc(collection(db, 'test'), {
+        message: 'Test connection',
+        timestamp: serverTimestamp()
+      });
+      console.log('Database connection successful, test document ID:', testDoc.id);
+      toast.success('Firebase connection successful!');
+      
+      // Clean up test document
+      await deleteDoc(doc(db, 'test', testDoc.id));
+    } catch (error) {
+      console.error('Database connection failed:', error);
+      toast.error('Firebase connection failed: ' + error.message);
+    }
+  };
+
   const value = {
     user,
     loading,
     error,
     signInWithGoogle,
     signOut: () => signOut(auth),
-    getCurrentUser: () => auth.currentUser
+    getCurrentUser: () => auth.currentUser,
+    testDatabaseConnection
   };
 
   if (loading) {
