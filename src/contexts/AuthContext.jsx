@@ -90,16 +90,16 @@ export function AuthProvider({ children }) {
         await connect();
       }
 
-      // Configure Google Auth Provider
+      // Basic Google Provider configuration
       const provider = new GoogleAuthProvider();
-      provider.addScope('email');
-      provider.addScope('profile');
       
-      // Use signInWithPopup with error handling
-      try {
-        const result = await signInWithPopup(auth, provider);
-        
-        // Check if user exists
+      // Use signInWithPopup with minimal configuration
+      const result = await signInWithPopup(auth, provider.setCustomParameters({
+        prompt: 'select_account'
+      }));
+
+      // Handle successful sign-in
+      if (result.user) {
         const userDoc = await getDoc(doc(db, 'users', result.user.uid));
         
         if (userDoc.exists()) {
@@ -140,56 +140,50 @@ export function AuthProvider({ children }) {
 
         toast.success('Successfully signed in!');
         return result.user;
-      } catch (popupError) {
-        // If popup fails, try redirect
-        console.log('Popup failed, trying redirect:', popupError);
-        await signInWithRedirect(auth, provider);
       }
     } catch (error) {
       console.error('Sign in error:', error);
-      toast.error(error.message);
+      
+      // Handle specific error cases
+      if (error.code === 'auth/popup-blocked') {
+        toast.error('Please allow popups for this site');
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        toast.error('Sign in was cancelled');
+      } else {
+        toast.error(error.message || 'Failed to sign in');
+      }
+      
       throw error;
     }
   };
 
-  // Add this useEffect to handle the redirect result
+  // Add this useEffect to handle redirect result
   useEffect(() => {
     const handleRedirectResult = async () => {
       try {
         const result = await getRedirectResult(auth);
-        if (result) {
-          // Handle user data after successful sign-in
+        
+        if (result?.user) {
           const userDoc = await getDoc(doc(db, 'users', result.user.uid));
           
           if (userDoc.exists()) {
             const userData = userDoc.data();
             if (userData.walletAddress !== account) {
               await signOut(auth);
-              throw new Error('Incorrect wallet address for this account');
+              throw new Error('Wallet address mismatch');
             }
             setUserType(userData.userType);
-          } else {
-            // Create new user profile
-            await setDoc(doc(db, 'users', result.user.uid), {
-              email: result.user.email,
-              displayName: result.user.displayName,
-              userType: selectedUserType,
-              walletAddress: account,
-              createdAt: serverTimestamp()
-            });
-
-            setUserType(selectedUserType);
           }
-          toast.success('Successfully signed in!');
+          // Note: New user creation will be handled in the onAuthStateChanged listener
         }
       } catch (error) {
         console.error('Redirect result error:', error);
-        toast.error(error.message);
+        toast.error(error.message || 'Authentication failed');
       }
     };
 
     handleRedirectResult();
-  }, []);
+  }, [account]); // Add account as dependency
 
   const signOutUser = async () => {
     try {
