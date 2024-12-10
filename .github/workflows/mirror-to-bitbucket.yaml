@@ -23,4 +23,5 @@ jobs:
         run: |
           ssh-keyscan bitbucket.org >> ~/.ssh/known_hosts
           git remote add bitbucket git@bitbucket.org:ritaban2006/blockchain-education.git
-          git push --mirror bitbucket
+          git push bitbucket --all
+          git push bitbucket --tags
