@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, Link } from 'react-router-dom'
-import Homepage from './pages/Homepage'
+import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import About from './pages/About'
@@ -24,7 +24,7 @@ function App() {
           <Routes>
             {/* Public routes with navbar */}
             <Route element={<PublicLayout />}>
-              <Route path="/" element={<Homepage />} />
+              <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/verify" element={<CredentialVerification />} />
