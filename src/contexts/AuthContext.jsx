@@ -7,6 +7,15 @@ import {
   GoogleAuthProvider, 
   signInWithPopup
 } from 'firebase/auth';
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  getDoc,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentSingleTabManager
+} from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 const firebaseConfig = {
@@ -22,13 +31,18 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+// Initialize Firestore with single tab persistence
+const db = initializeFirestore(app, {
+  cache: persistentLocalCache({
+    tabManager: persistentSingleTabManager()
+  })
+});
+
 // Configure Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
-googleProvider.addScope('profile');
-googleProvider.addScope('email');
 
 const AuthContext = createContext();
 
@@ -46,18 +60,47 @@ function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    let unsubscribe;
+    try {
+      unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          try {
+            const userRef = doc(db, 'users', user.uid);
+            const userSnap = await getDoc(userRef);
+            
+            if (!userSnap.exists()) {
+              await setDoc(userRef, {
+                displayName: user.displayName || 'Anonymous',
+                email: user.email,
+                photoURL: user.photoURL,
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString(),
+                role: 'user'
+              });
+            } else {
+              await setDoc(userRef, {
+                lastLogin: new Date().toISOString()
+              }, { merge: true });
+            }
+          } catch (error) {
+            console.error('Error updating user profile:', error);
+          }
+        }
+        setUser(user);
+        setLoading(false);
+      });
+    } catch (error) {
+      console.error('Auth state change error:', error);
+      setError(error);
       setLoading(false);
-    });
+    }
 
-    return () => unsubscribe();
+    return () => unsubscribe?.();
   }, []);
 
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
-      setError(null);
       const result = await signInWithPopup(auth, googleProvider);
       toast.success('Successfully signed in!');
       return result.user;
@@ -69,14 +112,14 @@ function AuthProvider({ children }) {
         errorMessage = 'Please allow popups for this website';
       } else if (error.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Sign in cancelled';
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = 'Network error. Please check your connection';
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = 'This domain is not authorized for sign in';
       }
       
       toast.error(errorMessage);
-      setError(error);
-      setLoading(false);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,6 +132,14 @@ function AuthProvider({ children }) {
     getCurrentUser: () => auth.currentUser
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
   return (
     <AuthContext.Provider value={value}>
       {children}
@@ -96,4 +147,4 @@ function AuthProvider({ children }) {
   );
 }
 
-export { AuthProvider, useAuth }; 
+export { AuthProvider, useAuth };
