@@ -4,11 +4,17 @@ import { useAuth } from '../contexts/AuthContext'
 import { getUserProfile } from '../services/userService'
 import { PageTransition } from '../components/PageTransition'
 
+/**
+ * InstituteDashboard Component
+ * Dashboard for educational institutions to manage credentials
+ */
 function InstituteDashboard() {
+  // Authentication and state management
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState(null);
   const [activeTab, setActiveTab] = useState('issued')
 
+  // Fetch user profile data on component mount
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (user) {
@@ -19,6 +25,7 @@ function InstituteDashboard() {
     fetchUserProfile();
   }, [user]);
 
+  // Mock statistics data
   const stats = [
     { label: 'Total Issued', value: '120' },
     { label: 'This Month', value: '15' },
@@ -29,13 +36,14 @@ function InstituteDashboard() {
   return (
     <PageTransition>
       <div className="relative min-h-screen p-6">
+        {/* Main Content Container */}
         <motion.div
           className="max-w-7xl mx-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          {/* Welcome Section */}
+          {/* Welcome Banner with Gradient Background */}
           <motion.div 
             className="bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-800 dark:to-primary-900 rounded-2xl p-8 text-white mb-8"
             initial={{ opacity: 0, y: 20 }}
@@ -49,8 +57,9 @@ function InstituteDashboard() {
             </p>
           </motion.div>
 
-          {/* Quick Actions */}
+          {/* Quick Action Buttons */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Issue New Credential Button */}
             <motion.button
               className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow"
               whileHover={{ scale: 1.02 }}
@@ -60,6 +69,7 @@ function InstituteDashboard() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Issue New Credential</h3>
               <p className="text-gray-500 dark:text-gray-400">Create and issue a new academic credential</p>
             </motion.button>
+            {/* Batch Processing Button */}
             <motion.button
               className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow"
               whileHover={{ scale: 1.02 }}
@@ -71,7 +81,7 @@ function InstituteDashboard() {
             </motion.button>
           </div>
 
-          {/* Stats Grid */}
+          {/* Statistics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {stats.map((stat, index) => (
               <motion.div
@@ -87,13 +97,14 @@ function InstituteDashboard() {
             ))}
           </div>
 
-          {/* Recent Activity */}
+          {/* Recent Activity Section */}
           <motion.div 
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h2>
+            {/* Activity List */}
             <div className="space-y-4">
               {[
                 { action: 'Credential Issued', student: 'John Doe', date: '2 hours ago' },
@@ -106,6 +117,7 @@ function InstituteDashboard() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
+                  {/* Activity Item Content */}
                   <div className="flex justify-between items-center">
                     <div>
                       <h3 className="text-lg font-medium text-gray-900 dark:text-white">

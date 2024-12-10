@@ -1,3 +1,4 @@
+// Import necessary React hooks and components for animations and page transitions
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PageTransition } from '../components/PageTransition'
@@ -5,9 +6,12 @@ import { useAuth } from '../contexts/AuthContext'
 import { useWeb3 } from '../contexts/Web3Context'
 
 function Profile() {
+  // Get authentication context and web3 account information
   const { user } = useAuth()
   const { account } = useWeb3()
+  // State for managing edit mode
   const [isEditing, setIsEditing] = useState(false)
+  // State for managing profile data
   const [profile, setProfile] = useState({
     name: 'Ritaban Ghosh',
     walletAddress: account || '0x1234...5678',
@@ -17,6 +21,7 @@ function Profile() {
     joinedDate: 'March 2024'
   })
 
+  // Handler for saving profile changes
   const handleSave = async (e) => {
     e.preventDefault()
     // Simulate save delay
@@ -26,20 +31,24 @@ function Profile() {
 
   return (
     <PageTransition>
+      {/* Main container with responsive padding */}
       <div className="relative min-h-screen py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
+          {/* Animated card container with fade-in effect */}
           <motion.div
             className="bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            {/* Profile Header */}
+            {/* Profile Header with gradient background */}
             <div className="px-6 py-8 bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-800 dark:to-primary-900">
               <div className="flex items-center">
+                {/* Avatar circle with first letter of name */}
                 <div className="h-24 w-24 rounded-full bg-white dark:bg-gray-700 flex items-center justify-center text-3xl font-bold text-primary-600">
                   {profile.name.charAt(0)}
                 </div>
+                {/* Name and role display */}
                 <div className="ml-6">
                   <h1 className="text-2xl font-bold text-white">{profile.name}</h1>
                   <p className="text-primary-100">{profile.role}</p>
@@ -47,8 +56,9 @@ function Profile() {
               </div>
             </div>
 
-            {/* Profile Content */}
+            {/* Profile Content Section */}
             <div className="px-6 py-8">
+              {/* Animated transition between edit and view modes */}
               <AnimatePresence mode="wait">
                 {isEditing ? (
                   <motion.form
@@ -59,6 +69,7 @@ function Profile() {
                     onSubmit={handleSave}
                     className="space-y-6"
                   >
+                    {/* Name input field */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Name
@@ -71,6 +82,7 @@ function Profile() {
                       />
                     </div>
 
+                    {/* Email input field */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Email
@@ -83,6 +95,7 @@ function Profile() {
                       />
                     </div>
 
+                    {/* Institution input field */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Institution
@@ -95,6 +108,7 @@ function Profile() {
                       />
                     </div>
 
+                    {/* Join date input field */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Joined Date
@@ -107,6 +121,7 @@ function Profile() {
                       />
                     </div>
 
+                    {/* Save button */}
                     <div className="mt-6">
                       <button
                         type="submit"
@@ -118,6 +133,7 @@ function Profile() {
                   </motion.form>
                 ) : (
                   <div className="mt-6">
+                    {/* Edit profile button */}
                     <div className="flex justify-end">
                       <button
                         onClick={() => setIsEditing(true)}
