@@ -30,11 +30,21 @@ function Navbar() {
     return '/'
   }
 
+  const getProfilePath = () => {
+    if (userType === userTypes.STUDENT) {
+      return '/student/profile'
+    }
+    if (userType === userTypes.INSTITUTE) {
+      return '/institution/profile'
+    }
+    return '/'
+  }
+
   const navLinks = [
     ['Dashboard', getDashboardPath()],
     ['Upload Credential', '/institution/upload-credential'],
     ['Verify Credential', '/verify'],
-    ['Profile', '/profile'],
+    ['Profile', getProfilePath()],
     ['About', '/about'],
     ['FAQ', '/faq']
   ]

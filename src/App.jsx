@@ -59,7 +59,6 @@ function App() {
               <Route path="dashboard" element={<InstituteDashboard />} />
               <Route path="upload-credential" element={<CredentialUpload />} />
               <Route path="profile" element={<Profile />} />
-              {/* Add other institution-specific routes here */}
             </Route>
 
             {/* Unauthorized Access Page */}
