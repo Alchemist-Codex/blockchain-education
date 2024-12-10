@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, Link } from 'react-router-dom'
+// Page imports
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
@@ -7,22 +8,28 @@ import SignIn from './pages/SignIn'
 import CredentialUpload from './pages/CredentialUpload'
 import CredentialVerification from './pages/CredentialVerification'
 import FAQ from './pages/FAQ'
+// Component imports
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+// Context imports
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Web3Provider } from './contexts/Web3Context'
 import ProtectedRoute from './components/ProtectedRoute'
 import { userTypes } from './utils/schema'
+// Dashboard variants
 import StudentDashboard from './pages/StudentDashboard'
 import InstituteDashboard from './pages/InstituteDashboard'
 
+/**
+ * Main App component that handles routing and layout structure
+ */
 function App() {
   return (
     <Web3Provider>
       <Router>
         <AuthProvider>
           <Routes>
-            {/* Public routes with navbar */}
+            {/* Public routes - accessible to all users */}
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
@@ -30,10 +37,10 @@ function App() {
               <Route path="/verify" element={<CredentialVerification />} />
             </Route>
 
-            {/* Authentication routes (no navbar) */}
+            {/* Authentication route - no navbar needed */}
             <Route path="/signin" element={<SignIn />} />
             
-            {/* Student protected routes */}
+            {/* Protected routes for students - requires student role */}
             <Route
               path="/student"
               element={
@@ -44,10 +51,9 @@ function App() {
             >
               <Route path="dashboard" element={<StudentDashboard />} />
               <Route path="profile" element={<Profile />} />
-              {/* Add other student-specific routes here */}
             </Route>
             
-            {/* Institution protected routes */}
+            {/* Protected routes for institutions - requires institute role */}
             <Route
               path="/institution"
               element={
@@ -61,10 +67,10 @@ function App() {
               <Route path="profile" element={<Profile />} />
             </Route>
 
-            {/* Unauthorized Access Page */}
+            {/* Route for unauthorized access attempts */}
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-            {/* Root redirect */}
+            {/* Smart redirect based on user role */}
             <Route 
               path="/" 
               element={
@@ -74,7 +80,7 @@ function App() {
               } 
             />
 
-            {/* Catch all route */}
+            {/* Fallback route - redirects unknown paths to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AuthProvider>
@@ -83,7 +89,10 @@ function App() {
   )
 }
 
-// Public layout with navbar
+/**
+ * Layout component for public pages
+ * Includes navbar and main content area
+ */
 function PublicLayout() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -95,7 +104,10 @@ function PublicLayout() {
   );
 }
 
-// Protected layout with navbar
+/**
+ * Layout component for protected pages
+ * Similar to PublicLayout but used for authenticated routes
+ */
 function ProtectedLayout() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -107,14 +119,19 @@ function ProtectedLayout() {
   );
 }
 
-// Component to handle role-based redirects
+/**
+ * Component that handles redirects based on user role
+ * Redirects to appropriate dashboard or signin page
+ */
 function RoleBasedRedirect() {
   const { user, userType } = useAuth();
   
+  // Redirect to signin if no user
   if (!user) {
     return <Navigate to="/signin" replace />;
   }
   
+  // Redirect based on user type
   switch (userType) {
     case userTypes.STUDENT:
       return <Navigate to="/student/dashboard" replace />;
@@ -126,7 +143,10 @@ function RoleBasedRedirect() {
   }
 }
 
-// Simple unauthorized page
+/**
+ * Component displayed when user attempts to access unauthorized content
+ * Provides a link back to their appropriate dashboard
+ */
 function UnauthorizedPage() {
   const { userType } = useAuth();
   

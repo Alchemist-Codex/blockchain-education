@@ -1,7 +1,12 @@
 import { motion } from 'framer-motion'
 import { PageTransition } from '../components/PageTransition'
 
+/**
+ * About Page Component
+ * Displays information about Academic Chain, features, and team members
+ */
 function About() {
+  // Platform features data
   const features = [
     {
       title: "Blockchain-Based Verification",
@@ -25,6 +30,7 @@ function About() {
     }
   ]
 
+  // Team members data
   const teamMembers = [
     {
       name: "Ritaban Ghosh",
@@ -50,10 +56,9 @@ function About() {
 
   return (
     <PageTransition>
-      
       <div className="relative min-h-screen py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          {/* Hero Section */}
+          {/* Hero Section with animated entrance */}
           <motion.div 
             className="text-center mb-16"
             initial={{ opacity: 0, y: 20 }}
@@ -68,7 +73,7 @@ function About() {
             </p>
           </motion.div>
 
-          {/* Mission Section */}
+          {/* Mission Statement with delayed animation */}
           <motion.div 
             className="mb-20"
             initial={{ opacity: 0, y: 20 }}
@@ -84,7 +89,7 @@ function About() {
             </p>
           </motion.div>
 
-          {/* Features Grid */}
+          {/* Features Grid with hover animations */}
           <motion.div 
             className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20"
             initial={{ opacity: 0, y: 20 }}
@@ -109,11 +114,12 @@ function About() {
             ))}
           </motion.div>
 
-          {/* Team Section */}
+          {/* Team Section with member cards */}
           <motion.div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-12">
               Our Team
             </h2>
+            {/* Responsive grid for team members */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 max-w-7xl mx-auto px-4">
               {teamMembers.map((member, index) => (
                 <motion.div
@@ -122,6 +128,7 @@ function About() {
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.2 }}
                 >
+                  {/* Member photo with fallback */}
                   <div className="relative w-32 h-32 mx-auto mb-4 group">
                     <img
                       src={member.image}

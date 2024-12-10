@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
 import { pinataService } from '../services/pinataService'
 
+// Configuration constants for IPFS gateways and CORS proxies
 const GATEWAY_URL = 'rose-hollow-mollusk-554.mypinata.cloud';
 const CORS_PROXIES = [
   'https://api.allorigins.win/raw?url=',
@@ -10,22 +11,32 @@ const CORS_PROXIES = [
   'https://cors.eu.org/'
 ];
 
+/**
+ * CredentialVerification Component
+ * Handles verification of academic credentials using IPFS and blockchain
+ */
 function CredentialVerification() {
   const { web3Service } = useWeb3();
-  const [verificationStatus, setVerificationStatus] = useState(null)
-  const [isVerifying, setIsVerifying] = useState(false)
-  const [isDownloading, setIsDownloading] = useState(false)
-  const [credentialId, setCredentialId] = useState('')
-  const [credentialDetails, setCredentialDetails] = useState(null)
-  const [error, setError] = useState(null)
+  
+  // State management
+  const [verificationStatus, setVerificationStatus] = useState(null)  // Status of verification process
+  const [isVerifying, setIsVerifying] = useState(false)              // Verification in progress
+  const [isDownloading, setIsDownloading] = useState(false)          // Download in progress
+  const [credentialId, setCredentialId] = useState('')               // IPFS CID input
+  const [credentialDetails, setCredentialDetails] = useState(null)   // Verified credential data
+  const [error, setError] = useState(null)                           // Error state
 
+  /**
+   * Handles credential verification process
+   * Validates CID and fetches metadata from IPFS
+   */
   const handleVerification = async (e) => {
     e.preventDefault()
     setIsVerifying(true)
     setError(null)
     
     try {
-      // Check if input is a valid metadata CID
+      // Validate CID format
       if (!credentialId.startsWith('bafk')) {
         throw new Error('Please enter a valid metadata CID (starts with "bafk")')
       }
@@ -33,18 +44,19 @@ function CredentialVerification() {
       console.log('Fetching metadata from Pinata:', credentialId)
       
       try {
-        // Fetch the metadata using the CID
+        // Fetch and validate metadata
         const metadata = await pinataService.main(credentialId)
         
         if (!metadata) {
           throw new Error('No metadata found')
         }
 
-        // Accept both bafy and bafk prefixes for image hashes
+        // Validate image hash format
         if (!metadata.imageHash?.startsWith('baf')) {
           console.warn('Image hash format unexpected:', metadata.imageHash)
         }
 
+        // Set verification details
         setCredentialDetails({
           ...metadata,
           blockchainHash: 'Verified from IPFS',
@@ -65,6 +77,10 @@ function CredentialVerification() {
     }
   }
 
+  /**
+   * Handles certificate download
+   * Attempts download through multiple CORS proxies
+   */
   const handleDownload = async () => {
     if (!credentialDetails?.imageHash || isDownloading) return;
     setIsDownloading(true);
@@ -75,12 +91,14 @@ function CredentialVerification() {
     let activeUrl = null;
 
     try {
-      // Try each CORS proxy until one works
+      // Try each CORS proxy until successful
       for (const proxy of CORS_PROXIES) {
         try {
+          // Construct download URL with Pinata gateway token
           const downloadUrl = `https://${GATEWAY_URL}/ipfs/${credentialDetails.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
           const proxyUrl = `${proxy}${encodeURIComponent(downloadUrl)}`;
           
+          // Set up request with timeout
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -97,10 +115,8 @@ function CredentialVerification() {
             throw new Error(`Download failed: ${response.status}`);
           }
 
+          // Determine file type and extension
           const contentType = response.headers.get('content-type');
-          console.log('Content type:', contentType); // Debug log
-
-          // More specific content type checking
           let fileExtension;
           if (contentType?.includes('jpeg') || contentType?.includes('jpg')) {
             fileExtension = 'jpg';
@@ -109,36 +125,30 @@ function CredentialVerification() {
           } else if (contentType?.includes('pdf')) {
             fileExtension = 'pdf';
           } else {
-            // Try to get extension from original filename if available
             fileExtension = credentialDetails.originalFileName?.split('.').pop() || 'file';
           }
 
+          // Create and trigger download
           const blob = await response.blob();
-          
-          // Create download link
           activeUrl = window.URL.createObjectURL(blob);
           activeLink = document.createElement('a');
           activeLink.href = activeUrl;
           
-          // Use original filename if available, otherwise generate one
+          // Generate filename
           const fileName = credentialDetails.originalFileName || 
             `${credentialDetails.institution}_${credentialDetails.credentialType}_${credentialDetails.studentName}`
               .replace(/[^a-zA-Z0-9]/g, '_')
               .toLowerCase() + '.' + fileExtension;
           
           activeLink.download = fileName;
-          
-          // Trigger download
           document.body.appendChild(activeLink);
           activeLink.click();
-          
-          // Success - break the loop
           break;
         } catch (error) {
           console.warn(`Download failed with proxy ${proxy}:`, error);
           downloadError = error;
           
-          // Cleanup on error
+          // Clean up failed attempt
           if (activeUrl) {
             window.URL.revokeObjectURL(activeUrl);
             activeUrl = null;
@@ -156,7 +166,7 @@ function CredentialVerification() {
         setError('Failed to download certificate. Please try again.');
       }
     } finally {
-      // Ensure cleanup happens after a delay
+      // Clean up resources after delay
       setTimeout(() => {
         if (activeUrl) {
           window.URL.revokeObjectURL(activeUrl);
@@ -165,10 +175,15 @@ function CredentialVerification() {
           activeLink.parentNode.removeChild(activeLink);
         }
         setIsDownloading(false);
-      }, 1500); // Increased delay to ensure download starts
+      }, 1500);
     }
   };
 
+  // Component render with sections for:
+  // - Header
+  // - Verification form
+  // - Results display
+  // - How it works section
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 transition-colors duration-200">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">

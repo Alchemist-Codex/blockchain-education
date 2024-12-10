@@ -1,3 +1,4 @@
+// Import necessary dependencies and components
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,12 +10,16 @@ import { motion } from 'framer-motion';
 import { FcGoogle } from 'react-icons/fc';
 
 function SignIn() {
+  // Hooks for navigation and authentication
   const navigate = useNavigate();
   const { signInWithGoogle, loading } = useAuth();
   const { account, connect } = useWeb3();
+  
+  // State management for user type selection and sign-in status
   const [selectedUserType, setSelectedUserType] = useState(userTypes.STUDENT);
   const [isSigningIn, setIsSigningIn] = useState(false);
 
+  // Handler for connecting wallet
   const handleWalletConnect = async () => {
     try {
       await connect();
@@ -23,15 +28,17 @@ function SignIn() {
     }
   };
 
+  // Handler for Google Sign In process
   const handleGoogleSignIn = async () => {
     try {
       setIsSigningIn(true);
+      // Ensure wallet is connected before proceeding
       if (!account) {
         await handleWalletConnect();
       }
       const user = await signInWithGoogle(selectedUserType);
       
-      // Redirect based on user type
+      // Navigate to appropriate dashboard based on user type
       if (selectedUserType === userTypes.STUDENT) {
         navigate('/student/dashboard');
       } else {
@@ -46,20 +53,25 @@ function SignIn() {
 
   return (
     <PageTransition>
+      {/* Main container with responsive padding */}
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+        {/* Animated content container */}
         <motion.div
           className="max-w-md w-full space-y-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
+          {/* Header section */}
           <div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
               Sign in to your account
             </h2>
           </div>
           
+          {/* Sign in form section */}
           <div className="mt-8 space-y-6">
+            {/* User type selection buttons */}
             <div className="flex justify-center space-x-4 mb-4">
               <button
                 onClick={() => setSelectedUserType(userTypes.STUDENT)}
@@ -83,11 +95,13 @@ function SignIn() {
               </button>
             </div>
 
+            {/* Google Sign In button */}
             <button
               onClick={handleGoogleSignIn}
               disabled={loading || isSigningIn}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
             >
+              {/* Google icon */}
               <span className="absolute left-0 inset-y-0 flex items-center pl-3">
                 <FcGoogle className="h-5 w-5" />
               </span>

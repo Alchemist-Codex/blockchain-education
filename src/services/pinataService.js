@@ -1,7 +1,8 @@
+// Dedicated Pinata gateway URL and authentication token
 const GATEWAY_URL = 'rose-hollow-mollusk-554.mypinata.cloud';
 const GATEWAY_TOKEN = import.meta.env.VITE_GATEWAY_KEY;
 
-// Multiple IPFS gateways for redundancy
+// Array of public IPFS gateways for fallback and redundancy
 const GATEWAYS = [
   'https://ipfs.io/ipfs/',
   'https://cloudflare-ipfs.com/ipfs/',
@@ -10,7 +11,7 @@ const GATEWAYS = [
   'https://ipfs.fleek.co/ipfs/'
 ];
 
-// Different CORS proxies in case one fails
+// Array of CORS proxy services to handle cross-origin requests
 const CORS_PROXIES = [
   'https://api.allorigins.win/raw?url=',
   'https://corsproxy.io/?',
@@ -18,6 +19,7 @@ const CORS_PROXIES = [
 ];
 
 export const pinataService = {
+  // Main function to fetch metadata from IPFS using CID (Content Identifier)
   async main(cid) {
     try {
       console.log('Starting fetch from gateway:', new Date().toISOString());
@@ -25,13 +27,15 @@ export const pinataService = {
       let metadata = null;
       let lastError = null;
 
-      // Try each combination of gateway and proxy with timeout
+      // Iterate through each gateway and proxy combination
       for (const gateway of GATEWAYS) {
         for (const proxy of CORS_PROXIES) {
           try {
+            // Set up request timeout handling
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
+            // Attempt to fetch metadata using current gateway and proxy
             const response = await fetch(
               `${proxy}${encodeURIComponent(`${gateway}${cid}`)}`, 
               {
@@ -49,6 +53,7 @@ export const pinataService = {
               break;
             }
           } catch (error) {
+            // Log failure and continue to next combination
             console.warn(`Gateway ${gateway} with proxy ${proxy} failed:`, error);
             lastError = error;
             continue;
@@ -57,7 +62,7 @@ export const pinataService = {
         if (metadata) break;
       }
 
-      // If all proxies fail, try direct Pinata gateway
+      // Fallback to dedicated Pinata gateway if all public gateways fail
       if (!metadata) {
         try {
           const response = await fetch(`https://${GATEWAY_URL}/ipfs/${cid}?pinataGatewayToken=${GATEWAY_TOKEN}`);
@@ -70,18 +75,20 @@ export const pinataService = {
         }
       }
 
+      // Throw error if all attempts fail
       if (!metadata) {
         throw lastError || new Error('Failed to fetch metadata from all gateways');
       }
 
       console.log('Received metadata:', new Date().toISOString());
 
-      // Use Pinata gateway for images since they're loaded directly by img tag
+      // Construct image URL using dedicated Pinata gateway for reliable access
       let imageUrl = '';
       if (metadata.imageHash) {
         imageUrl = `https://${GATEWAY_URL}/ipfs/${metadata.imageHash}?pinataGatewayToken=${GATEWAY_TOKEN}`;
       }
 
+      // Return structured credential metadata with image URL
       return {
         credentialType: metadata.credentialType,
         institution: metadata.institution,

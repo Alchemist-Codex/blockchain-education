@@ -1,7 +1,15 @@
+/**
+ * Footer Component
+ * Displays the website footer with navigation links and social connections
+ * Uses a responsive grid layout that adapts from 1 to 3 columns
+ */
 function Footer() {
   return (
+    // Main footer container with dark theme support
     <footer className="bg-gray-800 dark:bg-gray-900 text-white py-12">
+      {/* Content wrapper with responsive padding */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Grid container - 1 column on mobile, 3 columns on medium screens and up */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* About Section */}
           <div>
@@ -11,10 +19,11 @@ function Footer() {
             </p>
           </div>
 
-          {/* Quick Links */}
+          {/* Quick Links Section - Internal Navigation */}
           <div>
             <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
             <div className="space-y-2">
+              {/* Internal navigation links with hover effects */}
               <a href="/about" className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors">
                 About Us
               </a>
@@ -27,18 +36,20 @@ function Footer() {
             </div>
           </div>
 
-          {/* Connect Section */}
+          {/* Connect Section - External Links */}
           <div>
             <h4 className="text-lg font-semibold mb-4">Connect With Us</h4>
             <div className="space-y-2">
+              {/* External links with security attributes */}
               <a 
                 href="https://github.com/ritaban06/blockchain-education" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
-                rel="noopener noreferrer"
+                rel="noopener noreferrer" // Security best practice for external links
               >
                 Github
               </a>
+              {/* Team member social links */}
               <a 
                 href="https://linktr.ee/ritaban06" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
@@ -55,6 +66,7 @@ function Footer() {
               >
                 Koustav's Socials
               </a>
+              {/* Placeholder links for team members */}
               <a 
                 href="" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
@@ -75,7 +87,7 @@ function Footer() {
           </div>
         </div>
 
-        {/* Footer Bottom */}
+        {/* Copyright Section */}
         <div className="border-t border-gray-700 dark:border-gray-600 mt-8 pt-8 text-center text-gray-400 dark:text-gray-300">
           <p>&copy; 2024 Academic Chain. All rights reserved.</p>
         </div>

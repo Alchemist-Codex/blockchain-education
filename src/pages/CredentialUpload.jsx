@@ -6,32 +6,44 @@ import { toast } from 'react-hot-toast'
 import { ipfsService } from '../services/ipfsService'
 import BlockchainVideo from '../components/BlockchainVideo'
 
+/**
+ * CredentialUpload Component
+ * Handles the upload and issuance of academic credentials to the blockchain
+ */
 function CredentialUpload() {
+  // Web3 context for blockchain interaction
   const { account, contract } = useWeb3();
-  const [step, setStep] = useState(1)
-  const [uploading, setUploading] = useState(false)
-  const [imagePreview, setImagePreview] = useState(null)
+  
+  // Component state management
+  const [step, setStep] = useState(1)                  // Current step in upload process
+  const [uploading, setUploading] = useState(false)    // IPFS upload state
+  const [imagePreview, setImagePreview] = useState(null) // Preview of uploaded file
   const [formData, setFormData] = useState({
-    studentAddress: '',
-    studentName: '',
-    credentialType: '',
-    institution: '',
-    file: null
+    studentAddress: '',    // Student's wallet address
+    studentName: '',       // Student's name
+    credentialType: '',    // Type of credential
+    institution: '',       // Issuing institution
+    file: null            // Credential file
   })
   const [isBlockchainUploading, setIsBlockchainUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Animation configuration
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6 }
   }
 
+  /**
+   * Handles file upload and validation
+   * Validates file type and size, creates preview
+   */
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type with more explicit formats
+    // File type validation
     const validTypes = [
       'image/jpeg',
       'image/jpg',
@@ -44,22 +56,21 @@ function CredentialUpload() {
       return;
     }
 
-    // Validate file size (5MB max)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    // File size validation (5MB max)
+    const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       toast.error('File size should be less than 5MB');
       return;
     }
 
+    // Create file preview
     try {
-      // Only create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
 
-      // Store file for later upload
       setFormData(prev => ({
         ...prev,
         file: file
@@ -71,30 +82,23 @@ function CredentialUpload() {
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
+  /**
+   * Handles form submission and credential issuance
+   * Uploads to IPFS and records on blockchain
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validation checks
     if (isSubmitting) return;
-    
     if (!formData.file) {
       toast.error('Please upload a certificate file first');
       return;
     }
-
-    // Check MetaMask connection first
     if (!account) {
       toast.error('Please connect your wallet first');
       return;
     }
-
     if (!contract) {
       toast.error('Smart contract not initialized');
       return;
@@ -104,7 +108,7 @@ function CredentialUpload() {
       setIsSubmitting(true);
       setIsBlockchainUploading(true);
 
-      // Request MetaMask account access
+      // MetaMask connection check
       const accounts = await window.ethereum.request({ 
         method: 'eth_requestAccounts' 
       });
@@ -113,10 +117,10 @@ function CredentialUpload() {
         throw new Error('No authorized account found');
       }
 
-      // First upload file to IPFS
+      // IPFS upload process
       const { hash, url } = await ipfsService.uploadImage(formData.file);
 
-      // Create credential metadata
+      // Create and upload metadata
       const metadata = {
         studentName: formData.studentName,
         studentAddress: formData.studentAddress,
@@ -131,7 +135,7 @@ function CredentialUpload() {
       // Upload metadata to IPFS
       const metadataHash = await ipfsService.uploadJSON(metadata);
 
-      // Generate certificate hash without using ethers.utils
+      // Generate certificate hash
       const certificateString = JSON.stringify(metadata);
       const encoder = new TextEncoder();
       const data = encoder.encode(certificateString);
@@ -139,7 +143,7 @@ function CredentialUpload() {
       const hashArray = Array.from(new Uint8Array(certificateHash));
       const hashHex = '0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-      // Send transaction to blockchain
+      // Record on blockchain
       const tx = await contract.issueCredential(
         formData.studentAddress,
         hashHex,
@@ -149,7 +153,6 @@ function CredentialUpload() {
 
       await tx.wait();
       
-      // Success! Move to next step
       setStep(2);
       toast.success('Certificate issued successfully!');
 
@@ -162,6 +165,7 @@ function CredentialUpload() {
     }
   };
 
+  // JSX rendering with conditional components based on upload state
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">

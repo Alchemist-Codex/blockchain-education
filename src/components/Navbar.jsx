@@ -6,11 +6,20 @@ import { useAuth } from '../contexts/AuthContext'
 import { userTypes } from '../utils/schema'
 import MetaMaskConnect from './MetaMaskConnect'
 
+/**
+ * Navbar Component
+ * Main navigation component with responsive design and mobile menu
+ * Handles user authentication state and role-based navigation
+ */
 function Navbar() {
+  // State and hooks
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { user, signOut, userType } = useAuth()
   const navigate = useNavigate()
 
+  /**
+   * Handles user sign out and navigation
+   */
   const handleSignOut = async () => {
     try {
       await signOut()
@@ -20,6 +29,9 @@ function Navbar() {
     }
   }
 
+  /**
+   * Determines dashboard path based on user type
+   */
   const getDashboardPath = () => {
     if (userType === userTypes.STUDENT) {
       return '/student/dashboard'
@@ -30,6 +42,9 @@ function Navbar() {
     return '/'
   }
 
+  /**
+   * Determines profile path based on user type
+   */
   const getProfilePath = () => {
     if (userType === userTypes.STUDENT) {
       return '/student/profile'
@@ -40,6 +55,7 @@ function Navbar() {
     return '/'
   }
 
+  // Navigation links configuration
   const navLinks = [
     ['Dashboard', getDashboardPath()],
     ['Upload Credential', '/institution/upload-credential'],
@@ -53,14 +69,16 @@ function Navbar() {
     <nav className="bg-white dark:bg-gray-800 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          {/* Logo */}
+          {/* Logo and brand name */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
+              {/* Light mode logo */}
               <img
                 src="/logo-white.png"
                 alt="Academic Chain Logo"
                 className="h-8 w-8 mr-2 dark:hidden"
               />
+              {/* Dark mode logo */}
               <img
                 src="/logo-dark.png"
                 alt="Academic Chain Logo"
@@ -72,7 +90,7 @@ function Navbar() {
             </Link>
           </div>
   
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation Links */}
           <div className="hidden sm:flex sm:items-center sm:space-x-8">
             {user && navLinks.map(([title, path]) => (
               <Link
@@ -85,10 +103,12 @@ function Navbar() {
             ))}
           </div>
   
-          {/* User Controls */}
+          {/* User Controls Section */}
           <div className="flex items-center space-x-4">
             {user ? (
+              // Authenticated user display and controls
               <div className="flex items-center space-x-4">
+                {/* User avatar and name */}
                 <div className="flex items-center space-x-2">
                   <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
                     {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}

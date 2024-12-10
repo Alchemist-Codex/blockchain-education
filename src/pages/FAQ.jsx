@@ -1,15 +1,22 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
+/**
+ * FAQ Component
+ * Displays frequently asked questions in an accordion format
+ */
 function FAQ() {
+  // Track which FAQ item is currently open
   const [openIndex, setOpenIndex] = useState(null)
 
+  // Animation configuration for fade-in effect
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6 }
   }
 
+  // FAQ data organized by categories
   const faqs = [
     {
       category: "General",
@@ -63,7 +70,7 @@ function FAQ() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 transition-colors duration-200">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Section */}
+        {/* Page Header */}
         <motion.div 
           className="text-center mb-16"
           {...fadeIn}
@@ -76,7 +83,7 @@ function FAQ() {
           </p>
         </motion.div>
 
-        {/* Search Bar */}
+        {/* Search Input */}
         <motion.div 
           className="mb-12"
           {...fadeIn}
@@ -89,6 +96,7 @@ function FAQ() {
                        bg-white dark:bg-gray-800 text-gray-900 dark:text-white
                        focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
             />
+            {/* Search Icon */}
             <svg
               className="absolute right-3 top-3 h-6 w-6 text-gray-400 dark:text-gray-500"
               fill="none"
@@ -105,7 +113,7 @@ function FAQ() {
           </div>
         </motion.div>
 
-        {/* FAQ Categories */}
+        {/* FAQ Categories with Accordion */}
         {faqs.map((category, categoryIndex) => (
           <motion.div
             key={category.category}
@@ -114,9 +122,11 @@ function FAQ() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: categoryIndex * 0.1 }}
           >
+            {/* Category Title */}
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               {category.category}
             </h2>
+            {/* Questions List */}
             <div className="space-y-4">
               {category.questions.map((faq, index) => {
                 const isOpen = openIndex === `${categoryIndex}-${index}`
@@ -127,6 +137,7 @@ function FAQ() {
                     className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden"
                     initial={false}
                   >
+                    {/* Question Button with Toggle Arrow */}
                     <motion.button
                       className="w-full px-6 py-4 flex justify-between items-center text-left"
                       onClick={() => setOpenIndex(isOpen ? null : `${categoryIndex}-${index}`)}
@@ -134,6 +145,7 @@ function FAQ() {
                       <span className="text-gray-900 dark:text-white font-medium">
                         {faq.question}
                       </span>
+                      {/* Animated Arrow Icon */}
                       <motion.svg
                         className="w-5 h-5 text-gray-500 dark:text-gray-400"
                         fill="none"
@@ -149,6 +161,7 @@ function FAQ() {
                         />
                       </motion.svg>
                     </motion.button>
+                    {/* Animated Answer Panel */}
                     <AnimatePresence>
                       {isOpen && (
                         <motion.div
@@ -171,7 +184,7 @@ function FAQ() {
           </motion.div>
         ))}
 
-        {/* Contact Support Section */}
+        {/* Support Section */}
         <motion.div 
           className="mt-16 text-center bg-white dark:bg-gray-800 rounded-xl p-8"
           {...fadeIn}
@@ -182,6 +195,7 @@ function FAQ() {
           <p className="text-gray-600 dark:text-gray-300 mb-6">
             Can't find the answer you're looking for? Please contact our support team.
           </p>
+          {/* Animated Support Button */}
           <motion.button
             className="px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white rounded-lg
                      hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"

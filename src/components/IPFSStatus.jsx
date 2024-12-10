@@ -2,13 +2,23 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ipfsService } from '../services/ipfsService';
 
+/**
+ * IPFSStatus Component
+ * Displays a floating status indicator for IPFS connection
+ * Includes detailed troubleshooting information and connection checking
+ */
 function IPFSStatus() {
-  const [status, setStatus] = useState('checking');
-  const [lastChecked, setLastChecked] = useState(null);
-  const [showDetails, setShowDetails] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [corsError, setCorsError] = useState(false);
+  // State management for component
+  const [status, setStatus] = useState('checking');        // Current connection status
+  const [lastChecked, setLastChecked] = useState(null);    // Timestamp of last check
+  const [showDetails, setShowDetails] = useState(false);   // Controls detail panel visibility
+  const [errorMessage, setErrorMessage] = useState('');    // Stores error messages
+  const [corsError, setCorsError] = useState(false);       // Specific flag for CORS errors
 
+  /**
+   * Attempts to connect to IPFS node and updates status
+   * Handles different types of errors, including CORS issues
+   */
   const checkConnection = async () => {
     try {
       const nodeInfo = await ipfsService.testConnection();
@@ -23,7 +33,7 @@ function IPFSStatus() {
       console.error('IPFS connection error:', error);
       setStatus('error');
       
-      // Check for CORS error
+      // Special handling for CORS errors
       if (error.message.includes('CORS')) {
         setCorsError(true);
         setErrorMessage('CORS Error: IPFS connection blocked. Check IPFS Desktop settings.');
@@ -36,12 +46,16 @@ function IPFSStatus() {
     }
   };
 
+  // Set up periodic connection checking
   useEffect(() => {
     checkConnection();
-    const interval = setInterval(checkConnection, 30000);
-    return () => clearInterval(interval);
+    const interval = setInterval(checkConnection, 30000); // Check every 30 seconds
+    return () => clearInterval(interval); // Cleanup on unmount
   }, []);
 
+  /**
+   * Helper function to determine status indicator color
+   */
   const getStatusColor = () => {
     switch (status) {
       case 'connected': return 'bg-green-500';
@@ -50,6 +64,9 @@ function IPFSStatus() {
     }
   };
 
+  /**
+   * Helper function to get human-readable status text
+   */
   const getStatusText = () => {
     switch (status) {
       case 'connected': return 'IPFS Connected';
@@ -58,11 +75,15 @@ function IPFSStatus() {
     }
   };
 
+  /**
+   * Renders appropriate troubleshooting steps based on error type
+   */
   const getTroubleshootingSteps = () => (
     <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
       <p className="font-medium mb-2">Troubleshooting Steps:</p>
       <ol className="list-decimal list-inside space-y-1">
         {corsError ? (
+          // CORS-specific troubleshooting steps
           <>
             <li>Open IPFS Desktop Settings</li>
             <li>Add these CORS headers:
@@ -77,6 +98,7 @@ function IPFSStatus() {
             <li>Save settings and restart IPFS Desktop</li>
           </>
         ) : (
+          // General troubleshooting steps
           <>
             <li>Ensure IPFS Desktop is running</li>
             <li>Check your internet connection</li>
@@ -88,11 +110,14 @@ function IPFSStatus() {
   );
 
   return (
+    // Fixed position container for status indicator
     <div className="fixed bottom-4 right-4 z-50">
+      {/* Animated container with hover effect */}
       <motion.div
         className="relative"
         whileHover={{ scale: showDetails ? 1 : 1.05 }}
       >
+        {/* Status button */}
         <button
           onClick={() => setShowDetails(!showDetails)}
           className={`flex items-center space-x-2 px-4 py-2 rounded-full 
@@ -105,6 +130,7 @@ function IPFSStatus() {
           </span>
         </button>
 
+        {/* Animated details panel */}
         <AnimatePresence>
           {showDetails && (
             <motion.div

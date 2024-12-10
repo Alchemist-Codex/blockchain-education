@@ -4,12 +4,17 @@ import { useAuth } from '../contexts/AuthContext'
 import { getUserProfile } from '../services/userService'
 import { PageTransition } from '../components/PageTransition'
 
-
+/**
+ * Dashboard Component
+ * Main user interface showing credentials overview and recent activity
+ */
 function Dashboard() {
+  // Authentication and user state
   const { user, loading } = useAuth();
   const [userProfile, setUserProfile] = useState(null);
-  const [activeTab, setActiveTab] = useState('issued')
+  const [activeTab, setActiveTab] = useState('issued') // Track active credentials tab
 
+  // Fetch user profile data on mount or user change
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (user) {
@@ -20,12 +25,14 @@ function Dashboard() {
     fetchUserProfile();
   }, [user]);
 
+  // Animation configuration
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6 }
   }
 
+  // Mock statistics data
   const stats = [
     { label: 'Total Credentials', value: '12' },
     { label: 'Issued', value: '8' },
@@ -42,12 +49,12 @@ function Dashboard() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          {/* Welcome Section */}
+          {/* Welcome Banner with animated background */}
           <motion.div 
             className="bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-800 dark:to-primary-900 rounded-2xl p-8 text-white mb-8 relative overflow-hidden"
             {...fadeIn}
           >
-            {/* Animated background elements */}
+            {/* Floating background circles animation */}
             <motion.div
               className="absolute inset-0 opacity-20"
               initial={{ opacity: 0 }}
@@ -76,6 +83,7 @@ function Dashboard() {
               ))}
             </motion.div>
 
+            {/* Welcome message with loading state */}
             <div className="relative z-10">
               <AnimatePresence mode="wait">
                 <motion.h1 
@@ -101,7 +109,7 @@ function Dashboard() {
             </div>
           </motion.div>
 
-          {/* Stats Grid */}
+          {/* Statistics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {stats.map((stat, index) => (
               <motion.div
@@ -117,11 +125,12 @@ function Dashboard() {
             ))}
           </div>
 
-          {/* Recent Activity */}
+          {/* Recent Activity Section */}
           <motion.div 
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 mb-8"
             {...fadeIn}
           >
+            {/* Activity List with status indicators */}
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h2>
             <div className="space-y-4">
               {[
@@ -153,12 +162,12 @@ function Dashboard() {
             </div>
           </motion.div>
 
-          {/* Credentials Section */}
+          {/* Credentials Section with Tabs */}
           <motion.div 
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6"
             {...fadeIn}
           >
-            {/* Tabs */}
+            {/* Tab Navigation */}
             <div className="flex space-x-4 border-b border-gray-200 dark:border-gray-700 mb-6">
               {['issued', 'received'].map((tab) => (
                 <button
@@ -171,6 +180,7 @@ function Dashboard() {
                   }`}
                 >
                   {tab} Credentials
+                  {/* Animated tab indicator */}
                   {activeTab === tab && (
                     <motion.div
                       className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600 dark:bg-primary-400"
@@ -181,7 +191,7 @@ function Dashboard() {
               ))}
             </div>
 
-            {/* Credentials List */}
+            {/* Credentials List with animations */}
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
@@ -191,7 +201,7 @@ function Dashboard() {
                 transition={{ duration: 0.3 }}
                 className="space-y-4"
               >
-                {/* Sample Credential Cards */}
+                {/* Sample credential cards with hover effects */}
                 {[1, 2, 3].map((item) => (
                   <motion.div
                     key={item}
