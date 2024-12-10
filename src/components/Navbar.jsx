@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import ThemeToggle from './ThemeToggle'
 import { useAuth } from '../contexts/AuthContext'
+import { userTypes } from '../utils/schema'
+import MetaMaskConnect from './MetaMaskConnect'
 
 function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { user, signOut } = useAuth()
+  const { user, signOut, userType } = useAuth()
   const navigate = useNavigate()
 
   const handleSignOut = async () => {
@@ -18,9 +20,19 @@ function Navbar() {
     }
   }
 
+  const getDashboardPath = () => {
+    if (userType === userTypes.STUDENT) {
+      return '/student/dashboard'
+    }
+    if (userType === userTypes.INSTITUTE) {
+      return '/institution/dashboard'
+    }
+    return '/'
+  }
+
   const navLinks = [
-    ['Dashboard', '/dashboard'],
-    ['Upload Credential', '/upload'],
+    ['Dashboard', getDashboardPath()],
+    ['Upload Credential', '/institution/upload-credential'],
     ['Verify Credential', '/verify'],
     ['Profile', '/profile'],
     ['About', '/about'],
