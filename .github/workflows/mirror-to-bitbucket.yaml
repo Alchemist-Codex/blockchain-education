@@ -17,9 +17,9 @@ jobs:
           fetch-depth: 0 # Fetch all branches and history (not just the latest commit)
 
       - name: Mirror to Bitbucket
-        run: |
-          git remote add bitbucket https://ritaban2006@bitbucket.org/ritaban2006/blockchain-education.git
-          git push --mirror bitbucket
         env:
-          GIT_USERNAME: ${{ secrets.BITBUCKET_USERNAME }}
-          GIT_PASSWORD: ${{ secrets.BITBUCKET_APP_PASSWORD }}
+          BITBUCKET_USERNAME: ${{ secrets.BITBUCKET_USERNAME }}
+          BITBUCKET_APP_PASSWORD: ${{ secrets.BITBUCKET_APP_PASSWORD }}
+        run: |
+          git remote add bitbucket https://$BITBUCKET_USERNAME:$BITBUCKET_APP_PASSWORD@bitbucket.org/ritaban2006/blockchain-education.git
+          git push --mirror bitbucket
