@@ -1,12 +1,10 @@
 name: Mirror to Bitbucket
-
 on:
   push:
     branches:
       - '**'        # Trigger on pushes to any branch
     tags:
       - '**'        # Trigger on pushes to any tag
-
 jobs:
   mirror:
     runs-on: ubuntu-latest
@@ -15,11 +13,14 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Fetch all branches and history (not just the latest commit)
-
+      
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.BITBUCKET_SSH_PRIVATE_KEY }}
+      
       - name: Mirror to Bitbucket
-        env:
-          BITBUCKET_USERNAME: ${{ secrets.BITBUCKET_USERNAME }}
-          BITBUCKET_APP_PASSWORD: ${{ secrets.BITBUCKET_APP_PASSWORD }}
         run: |
-          git remote add bitbucket https://$BITBUCKET_USERNAME:$BITBUCKET_APP_PASSWORD@bitbucket.org/ritaban2006/blockchain-education.git
+          ssh-keyscan bitbucket.org >> ~/.ssh/known_hosts
+          git remote add bitbucket git@bitbucket.org:ritaban2006/blockchain-education.git
           git push --mirror bitbucket
