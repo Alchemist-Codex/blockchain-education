@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom'
 import HomePage from './pages/HomePage'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
@@ -9,113 +9,58 @@ import CredentialVerification from './pages/CredentialVerification'
 import FAQ from './pages/FAQ'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
-import { AuthProvider } from './contexts/AuthContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Web3Provider } from './contexts/Web3Context'
 import ProtectedRoute from './components/ProtectedRoute'
+import { userTypes } from './utils/schema'
+import StudentDashboard from './pages/StudentDashboard'
+import InstituteDashboard from './pages/InstituteDashboard'
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <Web3Provider>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <Web3Provider>
+      <Router>
+        <AuthProvider>
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             <Routes>
-              {/* Public Routes */}
+              {/* Public routes */}
               <Route path="/signin" element={<SignIn />} />
-
-              {/* Protected Routes */}
-              <Route
-                path="/"
+              
+              {/* Root redirect based on user type */}
+              <Route 
+                path="/" 
                 element={
                   <ProtectedRoute>
+                    <RoleBasedRedirect />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Student Routes */}
+              <Route
+                path="/student/dashboard"
+                element={
+                  <ProtectedRoute requiredUserType={userTypes.STUDENT}>
                     <div className="flex flex-col min-h-screen">
                       <Navbar />
                       <div className="flex-grow">
-                        <HomePage />
+                        <StudentDashboard />
                       </div>
                       <Footer />
                     </div>
                   </ProtectedRoute>
                 }
               />
+              
+              {/* Institution Routes */}
               <Route
-                path="/dashboard"
+                path="/institution/dashboard"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredUserType={userTypes.INSTITUTE}>
                     <div className="flex flex-col min-h-screen">
                       <Navbar />
                       <div className="flex-grow">
-                        <Dashboard />
-                      </div>
-                      <Footer />
-                    </div>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <div className="flex flex-col min-h-screen">
-                      <Navbar />
-                      <div className="flex-grow">
-                        <Profile />
-                      </div>
-                      <Footer />
-                    </div>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/about"
-                element={
-                  <ProtectedRoute>
-                    <div className="flex flex-col min-h-screen">
-                      <Navbar />
-                      <div className="flex-grow">
-                        <About />
-                      </div>
-                      <Footer />
-                    </div>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/upload"
-                element={
-                  <ProtectedRoute>
-                    <div className="flex flex-col min-h-screen">
-                      <Navbar />
-                      <div className="flex-grow">
-                        <CredentialUpload />
-                      </div>
-                      <Footer />
-                    </div>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/verify"
-                element={
-                  <ProtectedRoute>
-                    <div className="flex flex-col min-h-screen">
-                      <Navbar />
-                      <div className="flex-grow">
-                        <CredentialVerification />
-                      </div>
-                      <Footer />
-                    </div>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faq"
-                element={
-                  <ProtectedRoute>
-                    <div className="flex flex-col min-h-screen">
-                      <Navbar />
-                      <div className="flex-grow">
-                        <FAQ />
+                        <InstituteDashboard />
                       </div>
                       <Footer />
                     </div>
@@ -123,14 +68,56 @@ function App() {
                 }
               />
 
-              {/* Redirect unknown routes to home */}
+              {/* Unauthorized Access Page */}
+              <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+              {/* Catch all route */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
-        </Web3Provider>
-      </AuthProvider>
-    </Router>
+        </AuthProvider>
+      </Router>
+    </Web3Provider>
   )
+}
+
+// Component to handle role-based redirects
+function RoleBasedRedirect() {
+  const { userType } = useAuth();
+  
+  if (userType === userTypes.STUDENT) {
+    return <Navigate to="/student/dashboard" replace />;
+  }
+  
+  if (userType === userTypes.INSTITUTE) {
+    return <Navigate to="/institution/dashboard" replace />;
+  }
+  
+  return <Navigate to="/signin" replace />;
+}
+
+// Simple unauthorized page
+function UnauthorizedPage() {
+  const { userType } = useAuth();
+  
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          Unauthorized Access
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-8">
+          You don't have permission to access this page.
+        </p>
+        <Link
+          to={userType === userTypes.STUDENT ? '/student/dashboard' : '/institution/dashboard'}
+          className="text-primary-600 hover:text-primary-700 dark:text-primary-400"
+        >
+          Go to Dashboard
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 export default App
