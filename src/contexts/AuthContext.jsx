@@ -12,14 +12,13 @@ import {
   doc, 
   setDoc, 
   getDoc,
-  initializeFirestore,
-  persistentLocalCache,
-  persistentSingleTabManager,
+  query,
+  where,
   collection,
-  addDoc,
-  serverTimestamp,
-  deleteDoc
+  getDocs 
 } from 'firebase/firestore';
+import { useWeb3 } from './Web3Context';
+import { userTypes } from '../utils/schema';
 import toast from 'react-hot-toast';
 
 const firebaseConfig = {
@@ -60,107 +59,86 @@ function useAuth() {
 
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [userType, setUserType] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { account } = useWeb3();
 
   useEffect(() => {
-    let unsubscribe;
-    try {
-      unsubscribe = onAuthStateChanged(auth, async (user) => {
-        if (user) {
-          try {
-            const userRef = doc(db, 'users', user.uid);
-            const userSnap = await getDoc(userRef);
-            
-            if (!userSnap.exists()) {
-              await setDoc(userRef, {
-                displayName: user.displayName || 'Anonymous',
-                email: user.email,
-                photoURL: user.photoURL,
-                createdAt: new Date().toISOString(),
-                lastLogin: new Date().toISOString(),
-                role: 'user'
-              });
-            } else {
-              await setDoc(userRef, {
-                lastLogin: new Date().toISOString()
-              }, { merge: true });
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.walletAddress !== account) {
+              await signOut(auth);
+              toast.error('Wallet address mismatch');
+              setUser(null);
+              return;
             }
-          } catch (error) {
-            console.error('Error updating user profile:', error);
+            setUserType(userData.userType);
           }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
         }
-        setUser(user);
-        setLoading(false);
-      });
-    } catch (error) {
-      console.error('Auth state change error:', error);
-      setError(error);
+      }
+      setUser(user);
       setLoading(false);
-    }
+    });
 
-    return () => unsubscribe?.();
-  }, []);
+    return () => unsubscribe();
+  }, [account]);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (selectedUserType) => {
     try {
+      if (!account) {
+        throw new Error('Please connect your wallet first');
+      }
+
       setLoading(true);
       const result = await signInWithPopup(auth, googleProvider);
+      
+      // Check if user exists
+      const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+      
+      if (userDoc.exists()) {
+        // Verify wallet address
+        const userData = userDoc.data();
+        if (userData.walletAddress !== account) {
+          await signOut(auth);
+          throw new Error('Incorrect wallet address for this account');
+        }
+        setUserType(userData.userType);
+      } else {
+        // Create new user profile
+        await setDoc(doc(db, 'users', result.user.uid), {
+          email: result.user.email,
+          userType: selectedUserType,
+          walletAddress: account,
+          createdAt: new Date().toISOString()
+        });
+        setUserType(selectedUserType);
+      }
+
       toast.success('Successfully signed in!');
       return result.user;
     } catch (error) {
       console.error('Google sign in error:', error);
-      let errorMessage = 'Failed to sign in with Google';
-      
-      if (error.code === 'auth/popup-blocked') {
-        errorMessage = 'Please allow popups for this website';
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Sign in cancelled';
-      } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = 'This domain is not authorized for sign in';
-      }
-      
-      toast.error(errorMessage);
+      toast.error(error.message);
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const testDatabaseConnection = async () => {
-    try {
-      const testDoc = await addDoc(collection(db, 'test'), {
-        message: 'Test connection',
-        timestamp: serverTimestamp()
-      });
-      console.log('Database connection successful, test document ID:', testDoc.id);
-      toast.success('Firebase connection successful!');
-      
-      // Clean up test document
-      await deleteDoc(doc(db, 'test', testDoc.id));
-    } catch (error) {
-      console.error('Database connection failed:', error);
-      toast.error('Firebase connection failed: ' + error.message);
-    }
-  };
-
   const value = {
     user,
+    userType,
     loading,
-    error,
     signInWithGoogle,
     signOut: () => signOut(auth),
-    getCurrentUser: () => auth.currentUser,
-    testDatabaseConnection
+    getCurrentUser: () => auth.currentUser
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
 
   return (
     <AuthContext.Provider value={value}>
