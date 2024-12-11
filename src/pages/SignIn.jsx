@@ -54,13 +54,13 @@ function SignIn() {
   return (
     <PageTransition>
       {/* Main container with responsive padding */}
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-r from-primary-600 to-primary-800 flex items-center justify-center p-4">
         {/* Animated content container */}
         <motion.div
-          className="max-w-md w-full space-y-8"
+          className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.5 }}
         >
           {/* Header section */}
           <div>
