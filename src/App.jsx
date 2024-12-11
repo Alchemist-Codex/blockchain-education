@@ -100,6 +100,7 @@ function PublicLayout() {
       <main className="flex-grow">
         <Outlet />
       </main>
+      <Footer />
     </div>
   );
 }
@@ -115,6 +116,7 @@ function ProtectedLayout() {
       <main className="flex-grow">
         <Outlet />
       </main>
+      <Footer />
     </div>
   );
 }
