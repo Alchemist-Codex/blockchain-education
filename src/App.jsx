@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import About from './pages/About'
 import SignIn from './pages/SignIn'
+import IntroAnimation from './components/IntroAnimation'
 import CredentialUpload from './pages/CredentialUpload'
 import CredentialVerification from './pages/CredentialVerification'
 import FAQ from './pages/FAQ'
@@ -29,9 +30,12 @@ function App() {
       <Router>
         <AuthProvider>
           <Routes>
-            {/* Public routes - accessible to all users */}
+            {/* Make IntroAnimation the root route */}
+            <Route path="/" element={<IntroAnimation />} />
+            
+            {/* Move other public routes under a different path */}
             <Route element={<PublicLayout />}>
-              <Route path="/" element={<Home />} />
+              <Route path="/home" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/verify" element={<CredentialVerification />} />
