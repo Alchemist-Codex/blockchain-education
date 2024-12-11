@@ -7,63 +7,63 @@ const IntroAnimation = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if particlesJS is loaded
+    // Wait for particles.js to be loaded from CDN
     const initParticles = () => {
-      if (typeof window.particlesJS !== 'undefined') {
+      if (window.particlesJS) {
         window.particlesJS('particles-js', {
-          particles: {
-            number: {
-              value: 80,
-              density: {
-                enable: true,
-                value_area: 800
+          "particles": {
+            "number": {
+              "value": 80,
+              "density": {
+                "enable": true,
+                "value_area": 800
               }
             },
-            color: {
-              value: '#0ea5e9'
+            "color": {
+              "value": "#0ea5e9"
             },
-            shape: {
-              type: 'circle'
+            "shape": {
+              "type": "circle"
             },
-            opacity: {
-              value: 0.5,
-              random: false
+            "opacity": {
+              "value": 0.5,
+              "random": false
             },
-            size: {
-              value: 3,
-              random: true
+            "size": {
+              "value": 3,
+              "random": true
             },
-            line_linked: {
-              enable: true,
-              distance: 150,
-              color: '#0ea5e9',
-              opacity: 0.4,
-              width: 1
+            "line_linked": {
+              "enable": true,
+              "distance": 150,
+              "color": "#0ea5e9",
+              "opacity": 0.4,
+              "width": 1
             },
-            move: {
-              enable: true,
-              speed: 3,
-              direction: 'none',
-              random: false,
-              straight: false,
-              out_mode: 'out',
-              bounce: false
+            "move": {
+              "enable": true,
+              "speed": 3,
+              "direction": "none",
+              "random": false,
+              "straight": false,
+              "out_mode": "out",
+              "bounce": false
             }
           },
-          interactivity: {
-            detect_on: 'canvas',
-            events: {
-              onhover: {
-                enable: true,
-                mode: 'grab'
+          "interactivity": {
+            "detect_on": "canvas",
+            "events": {
+              "onhover": {
+                "enable": true,
+                "mode": "grab"
               },
-              resize: true
+              "resize": true
             }
           },
-          retina_detect: true
+          "retina_detect": true
         });
 
-        // Set timeout to hide particles and navigate
+        // Set timeout to navigate after animation
         const timer = setTimeout(() => {
           setShowParticles(false);
           setTimeout(() => {

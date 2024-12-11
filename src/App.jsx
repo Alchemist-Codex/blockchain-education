@@ -30,9 +30,11 @@ function App() {
       <Router>
         <AuthProvider>
           <Routes>
-            {/* Public routes - accessible to all users */}
+            {/* Make IntroAnimation the root route */}
+            <Route path="/" element={<IntroAnimation />} />
+            
+            {/* Move other public routes under a different path */}
             <Route element={<PublicLayout />}>
-              <Route path="/" element={<IntroAnimation />} />
               <Route path="/home" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/faq" element={<FAQ />} />
