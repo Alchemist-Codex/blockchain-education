@@ -39,7 +39,7 @@ function About() {
     },
     {
       name: "Ritaban Ghosh",
-      role: "Frontend Developer\nDid 99% of the project",
+      role: "Frontend Developer",
       image: "/ritaban.jpeg",
     },
     {
