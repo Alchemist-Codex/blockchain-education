@@ -39,7 +39,7 @@ function About() {
     },
     {
       name: "Ritaban Ghosh",
-      role: "Frontend Developer",
+      role: "Frontend Developer\nDid 99% of the project",
       image: "/ritaban.jpeg",
     },
     {
@@ -144,7 +144,12 @@ function About() {
                     {member.name}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-300">
-                    {member.role}
+                    {member.role.split('\n').map((line, i) => (
+                      <span key={i}>
+                        {line}
+                        {i !== member.role.split('\n').length - 1 && <br />}
+                      </span>
+                    ))}
                   </p>
                 </motion.div>
               ))}
