@@ -44,7 +44,7 @@ function About() {
     },
     {
       name: "Sougata Mondal",
-      role: "Junior Backend Developer",
+      role: "Backend Developer",
       image: "/sougata.png",
     },
     {
