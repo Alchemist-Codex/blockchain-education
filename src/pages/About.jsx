@@ -33,24 +33,24 @@ function About() {
   // Team members data
   const teamMembers = [
     {
+      name: "Anjali Ray",
+      role: "Frontend Developer",
+      image: "/anjali.jpeg",
+    },
+    {
       name: "Ritaban Ghosh",
-      role: "Senior Frontend Developer",
+      role: "Frontend Developer",
       image: "/ritaban.jpeg",
     },
     {
       name: "Koustav Singh",
-      role: "Senior Backend Developer",
+      role: "Backend Developer",
       image: "/koustav.jpg",
     },
     {
       name: "Sougata Mondal",
       role: "Junior Backend Developer",
       image: "/sougata.png",
-    },
-    {
-      name: "Anjali Ray",
-      role: "Junior Frontend Developer",
-      image: "/anjali.jpeg",
     }
   ]
 
