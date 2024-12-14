@@ -56,6 +56,8 @@ export function useAuth() {
   return context;
 }
 
+const SESSION_DURATION = 5 * 60 * 60 * 1000; // 5 hours in milliseconds
+
 /**
  * AuthProvider Component
  * Manages authentication state and provides auth-related functionality
@@ -67,18 +69,39 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const { account, connect } = useWeb3();
 
-  // Monitor authentication state changes
+  // Check session validity on mount and setup timer
   useEffect(() => {
-    console.log('AuthProvider mounted');
+    const checkSession = () => {
+      const sessionData = localStorage.getItem('authSession');
+      if (sessionData) {
+        const { timestamp } = JSON.parse(sessionData);
+        const isExpired = Date.now() - timestamp > SESSION_DURATION;
+        
+        if (isExpired) {
+          // Session expired, clear everything
+          localStorage.removeItem('authSession');
+          signOutUser();
+        }
+      }
+    };
+
+    // Check session immediately
+    checkSession();
+
+    // Set up periodic checks
+    const interval = setInterval(checkSession, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Modified auth state change handler
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('Auth state changed:', user);
       if (user) {
         try {
-          // Fetch user data and verify wallet address
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            console.log('User data:', userData);
             setUserType(userData.userType);
             
             // Verify wallet address match
@@ -88,12 +111,20 @@ export function AuthProvider({ children }) {
               setUser(null);
               return;
             }
+
+            // Store session data
+            localStorage.setItem('authSession', JSON.stringify({
+              timestamp: Date.now(),
+              uid: user.uid,
+              userType: userData.userType
+            }));
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
         }
       } else {
         setUserType(null);
+        localStorage.removeItem('authSession');
       }
       setUser(user);
       setLoading(false);
@@ -209,6 +240,7 @@ export function AuthProvider({ children }) {
       await signOut(auth);
       setUser(null);
       setUserType(null);
+      localStorage.removeItem('authSession');
       toast.success('Signed out successfully');
     } catch (error) {
       console.error('Sign out error:', error);

@@ -15,13 +15,24 @@ function ProtectedRoute({ children, requiredUserType }) {
   // Debug logging for route protection
   console.log('ProtectedRoute:', { user, userType, loading, requiredUserType });
 
+  // Check session validity
+  const checkSession = () => {
+    const sessionData = localStorage.getItem('authSession');
+    if (!sessionData) return false;
+    
+    const { timestamp } = JSON.parse(sessionData);
+    const isExpired = Date.now() - timestamp > (5 * 60 * 60 * 1000);
+    return !isExpired;
+  };
+
   // Show loading spinner while authentication state is being determined
   if (loading) {
     return <LoadingSpinner />;
   }
 
-  // Redirect to sign in if no user is authenticated
-  if (!user) {
+  // Redirect to sign in if no user or session expired
+  if (!user || !checkSession()) {
+    localStorage.removeItem('authSession');
     return <Navigate to="/signin" replace />;
   }
 
