@@ -40,6 +40,12 @@ export default defineConfig({
   // Production build configuration
   build: {
     outDir: 'dist',
+    minify: 'terser',
+    terserOptions: {
+      format: {
+        comments: false,
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks: undefined,  // Disable manual chunk splitting
@@ -55,5 +61,17 @@ export default defineConfig({
       },
     },
     assetsDir: 'assets',
+  },
+  esbuild: {
+    legalComments: 'none',
+    format: 'esm',
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'esnext',
+      supported: {
+        'top-level-await': true
+      },
+    },
   },
 });
