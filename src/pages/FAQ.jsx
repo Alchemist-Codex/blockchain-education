@@ -82,7 +82,6 @@ function FAQ() {
             Find answers to common questions about Academic Chain
           </p>
         </motion.div>
-
         {/* FAQ Categories with Accordion */}
         {faqs.map((category, categoryIndex) => (
           <motion.div
