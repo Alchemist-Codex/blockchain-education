@@ -1,32 +1,38 @@
-// Import necessary React hooks and components for animations and page transitions
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PageTransition } from '../components/PageTransition'
 import { useAuth } from '../contexts/AuthContext'
 import { useWeb3 } from '../contexts/Web3Context'
+import toast from 'react-hot-toast'
+import { Navigate } from 'react-router-dom'
 
 function Profile() {
-  // Get authentication context and web3 account information
   const { user } = useAuth()
   const { account } = useWeb3()
-  // State for managing edit mode
   const [isEditing, setIsEditing] = useState(false)
-  // State for managing profile data
   const [profile, setProfile] = useState({
-    name: 'Ritaban Ghosh',
+    name: user?.displayName || 'User',
     walletAddress: account || '0x1234...5678',
-    email: 'ghoshritaban@gmail.com',
-    institution: 'Techno Main Salt Lake',
-    role: 'Student',
-    joinedDate: 'March 2024'
+    email: user?.email || 'user@example.com',
+    institution: 'Not Set',
+    role: localStorage.getItem('userType') || 'Student',
+    joinedDate: new Date().toLocaleDateString()
   })
 
-  // Handler for saving profile changes
   const handleSave = async (e) => {
     e.preventDefault()
-    // Simulate save delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsEditing(false)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      setIsEditing(false)
+      toast.success('Profile updated successfully')
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      toast.error('Failed to update profile')
+    }
+  }
+
+  if (!user) {
+    return <Navigate to="/signin" />
   }
 
   return (
