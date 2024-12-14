@@ -31,7 +31,7 @@ export default defineConfig({
     historyApiFallback: true,  // Enable SPA routing support
     host: true,
     strictPort: true,
-    port: 3000
+    port: 5173
   },
   
   // Production build configuration
