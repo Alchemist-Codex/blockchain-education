@@ -165,6 +165,7 @@ function FAQ() {
             Can't find the answer you're looking for? Please contact our support team.
           </p>
           {/* Animated Support Button */}
+          <a href="mailto:sup.academicchain@gmail.com"></a>
           <motion.button
             className="px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white rounded-lg
                      hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
