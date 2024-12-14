@@ -83,8 +83,6 @@ function FAQ() {
           </p>
         </motion.div>
 
-        
-
         {/* FAQ Categories with Accordion */}
         {faqs.map((category, categoryIndex) => (
           <motion.div
