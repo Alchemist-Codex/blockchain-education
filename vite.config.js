@@ -31,7 +31,10 @@ export default defineConfig({
     historyApiFallback: true,  // Enable SPA routing support
     host: true,
     strictPort: true,
-    port: 5173
+    port: 5173,
+    headers: {
+      'Content-Type': 'text/css'
+    }
   },
   
   // Production build configuration
@@ -40,7 +43,17 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: undefined,  // Disable manual chunk splitting
+        assetFileNames: (assetInfo) => {
+          let extType = assetInfo.name.split('.').at(1);
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
+            extType = 'img';
+          }
+          return `assets/${extType}/[name]-[hash][extname]`;
+        },
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
       },
     },
+    assetsDir: 'assets',
   },
 });
