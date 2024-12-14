@@ -98,7 +98,7 @@ function FAQ() {
             />
             {/* Search Icon */}
             <svg
-              className="absolute right-3 top-3 h-6 w-6 text-gray-400 dark:text-gray-500"
+              className="absolute right-3 top-3 h-6 w-6 text-gray-400 dark:text-gray-500 hover:cursor-pointer"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
