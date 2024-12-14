@@ -1,32 +1,25 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-// Firebase imports
-import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
-  onAuthStateChanged, 
-  signOut,
   GoogleAuthProvider, 
-  signInWithRedirect,
-  getRedirectResult,
-  signInWithPopup
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged,
+  getRedirectResult 
 } from 'firebase/auth';
 import { 
   getFirestore, 
   doc, 
+  getDoc, 
   setDoc, 
-  getDoc,
-  collection,
-  addDoc,
-  serverTimestamp,
-  deleteDoc
+  serverTimestamp 
 } from 'firebase/firestore';
 import { useWeb3 } from './Web3Context';
+import { toast } from 'react-hot-toast';
 import { userTypes } from '../utils/schema';
-import toast from 'react-hot-toast';
+import { initializeApp } from 'firebase/app';
 
-/**
- * Firebase configuration from environment variables
- */
+// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -36,50 +29,76 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase services
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Create context for authentication
+const SESSION_DURATION = 5 * 60 * 60 * 1000; // 5 hours in milliseconds
 const AuthContext = createContext();
 
-/**
- * Custom hook to use authentication context
- * @throws {Error} If used outside of AuthProvider
- */
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 }
 
-/**
- * AuthProvider Component
- * Manages authentication state and provides auth-related functionality
- */
 export function AuthProvider({ children }) {
-  // State management
   const [user, setUser] = useState(null);
   const [userType, setUserType] = useState(null);
   const [loading, setLoading] = useState(true);
   const { account, connect } = useWeb3();
 
+  // Check for existing user session in Firestore
+  const checkExistingUser = async (uid) => {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        
+        // Check if session is still valid
+        const sessionData = localStorage.getItem('authSession');
+        if (sessionData) {
+          const { timestamp } = JSON.parse(sessionData);
+          const isValid = Date.now() - timestamp < SESSION_DURATION;
+          
+          if (isValid && userData.walletAddress === account) {
+            setUserType(userData.userType);
+            setUser({ uid, ...userData });
+            return true;
+          }
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking existing user:', error);
+      return false;
+    }
+  };
+
+  // Auto-login check on mount
+  useEffect(() => {
+    const autoLogin = async () => {
+      const sessionData = localStorage.getItem('authSession');
+      if (sessionData) {
+        const { uid } = JSON.parse(sessionData);
+        const isExistingUser = await checkExistingUser(uid);
+        if (!isExistingUser) {
+          localStorage.removeItem('authSession');
+        }
+      }
+      setLoading(false);
+    };
+
+    autoLogin();
+  }, [account]);
+
   // Monitor authentication state changes
   useEffect(() => {
-    console.log('AuthProvider mounted');
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('Auth state changed:', user);
       if (user) {
         try {
-          // Fetch user data and verify wallet address
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            console.log('User data:', userData);
-            setUserType(userData.userType);
             
             // Verify wallet address match
             if (account && userData.walletAddress !== account) {
@@ -88,12 +107,21 @@ export function AuthProvider({ children }) {
               setUser(null);
               return;
             }
+
+            setUserType(userData.userType);
+            // Update session timestamp
+            localStorage.setItem('authSession', JSON.stringify({
+              timestamp: Date.now(),
+              uid: user.uid,
+              userType: userData.userType
+            }));
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
         }
       } else {
         setUserType(null);
+        localStorage.removeItem('authSession');
       }
       setUser(user);
       setLoading(false);
@@ -102,13 +130,8 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, [account]);
 
-  /**
-   * Handle Google Sign In
-   * Creates user profile if new user
-   */
   const signInWithGoogle = async (selectedUserType) => {
     try {
-      // Ensure wallet is connected
       if (!account) {
         await connect();
       }
@@ -122,37 +145,45 @@ export function AuthProvider({ children }) {
         const userDoc = await getDoc(doc(db, 'users', result.user.uid));
         
         if (userDoc.exists()) {
-          // Verify existing user's wallet
+          // Existing user - verify wallet and update session
           const userData = userDoc.data();
           if (userData.walletAddress !== account) {
             await signOut(auth);
             throw new Error('Incorrect wallet address for this account');
           }
           setUserType(userData.userType);
+          
+          // Update session data
+          localStorage.setItem('authSession', JSON.stringify({
+            timestamp: Date.now(),
+            uid: result.user.uid,
+            userType: userData.userType
+          }));
         } else {
-          // Create new user profile
+          // New user - create profile
           const profileData = {
             userId: result.user.uid,
             email: result.user.email,
             displayName: result.user.displayName,
             walletAddress: account,
+            userType: selectedUserType,
             createdAt: serverTimestamp()
           };
 
-          // Create user document
-          await setDoc(doc(db, 'users', result.user.uid), {
-            ...profileData,
-            userType: selectedUserType,
-          });
+          await setDoc(doc(db, 'users', result.user.uid), profileData);
 
           // Create type-specific profile
-          if (selectedUserType === userTypes.STUDENT) {
-            await setDoc(doc(db, 'students', result.user.uid), profileData);
-          } else {
-            await setDoc(doc(db, 'institutions', result.user.uid), profileData);
-          }
+          const collectionName = selectedUserType === userTypes.STUDENT ? 'students' : 'institutions';
+          await setDoc(doc(db, collectionName, result.user.uid), profileData);
 
           setUserType(selectedUserType);
+          
+          // Set initial session
+          localStorage.setItem('authSession', JSON.stringify({
+            timestamp: Date.now(),
+            uid: result.user.uid,
+            userType: selectedUserType
+          }));
         }
 
         toast.success('Successfully signed in!');
@@ -160,55 +191,17 @@ export function AuthProvider({ children }) {
       }
     } catch (error) {
       console.error('Sign in error:', error);
-      
-      // Handle specific error cases
-      if (error.code === 'auth/popup-blocked') {
-        toast.error('Please allow popups for this site');
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        toast.error('Sign in was cancelled');
-      } else {
-        toast.error(error.message || 'Failed to sign in');
-      }
-      
+      handleSignInError(error);
       throw error;
     }
   };
 
-  // Handle redirect result after authentication
-  useEffect(() => {
-    const handleRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        
-        if (result?.user) {
-          const userDoc = await getDoc(doc(db, 'users', result.user.uid));
-          
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            if (userData.walletAddress !== account) {
-              await signOut(auth);
-              throw new Error('Wallet address mismatch');
-            }
-            setUserType(userData.userType);
-          }
-        }
-      } catch (error) {
-        console.error('Redirect result error:', error);
-        toast.error(error.message || 'Authentication failed');
-      }
-    };
-
-    handleRedirectResult();
-  }, [account]);
-
-  /**
-   * Handle user sign out
-   */
   const signOutUser = async () => {
     try {
       await signOut(auth);
       setUser(null);
       setUserType(null);
+      localStorage.removeItem('authSession');
       toast.success('Signed out successfully');
     } catch (error) {
       console.error('Sign out error:', error);
@@ -216,33 +209,22 @@ export function AuthProvider({ children }) {
     }
   };
 
-  /**
-   * Test Firebase database connection
-   */
-  const testDatabaseConnection = async () => {
-    try {
-      const testDoc = await addDoc(collection(db, 'test'), {
-        message: 'Test connection',
-        timestamp: serverTimestamp()
-      });
-      console.log('Database connection successful, test document ID:', testDoc.id);
-      toast.success('Firebase connection successful!');
-      
-      await deleteDoc(doc(db, 'test', testDoc.id));
-    } catch (error) {
-      console.error('Database connection failed:', error);
-      toast.error('Firebase connection failed: ' + error.message);
+  const handleSignInError = (error) => {
+    if (error.code === 'auth/popup-blocked') {
+      toast.error('Please allow popups for this site');
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      toast.error('Sign in was cancelled');
+    } else {
+      toast.error(error.message || 'Failed to sign in');
     }
   };
 
-  // Context value
   const value = {
     user,
     userType,
     loading,
     signInWithGoogle,
-    signOut: signOutUser,
-    testDatabaseConnection
+    signOut: signOutUser
   };
 
   return (
