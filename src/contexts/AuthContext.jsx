@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { useWeb3 } from './Web3Context';
 import { toast } from 'react-hot-toast';
-import { userTypes } from '../utils/constants';
+import { userTypes } from '../utils/schema';
 import { initializeApp } from 'firebase/app';
 
 // Your web app's Firebase configuration
