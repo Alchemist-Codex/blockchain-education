@@ -71,7 +71,10 @@ function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo and brand name */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center">
+            <Link 
+              to={user ? getDashboardPath() : '/'} 
+              className="flex items-center"
+            >
               {/* Light mode logo */}
               <img
                 src="/logo-white.png"
