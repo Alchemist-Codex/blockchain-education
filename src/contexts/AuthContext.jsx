@@ -1,9 +1,10 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { signInWithPopup, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, setPersistence, browserLocalPersistence, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase'; // Import both auth and db
 import { useWeb3 } from './Web3Context';
 import { userTypes } from '../utils/schema';
+import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
@@ -86,7 +87,9 @@ export function AuthProvider({ children }) {
       await signOut(auth);
       setUser(null);
       setUserType(null);
+      localStorage.removeItem('userType');
       localStorage.removeItem('authSession');
+      localStorage.removeItem('walletConnected');
       toast.success('Signed out successfully');
     } catch (error) {
       console.error('Sign out error:', error);
@@ -109,7 +112,8 @@ export function AuthProvider({ children }) {
     userType,
     loading,
     signInWithGoogle,
-    signOut: signOutUser
+    signOut: signOutUser,
+    setUser
   };
 
   return (
