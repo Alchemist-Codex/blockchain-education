@@ -1,56 +1,38 @@
 // Import Vite configuration utilities and plugins
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import restrictHTMLInPublic from './plugins/restrictHTMLInPublic';
 
 export default defineConfig({
   // Configure Vite plugins
-  plugins: [
-    react(),                  // Enable React support
-    restrictHTMLInPublic()    // Custom plugin to restrict HTML in public directory
-  ],
+  plugins: [react()],
   
   // Set base URL for production builds
-  base: './',
+  base: '/',
   
   // Configure module resolution
   resolve: {
     alias: {
-      buffer: 'buffer',     // Alias for buffer module
       'react': 'react',
       'react-dom': 'react-dom'
     },
   },
   
-  // Define global variables for client-side code
-  define: {
-    global: {},            // Polyfill for global object
-    'process.env': {},     // Polyfill for process.env
-  },
-  
   // Development server configuration
   server: {
-    historyApiFallback: true,  // Enable SPA routing support
-    host: true,
-    strictPort: true,
     port: 5173,
-    headers: {
-      'Content-Type': 'text/css'
-    }
+    strictPort: true,
+    host: true,
+    open: true
   },
   
   // Production build configuration
   build: {
     outDir: 'dist',
-    minify: 'terser',
-    terserOptions: {
-      format: {
-        comments: false,
-      },
-    },
+    assetsDir: 'assets',
+    sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: undefined,  // Disable manual chunk splitting
+        manualChunks: undefined,
         assetFileNames: (assetInfo) => {
           let extType = assetInfo.name.split('.').at(1);
           if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
@@ -60,21 +42,17 @@ export default defineConfig({
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
-      },
+      }
     },
-    assetsDir: 'assets',
-  },
-  esbuild: {
-    legalComments: 'none',
-    format: 'esm',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    }
   },
   optimizeDeps: {
-    esbuildOptions: {
-      target: 'esnext',
-      supported: {
-        'top-level-await': true
-      },
-    },
-    include: ['react', 'react-dom']
-  },
+    include: ['react', 'react-dom', 'react-router-dom']
+  }
 });

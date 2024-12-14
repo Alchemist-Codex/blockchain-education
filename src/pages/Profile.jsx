@@ -1,23 +1,42 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PageTransition } from '../components/PageTransition'
 import { useAuth } from '../contexts/AuthContext'
 import { useWeb3 } from '../contexts/Web3Context'
 import toast from 'react-hot-toast'
 import { Navigate } from 'react-router-dom'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 function Profile() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const { account } = useWeb3()
   const [isEditing, setIsEditing] = useState(false)
-  const [profile, setProfile] = useState({
-    name: user?.displayName || 'User',
-    walletAddress: account || '0x1234...5678',
-    email: user?.email || 'user@example.com',
-    institution: 'Not Set',
-    role: localStorage.getItem('userType') || 'Student',
-    joinedDate: new Date().toLocaleDateString()
-  })
+  const [profile, setProfile] = useState(null)
+
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.displayName || 'User',
+        walletAddress: account || '0x1234...5678',
+        email: user.email || 'user@example.com',
+        institution: 'Not Set',
+        role: localStorage.getItem('userType') || 'Student',
+        joinedDate: new Date().toLocaleDateString()
+      })
+    }
+  }, [user, account])
+
+  if (loading) {
+    return <LoadingSpinner />
+  }
+
+  if (!user) {
+    return <Navigate to="/signin" replace />
+  }
+
+  if (!profile) {
+    return <LoadingSpinner />
+  }
 
   const handleSave = async (e) => {
     e.preventDefault()
@@ -29,10 +48,6 @@ function Profile() {
       console.error('Error saving profile:', error)
       toast.error('Failed to update profile')
     }
-  }
-
-  if (!user) {
-    return <Navigate to="/signin" />
   }
 
   return (
