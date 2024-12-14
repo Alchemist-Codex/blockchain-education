@@ -17,6 +17,20 @@ export function AuthProvider({ children }) {
   const [userType, setUserType] = useState(null);
   const [loading, setLoading] = useState(true);
   const { account } = useWeb3();
+  const googleProvider = new GoogleAuthProvider();
+
+  const handleSignInError = (error) => {
+    console.error('Sign in error:', error);
+    if (error.code === 'auth/popup-blocked') {
+      toast.error('Please allow popups for this site');
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      toast.error('Sign in was cancelled');
+    } else if (error.code === 'auth/popup-closed-by-user') {
+      toast.error('Sign in window was closed');
+    } else {
+      toast.error(error.message || 'Failed to sign in');
+    }
+  };
 
   useEffect(() => {
     setPersistence(auth, browserLocalPersistence)
@@ -27,7 +41,6 @@ export function AuthProvider({ children }) {
             setUser(user);
             setUserType(storedUserType);
             
-            // Create or update user document in Firestore
             try {
               const userRef = doc(db, 'users', user.uid);
               const userDoc = await getDoc(userRef);
