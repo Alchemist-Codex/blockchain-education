@@ -29,10 +29,14 @@ export default defineConfig({
   // Development server configuration
   server: {
     historyApiFallback: true,  // Enable SPA routing support
+    host: true,
+    strictPort: true,
+    port: 3000
   },
   
   // Production build configuration
   build: {
+    outDir: 'dist',
     rollupOptions: {
       output: {
         manualChunks: undefined,  // Disable manual chunk splitting
