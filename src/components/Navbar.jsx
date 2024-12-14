@@ -72,7 +72,7 @@ function Navbar() {
           {/* Logo and brand name */}
           <div className="flex items-center">
             <Link 
-              to={user ? getDashboardPath() : '/'} 
+              to="/" 
               className="flex items-center"
             >
               {/* Light mode logo */}
