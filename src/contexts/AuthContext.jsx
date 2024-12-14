@@ -1,43 +1,10 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  signOut, 
-  onAuthStateChanged,
-  getRedirectResult,
-  setPersistence,
-  browserLocalPersistence
-} from 'firebase/auth';
-import { 
-  getFirestore, 
-  doc, 
-  getDoc, 
-  setDoc, 
-  serverTimestamp 
-} from 'firebase/firestore';
+import { useState, useEffect, createContext, useContext } from 'react';
+import { signInWithPopup, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../config/firebase'; // Import both auth and db
 import { useWeb3 } from './Web3Context';
-import { toast } from 'react-hot-toast';
 import { userTypes } from '../utils/schema';
-import { initializeApp } from 'firebase/app';
-import { auth, db } from '../config/firebase';
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-const SESSION_DURATION = 5 * 60 * 60 * 1000; // 5 hours in milliseconds
 const AuthContext = createContext();
 
 export function useAuth() {
@@ -49,6 +16,9 @@ export function AuthProvider({ children }) {
   const [userType, setUserType] = useState(null);
   const [loading, setLoading] = useState(true);
   const { account, connect } = useWeb3();
+  
+  const SESSION_DURATION = 5 * 60 * 60 * 1000; // 5 hours in milliseconds
+  const googleProvider = new GoogleAuthProvider();
 
   // Check for existing user session in Firestore
   const checkExistingUser = async (uid) => {
@@ -77,24 +47,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Auto-login check on mount
-  useEffect(() => {
-    const autoLogin = async () => {
-      const sessionData = localStorage.getItem('authSession');
-      if (sessionData) {
-        const { uid } = JSON.parse(sessionData);
-        const isExistingUser = await checkExistingUser(uid);
-        if (!isExistingUser) {
-          localStorage.removeItem('authSession');
-        }
-      }
-      setLoading(false);
-    };
-
-    autoLogin();
-  }, [account]);
-
-  // Monitor authentication state changes
   useEffect(() => {
     // Set persistence to LOCAL
     setPersistence(auth, browserLocalPersistence);
