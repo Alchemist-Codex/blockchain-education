@@ -20,7 +20,7 @@ import { useWeb3 } from './Web3Context';
 import { toast } from 'react-hot-toast';
 import { userTypes } from '../utils/schema';
 import { initializeApp } from 'firebase/app';
-import { auth } from '../config/firebase';
+import { auth, db } from '../config/firebase';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
