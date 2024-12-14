@@ -5,7 +5,9 @@ import {
   signInWithPopup, 
   signOut, 
   onAuthStateChanged,
-  getRedirectResult 
+  getRedirectResult,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -18,6 +20,7 @@ import { useWeb3 } from './Web3Context';
 import { toast } from 'react-hot-toast';
 import { userTypes } from '../utils/schema';
 import { initializeApp } from 'firebase/app';
+import { auth } from '../config/firebase';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -93,105 +96,35 @@ export function AuthProvider({ children }) {
 
   // Monitor authentication state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    // Set persistence to LOCAL
+    setPersistence(auth, browserLocalPersistence);
+    
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            
-            // Verify wallet address match
-            if (account && userData.walletAddress !== account) {
-              await signOut(auth);
-              toast.error('Wallet address mismatch');
-              setUser(null);
-              return;
-            }
-
-            setUserType(userData.userType);
-            // Update session timestamp
-            localStorage.setItem('authSession', JSON.stringify({
-              timestamp: Date.now(),
-              uid: user.uid,
-              userType: userData.userType
-            }));
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        }
+        // Get stored user type from localStorage
+        const storedUserType = localStorage.getItem('userType');
+        setUser(user);
+        setUserType(storedUserType);
       } else {
+        setUser(null);
         setUserType(null);
-        localStorage.removeItem('authSession');
+        localStorage.removeItem('userType');
       }
-      setUser(user);
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [account]);
+    return unsubscribe;
+  }, []);
 
   const signInWithGoogle = async (selectedUserType) => {
     try {
-      if (!account) {
-        await connect();
-      }
-
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider.setCustomParameters({
-        prompt: 'select_account'
-      }));
-
-      if (result.user) {
-        const userDoc = await getDoc(doc(db, 'users', result.user.uid));
-        
-        if (userDoc.exists()) {
-          // Existing user - verify wallet and update session
-          const userData = userDoc.data();
-          if (userData.walletAddress !== account) {
-            await signOut(auth);
-            throw new Error('Incorrect wallet address for this account');
-          }
-          setUserType(userData.userType);
-          
-          // Update session data
-          localStorage.setItem('authSession', JSON.stringify({
-            timestamp: Date.now(),
-            uid: result.user.uid,
-            userType: userData.userType
-          }));
-        } else {
-          // New user - create profile
-          const profileData = {
-            userId: result.user.uid,
-            email: result.user.email,
-            displayName: result.user.displayName,
-            walletAddress: account,
-            userType: selectedUserType,
-            createdAt: serverTimestamp()
-          };
-
-          await setDoc(doc(db, 'users', result.user.uid), profileData);
-
-          // Create type-specific profile
-          const collectionName = selectedUserType === userTypes.STUDENT ? 'students' : 'institutions';
-          await setDoc(doc(db, collectionName, result.user.uid), profileData);
-
-          setUserType(selectedUserType);
-          
-          // Set initial session
-          localStorage.setItem('authSession', JSON.stringify({
-            timestamp: Date.now(),
-            uid: result.user.uid,
-            userType: selectedUserType
-          }));
-        }
-
-        toast.success('Successfully signed in!');
-        return result.user;
-      }
+      const result = await signInWithPopup(auth, googleProvider);
+      // Store user type in localStorage
+      localStorage.setItem('userType', selectedUserType);
+      setUserType(selectedUserType);
+      return result.user;
     } catch (error) {
       console.error('Sign in error:', error);
-      handleSignInError(error);
       throw error;
     }
   };
