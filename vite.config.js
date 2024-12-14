@@ -17,6 +17,8 @@ export default defineConfig({
   resolve: {
     alias: {
       buffer: 'buffer',     // Alias for buffer module
+      'react': 'react',
+      'react-dom': 'react-dom'
     },
   },
   
@@ -73,5 +75,6 @@ export default defineConfig({
         'top-level-await': true
       },
     },
+    include: ['react', 'react-dom']
   },
 });
