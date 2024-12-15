@@ -63,8 +63,8 @@ function App() {
             }>
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<InstituteDashboard />} />
-              <Route path="upload-credential" element={<CredentialUpload />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="upload-credential" element={<CredentialUpload />} />
             </Route>
 
             {/* Route for unauthorized access attempts */}
