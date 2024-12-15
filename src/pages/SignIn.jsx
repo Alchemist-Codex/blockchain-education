@@ -35,6 +35,7 @@ function SignIn() {
       if (!account) {
         await handleWalletConnect();
       }
+      
       const user = await signInWithGoogle(selectedUserType);
       
       // Store wallet connection in localStorage
@@ -49,6 +50,7 @@ function SignIn() {
       }
     } catch (error) {
       console.error('Sign in error:', error);
+      toast.error('Failed to sign in');
     } finally {
       setIsSigningIn(false);
     }
