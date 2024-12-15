@@ -9,6 +9,7 @@ import IntroAnimation from './components/IntroAnimation'
 import CredentialUpload from './pages/CredentialUpload'
 import CredentialVerification from './pages/CredentialVerification'
 import FAQ from './pages/FAQ'
+import StudentDetails from './pages/StudentDetails'
 // Component imports
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -53,6 +54,7 @@ function App() {
                 </ProtectedRoute>
               }
             >
+              <Route path="studentdetails" element={<StudentDetails/>}></Route>
               <Route path="dashboard" element={<StudentDashboard />} />
               <Route path="profile" element={<Profile />} />
             </Route>
@@ -140,7 +142,7 @@ function RoleBasedRedirect() {
   // Redirect based on user type
   switch (userType) {
     case userTypes.STUDENT:
-      return <Navigate to="/student/dashboard" replace />;
+      return <Navigate to="/student/studentdetails" replace />;
     case userTypes.INSTITUTE:
       return <Navigate to="/institution/dashboard" replace />;
     default:
@@ -166,7 +168,7 @@ function UnauthorizedPage() {
           You don't have permission to access this page.
         </p>
         <Link
-          to={userType === userTypes.STUDENT ? '/student/dashboard' : '/institution/dashboard'}
+          to={userType === userTypes.STUDENT ? '/student/studentdetails' : '/institution/dashboard'}
           className="text-primary-600 hover:text-primary-700 dark:text-primary-400"
         >
           Go to Dashboard

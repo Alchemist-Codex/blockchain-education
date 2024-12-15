@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { PageTransition } from '../components/PageTransition'
 import { useAuth } from '../contexts/AuthContext'
 import { useWeb3 } from '../contexts/Web3Context'
-
 function Profile() {
   // Get authentication context and web3 account information
   const { user } = useAuth()
