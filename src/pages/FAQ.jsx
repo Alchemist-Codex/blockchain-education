@@ -153,28 +153,30 @@ function FAQ() {
           </motion.div>
         ))}
 
-        {/* Support Section */}
-        <motion.div 
-          className="mt-16 text-center bg-white dark:bg-gray-800 rounded-xl p-8"
-          {...fadeIn}
-        >
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Still have questions?
-          </h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Can't find the answer you're looking for? Please contact our support team.
-          </p>
-          {/* Animated Support Button */}
-          <a href="mailto:sup.academicchain@gmail.com"></a>
-          <motion.button
-            className="px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white rounded-lg
-                     hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <motion.div 
+            className="mt-16 text-center bg-white dark:bg-gray-800 rounded-xl p-8"
+            {...fadeIn}
           >
-            Contact Support
-          </motion.button>
-        </motion.div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Need Further Assistance?
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              If you can't find the answer you're looking for, our dedicated support team is here to help.
+            </p>
+            <a href="mailto:sup.academicchain@gmail.com" className="text-decoration-none">
+              <motion.button
+                className="px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white rounded-lg
+                          hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Get in Touch with Support
+              </motion.button>
+            </a>
+            <p className="text-gray-600 dark:text-gray-300 mt-4">
+              We'll respond to your inquiry as soon as possible.
+            </p>
+          </motion.div> 
       </div>
     </div>
   )
