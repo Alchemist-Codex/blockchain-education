@@ -70,7 +70,7 @@ function Footer() {
               </a>
               {/* Placeholder links for team members */}
               <a 
-                href="" 
+                href="https://linktr.ee/Lykus691" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
                 rel="noopener noreferrer"
@@ -78,7 +78,7 @@ function Footer() {
                 Sougata's Socials
               </a>
               <a 
-                href="" 
+                href="https://linktr.ee/rayyyanjali" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
                 rel="noopener noreferrer"
