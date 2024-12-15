@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useWeb3 } from './Web3Context';
-import { userTypes, studentSchema, instituteSchema, collections } from '../utils/schema';
+import { userTypes } from '../utils/schema';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -27,22 +27,13 @@ export function AuthProvider({ children }) {
 
   const handleSignInError = (error) => {
     console.error('Sign in error:', error);
-    if (error.code === 'auth/popup-blocked') {
-      toast.error('Please allow popups for this site');
-    } else if (error.code === 'auth/cancelled-popup-request') {
-      toast.error('Sign in was cancelled');
-    } else if (error.code === 'auth/popup-closed-by-user') {
-      toast.error('Sign in window was closed');
-    } else {
-      toast.error(error.message || 'Failed to sign in');
-    }
+    toast.error(error.message || 'Failed to sign in');
   };
 
   const signIn = async (selectedUserType) => {
     try {
       await loginWithPopup();
       localStorage.setItem('userType', selectedUserType);
-      localStorage.setItem('authSession', JSON.stringify({ timestamp: Date.now() }));
       setUserType(selectedUserType);
     } catch (error) {
       handleSignInError(error);
@@ -56,24 +47,26 @@ export function AuthProvider({ children }) {
       setUser(null);
       setUserType(null);
       localStorage.removeItem('userType');
-      localStorage.removeItem('authSession');
-      toast.success('Signed out successfully');
     } catch (error) {
       console.error('Error signing out:', error);
-      toast.error('Failed to sign out');
     }
   };
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && auth0User) {
-      const storedUserType = localStorage.getItem('userType');
-      setUser(auth0User);
-      setUserType(storedUserType);
-      setLoading(false);
-    } else if (!isLoading) {
-      setLoading(false);
+    // Check for existing session
+    const authSession = localStorage.getItem('authSession');
+    const userType = localStorage.getItem('userType');
+
+    if (isAuthenticated && auth0User && authSession && userType) {
+      setUser({
+        ...auth0User,
+        userType,
+        email: auth0User.email,
+        name: auth0User.name,
+        picture: auth0User.picture
+      });
     }
-  }, [isLoading, isAuthenticated, auth0User]);
+  }, [isAuthenticated, auth0User]);
 
   const value = {
     user,
