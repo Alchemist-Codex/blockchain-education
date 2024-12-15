@@ -32,11 +32,8 @@ function App() {
     <Auth0Provider
       domain={auth0Config.domain}
       clientId={auth0Config.clientId}
-      authorizationParams={{
-        redirect_uri: `${window.location.origin}/callback`,
-        audience: auth0Config.authorizationParams.audience,
-        scope: auth0Config.authorizationParams.scope
-      }}
+      authorizationParams={auth0Config.authorizationParams}
+      cacheLocation="localstorage"
     >
       <Web3Provider>
         <Router>
