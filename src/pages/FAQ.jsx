@@ -165,15 +165,16 @@ function FAQ() {
             Can't find the answer you're looking for? Please contact our support team.
           </p>
           {/* Animated Support Button */}
-          <a href="mailto:sup.academicchain@gmail.com"></a>
+          <a href="mailto:sup.academicchain@gmail.com" className="text-decoration-none">
           <motion.button
             className="px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white rounded-lg
-                     hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
+                      hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             Contact Support
-          </motion.button>
+            </motion.button>
+          </a>  
         </motion.div>
       </div>
     </div>
