@@ -32,6 +32,37 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const signInWithGoogle = async (selectedUserType) => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const { user } = result;
+      
+      // Store user type in localStorage
+      localStorage.setItem('userType', selectedUserType);
+      localStorage.setItem('authSession', JSON.stringify({ timestamp: Date.now() }));
+      
+      // Create or update user document in Firestore
+      const userRef = doc(db, 'users', user.uid);
+      await setDoc(userRef, {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        userType: selectedUserType,
+        walletAddress: account || '',
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+      }, { merge: true });
+
+      setUser(user);
+      setUserType(selectedUserType);
+      return user;
+    } catch (error) {
+      handleSignInError(error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     setPersistence(auth, browserLocalPersistence)
       .then(() => {
@@ -41,21 +72,11 @@ export function AuthProvider({ children }) {
             setUser(user);
             setUserType(storedUserType);
             
-            try {
-              const userRef = doc(db, 'users', user.uid);
-              const userDoc = await getDoc(userRef);
-              
-              if (!userDoc.exists()) {
-                await setDoc(userRef, {
-                  email: user.email,
-                  userType: storedUserType,
-                  walletAddress: account || '',
-                  createdAt: new Date().toISOString()
-                });
-              }
-            } catch (error) {
-              console.error('Error updating user document:', error);
-            }
+            // Update last login time
+            const userRef = doc(db, 'users', user.uid);
+            await setDoc(userRef, {
+              lastLogin: new Date().toISOString()
+            }, { merge: true });
           } else {
             setUser(null);
             setUserType(null);
@@ -71,21 +92,6 @@ export function AuthProvider({ children }) {
         setLoading(false);
       });
   }, [account]);
-
-  const signInWithGoogle = async (selectedUserType) => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      localStorage.setItem('userType', selectedUserType);
-      localStorage.setItem('authSession', JSON.stringify({ 
-        timestamp: Date.now() 
-      }));
-      setUserType(selectedUserType);
-      return result.user;
-    } catch (error) {
-      handleSignInError(error);
-      throw error;
-    }
-  };
 
   const signOutUser = async () => {
     try {
