@@ -55,7 +55,6 @@ function SignIn() {
       setIsSigningIn(false);
     }
   };
-  
 
   return (
     <PageTransition>
@@ -84,7 +83,7 @@ function SignIn() {
                 className={`px-4 py-2 rounded-md ${
                   selectedUserType === userTypes.STUDENT
                     ? 'bg-primary-600 text-white'
-                    : 'bg-gray-200 text-gray-700'
+                    : 'bg-gray-200 text-gray-950'
                 }`}
               >
                 Student
@@ -94,7 +93,7 @@ function SignIn() {
                 className={`px-4 py-2 rounded-md ${
                   selectedUserType === userTypes.INSTITUTE
                     ? 'bg-primary-600 text-white'
-                    : 'bg-gray-200 text-gray-700'
+                    : 'bg-gray-200 text-gray-950'
                 }`}
               >
                 Institution

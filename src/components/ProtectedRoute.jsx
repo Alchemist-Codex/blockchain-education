@@ -21,8 +21,16 @@ function ProtectedRoute({ children, requiredUserType }) {
     return <LoadingSpinner />;
   }
 
-  // If no user is authenticated, redirect to sign in
-  if (!user) {
+  // Redirect to sign in if no user or session expired
+  if (!user || !localStorage.getItem('authSession')) {
+    return <Navigate to="/signin" replace />;
+  }
+
+  // Parse the session token and check expiration
+  const { timestamp } = JSON.parse(localStorage.getItem('authSession'));
+  const isExpired = Date.now() - timestamp > (5 * 60 * 60 * 1000); // 5 hours
+  if (isExpired) {
+    localStorage.removeItem('authSession');
     return <Navigate to="/signin" replace />;
   }
 
