@@ -36,11 +36,16 @@ function SignIn() {
         await handleWalletConnect();
       }
       const user = await signInWithGoogle(selectedUserType);
-      
-      // Store wallet connection in localStorage
-      localStorage.setItem('walletConnected', 'true');
-      
-      // Navigate based on stored user type
+  
+      const sessionToken = {
+        timestamp: Date.now(), // Current timestamp
+      };
+  
+      // Store session token locally and remotely
+      localStorage.setItem('authSession', JSON.stringify(sessionToken));
+      const userRef = doc(db, 'users', user.uid);
+      await setDoc(userRef, { sessionToken }, { merge: true });
+  
       const userType = localStorage.getItem('userType');
       if (userType === userTypes.STUDENT) {
         navigate('/student/dashboard');
@@ -53,6 +58,7 @@ function SignIn() {
       setIsSigningIn(false);
     }
   };
+  
 
   return (
     <PageTransition>

@@ -95,36 +95,46 @@ export function AuthProvider({ children }) {
     const initializeAuth = async () => {
       try {
         await setPersistence(auth, browserLocalPersistence);
-
+  
         const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
           if (currentUser) {
-            const storedUserType = localStorage.getItem('userType');
-            setUser(currentUser);
-            setUserType(storedUserType);
-
             const userRef = doc(db, 'users', currentUser.uid);
-            await setDoc(
-              userRef,
-              { lastLogin: new Date().toISOString() },
-              { merge: true }
-            );
+            const userDoc = await getDoc(userRef);
+  
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              const { sessionToken } = userData;
+  
+              // Validate session token
+              if (sessionToken && Date.now() - sessionToken.timestamp < 5 * 60 * 60 * 1000) {
+                localStorage.setItem('authSession', JSON.stringify(sessionToken));
+                setUser(currentUser);
+                setUserType(userData.userType || localStorage.getItem('userType'));
+              } else {
+                // Clear session if expired
+                await setDoc(userRef, { sessionToken: null }, { merge: true });
+                localStorage.removeItem('authSession');
+                setUser(null);
+                setUserType(null);
+              }
+            }
           } else {
             setUser(null);
             setUserType(null);
-            localStorage.removeItem('userType');
             localStorage.removeItem('authSession');
           }
           setLoading(false);
         });
-
+  
         return unsubscribe;
       } catch (error) {
         console.error('Error initializing authentication:', error);
       }
     };
-
+  
     initializeAuth();
   }, [auth]);
+  
 
   const signInWithGoogle = async (selectedUserType) => {
     return await signInOrCreateUser(selectedUserType);
