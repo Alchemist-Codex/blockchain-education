@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
+import { userTypes } from '../utils/schema';
 
 /**
  * ProtectedRoute Component
@@ -20,16 +21,8 @@ function ProtectedRoute({ children, requiredUserType }) {
     return <LoadingSpinner />;
   }
 
-  // Redirect to sign in if no user or session expired
-  if (!user || !localStorage.getItem('authSession')) {
-    return <Navigate to="/signin" replace />;
-  }
-
-  // Parse the session token and check expiration
-  const { timestamp } = JSON.parse(localStorage.getItem('authSession'));
-  const isExpired = Date.now() - timestamp > 5 * 60 * 60 * 1000;
-  if (isExpired) {
-    localStorage.removeItem('authSession');
+  // If no user is authenticated, redirect to sign in
+  if (!user) {
     return <Navigate to="/signin" replace />;
   }
 

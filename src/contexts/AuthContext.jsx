@@ -1,15 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  signInWithPopup,
-  GoogleAuthProvider,
-  setPersistence,
-  browserLocalPersistence,
-  signOut,
-} from '@firebase/auth';
-import { doc, getDoc, setDoc } from '@firebase/firestore';
-import { auth, db } from '../config/firebase'; // Import both auth and db
+import { useAuth0 } from '@auth0/auth0-react';
 import { useWeb3 } from './Web3Context';
-import { userTypes, studentSchema, instituteSchema } from '../utils/schema';
+import { userTypes } from '../utils/schema';
+import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
@@ -18,146 +11,65 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
+  const { account } = useWeb3();
+  const {
+    isAuthenticated,
+    user: auth0User,
+    loginWithPopup,
+    logout,
+    isLoading,
+    getAccessTokenSilently
+  } = useAuth0();
+
   const [user, setUser] = useState(null);
   const [userType, setUserType] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { account, connect } = useWeb3();
 
-  const googleProvider = new GoogleAuthProvider();
+  const handleSignInError = (error) => {
+    console.error('Sign in error:', error);
+    toast.error(error.message || 'Failed to sign in');
+  };
 
-  const signInOrCreateUser = async (selectedUserType) => {
+  const signIn = async (selectedUserType) => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const { user } = result;
-
-      // Store user type and session in localStorage
+      await loginWithPopup();
       localStorage.setItem('userType', selectedUserType);
-      localStorage.setItem('authSession', JSON.stringify({ timestamp: Date.now() }));
-
-      const userRef = doc(db, 'users', user.uid);
-      await setDoc(
-        userRef,
-        {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-          userType: selectedUserType,
-          walletAddress: account || '',
-          createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString(),
-        },
-        { merge: true }
-      );
-
-      if (selectedUserType === userTypes.STUDENT) {
-        const studentRef = doc(db, 'students', user.uid);
-        await setDoc(
-          studentRef,
-          {
-            ...studentSchema,
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName || '',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            walletAddress: account || '',
-          },
-          { merge: true }
-        );
-      } else {
-        const instituteRef = doc(db, 'institutions', user.uid);
-        await setDoc(
-          instituteRef,
-          {
-            ...instituteSchema,
-            uid: user.uid,
-            email: user.email,
-            instituteName: user.displayName || '',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            walletAddress: account || '',
-          },
-          { merge: true }
-        );
-      }
-
-      setUser(user);
       setUserType(selectedUserType);
-      return user;
     } catch (error) {
-      console.error('Error signing in or creating user:', error);
+      handleSignInError(error);
       throw error;
     }
   };
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        await setPersistence(auth, browserLocalPersistence);
-  
-        const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
-          if (currentUser) {
-            const userRef = doc(db, 'users', currentUser.uid);
-            const userDoc = await getDoc(userRef);
-  
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
-              const { sessionToken } = userData;
-  
-              // Validate session token
-              if (sessionToken && Date.now() - sessionToken.timestamp < 5 * 60 * 60 * 1000) {
-                localStorage.setItem('authSession', JSON.stringify(sessionToken));
-                setUser(currentUser);
-                setUserType(userData.userType || localStorage.getItem('userType'));
-              } else {
-                // Clear session if expired
-                await setDoc(userRef, { sessionToken: null }, { merge: true });
-                localStorage.removeItem('authSession');
-                setUser(null);
-                setUserType(null);
-              }
-            }
-          } else {
-            setUser(null);
-            setUserType(null);
-            localStorage.removeItem('authSession');
-          }
-          setLoading(false);
-        });
-  
-        return unsubscribe;
-      } catch (error) {
-        console.error('Error initializing authentication:', error);
-      }
-    };
-  
-    initializeAuth();
-  }, [auth]);
-  
-
-  const signInWithGoogle = async (selectedUserType) => {
-    return await signInOrCreateUser(selectedUserType);
-  };
-
   const signOutUser = async () => {
     try {
-      await signOut(auth);
+      await logout({ returnTo: window.location.origin });
       setUser(null);
       setUserType(null);
-      localStorage.removeItem('authSession');
       localStorage.removeItem('userType');
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
 
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && auth0User) {
+      const storedUserType = localStorage.getItem('userType');
+      setUser(auth0User);
+      setUserType(storedUserType);
+      setLoading(false);
+    } else if (!isLoading) {
+      setLoading(false);
+    }
+  }, [isLoading, isAuthenticated, auth0User]);
+
   const value = {
     user,
     userType,
-    loading,
-    signInWithGoogle,
+    loading: loading || isLoading,
+    signIn,
     signOut: signOutUser,
+    setUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

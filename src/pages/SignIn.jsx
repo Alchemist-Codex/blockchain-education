@@ -35,17 +35,13 @@ function SignIn() {
       if (!account) {
         await handleWalletConnect();
       }
+      
       const user = await signInWithGoogle(selectedUserType);
-  
-      const sessionToken = {
-        timestamp: Date.now(), // Current timestamp
-      };
-  
-      // Store session token locally and remotely
-      localStorage.setItem('authSession', JSON.stringify(sessionToken));
-      const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, { sessionToken }, { merge: true });
-  
+      
+      // Store wallet connection in localStorage
+      localStorage.setItem('walletConnected', 'true');
+      
+      // Navigate based on stored user type
       const userType = localStorage.getItem('userType');
       if (userType === userTypes.STUDENT) {
         navigate('/student/dashboard');
@@ -54,6 +50,7 @@ function SignIn() {
       }
     } catch (error) {
       console.error('Sign in error:', error);
+      toast.error('Failed to sign in');
     } finally {
       setIsSigningIn(false);
     }
