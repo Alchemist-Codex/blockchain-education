@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { web3Service } from '../services/web3Service'
+import { ethers } from 'ethers'
+import config from '../config'
+import toast from 'react-hot-toast'
 
 // Create context for Web3 functionality
 const Web3Context = createContext()
@@ -10,10 +12,10 @@ const Web3Context = createContext()
  */
 export function Web3Provider({ children }) {
   // State management for Web3 connection
-  const [account, setAccount] = useState(null)         // Connected wallet address
-  const [isInstitution, setIsInstitution] = useState(false) // Institution status
-  const [loading, setLoading] = useState(true)         // Loading state
-  const [contract, setContract] = useState(null)       // Smart contract instance
+  const [provider, setProvider] = useState(null)
+  const [signer, setSigner] = useState(null)
+  const [account, setAccount] = useState(null)
+  const [networkId, setNetworkId] = useState(null)
 
   // Set up Web3 connection and MetaMask event listeners
   useEffect(() => {
@@ -85,23 +87,73 @@ export function Web3Provider({ children }) {
 
   const connect = async () => {
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (!window.ethereum) {
+        toast.error('Please install MetaMask');
+        return;
+      }
+
+      // Request account access
+      const accounts = await window.ethereum.request({ 
+        method: 'eth_requestAccounts' 
+      });
+
+      // Get network ID
+      const networkId = await window.ethereum.request({ 
+        method: 'net_version' 
+      });
+
+      // Check if connected to correct network
+      if (networkId !== config.networkId.toString()) {
+        try {
+          // Try to switch to the correct network
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: `0x${Number(config.networkId).toString(16)}` }],
+          });
+        } catch (switchError) {
+          // If network doesn't exist, add it
+          if (switchError.code === 4902) {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: `0x${Number(config.networkId).toString(16)}`,
+                chainName: config.networkName,
+                rpcUrls: [config.rpcUrl],
+                nativeCurrency: {
+                  name: 'ETH',
+                  symbol: 'ETH',
+                  decimals: 18
+                }
+              }]
+            });
+          } else {
+            throw switchError;
+          }
+        }
+      }
+
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+
+      setProvider(provider);
+      setSigner(signer);
       setAccount(accounts[0]);
-      localStorage.setItem('walletConnected', 'true');
+      setNetworkId(networkId);
+
+      toast.success('Wallet connected successfully!');
     } catch (error) {
-      console.error('Failed to connect:', error);
-      throw error;
+      console.error('Connection error:', error);
+      toast.error('Failed to connect wallet: ' + error.message);
     }
   };
 
   return (
     <Web3Context.Provider value={{ 
-      account,           // Connected wallet address
-      isInstitution,     // Institution status
-      loading,           // Loading state
-      contract,          // Smart contract instance
-      web3Service,       // Web3 service utilities
-      connect: connect  // Connection function
+      provider, 
+      signer, 
+      account, 
+      networkId,
+      connect 
     }}>
       {children}
     </Web3Context.Provider>
