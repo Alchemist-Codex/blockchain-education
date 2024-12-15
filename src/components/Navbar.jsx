@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { signOut } from 'firebase/auth'
+import { auth } from '../config/firebase'
 import ThemeToggle from './ThemeToggle'
 import { useAuth } from '../contexts/AuthContext'
 import { userTypes } from '../utils/schema'
-import MetaMaskConnect from './MetaMaskConnect'
+import toast from 'react-hot-toast'
 
 /**
  * Navbar Component
@@ -14,7 +16,7 @@ import MetaMaskConnect from './MetaMaskConnect'
 function Navbar() {
   // State and hooks
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { user, signOut, userType } = useAuth()
+  const { user, setUser, userType } = useAuth()
   const navigate = useNavigate()
 
   /**
@@ -22,10 +24,20 @@ function Navbar() {
    */
   const handleSignOut = async () => {
     try {
-      await signOut()
+      await signOut(auth)
+      // Clear user data from context
+      setUser(null)
+      // Clear local storage
+      localStorage.removeItem('userType')
+      localStorage.removeItem('authSession')
+      localStorage.removeItem('walletConnected')
+      // Show success message
+      toast.success('Signed out successfully')
+      // Redirect to signin page
       navigate('/signin')
     } catch (error) {
       console.error('Error signing out:', error)
+      toast.error('Failed to sign out')
     }
   }
 
@@ -71,7 +83,10 @@ function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo and brand name */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center">
+            <Link 
+              to="/" 
+              className="flex items-center"
+            >
               {/* Light mode logo */}
               <img
                 src="/logo-white.png"

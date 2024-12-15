@@ -2,7 +2,7 @@
   "name": "blockchain-education",
   "private": true,
   "version": "0.0.0",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -28,6 +28,7 @@
     "react-icons": "^5.4.0",
     "react-router-dom": "^7.0.2",
     "tailwind-scrollbar": "^3.0.5",
+    "terser": "^5.37.0",
     "three": "^0.171.0",
     "web3modal": "^1.9.12"
   },

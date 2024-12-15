@@ -27,6 +27,22 @@ export function Web3Provider({ children }) {
     }
   }, [])
 
+  useEffect(() => {
+    const checkPersistedConnection = async () => {
+      const wasConnected = localStorage.getItem('walletConnected') === 'true';
+      if (wasConnected && window.ethereum) {
+        try {
+          await connect();
+        } catch (error) {
+          console.error('Failed to reconnect wallet:', error);
+          localStorage.removeItem('walletConnected');
+        }
+      }
+    };
+
+    checkPersistedConnection();
+  }, []);
+
   /**
    * Initialize Web3 connection
    * Connects to wallet and sets up contract instance
@@ -67,6 +83,17 @@ export function Web3Provider({ children }) {
     }
   }
 
+  const connect = async () => {
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      setAccount(accounts[0]);
+      localStorage.setItem('walletConnected', 'true');
+    } catch (error) {
+      console.error('Failed to connect:', error);
+      throw error;
+    }
+  };
+
   return (
     <Web3Context.Provider value={{ 
       account,           // Connected wallet address
@@ -74,7 +101,7 @@ export function Web3Provider({ children }) {
       loading,           // Loading state
       contract,          // Smart contract instance
       web3Service,       // Web3 service utilities
-      connect: initWeb3  // Connection function
+      connect: connect  // Connection function
     }}>
       {children}
     </Web3Context.Provider>

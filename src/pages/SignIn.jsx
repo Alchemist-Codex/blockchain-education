@@ -32,14 +32,17 @@ function SignIn() {
   const handleGoogleSignIn = async () => {
     try {
       setIsSigningIn(true);
-      // Ensure wallet is connected before proceeding
       if (!account) {
         await handleWalletConnect();
       }
       const user = await signInWithGoogle(selectedUserType);
       
-      // Navigate to appropriate dashboard based on user type
-      if (selectedUserType === userTypes.STUDENT) {
+      // Store wallet connection in localStorage
+      localStorage.setItem('walletConnected', 'true');
+      
+      // Navigate based on stored user type
+      const userType = localStorage.getItem('userType');
+      if (userType === userTypes.STUDENT) {
         navigate('/student/dashboard');
       } else {
         navigate('/institution/dashboard');

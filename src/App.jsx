@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, Link } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 // Page imports
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
@@ -47,47 +47,46 @@ function App() {
             
             {/* Protected routes for students - requires student role */}
             <Route
-              path="/student"
+              path="/student/*"
               element={
                 <ProtectedRoute requiredUserType={userTypes.STUDENT}>
                   <ProtectedLayout />
                 </ProtectedRoute>
               }
             >
-              <Route path="studentdetails" element={<StudentDetails/>}></Route>
+              <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<StudentDashboard />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="studentdetails" element={<StudentDetails />}></Route>
             </Route>
-            
+
             {/* Protected routes for institutions - requires institute role */}
-            <Route
-              path="/institution"
-              element={
-                <ProtectedRoute requiredUserType={userTypes.INSTITUTE}>
-                  <ProtectedLayout />
-                </ProtectedRoute>
-              }
-            >
+            <Route path="/institution/*" element={
+              <ProtectedRoute requiredUserType={userTypes.INSTITUTE}>
+                <ProtectedLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<InstituteDashboard />} />
-              <Route path="upload-credential" element={<CredentialUpload />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="upload-credential" element={<CredentialUpload />} />
             </Route>
 
             {/* Route for unauthorized access attempts */}
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* Smart redirect based on user role */}
-            <Route 
-              path="/" 
+            <Route
+              path="/"
               element={
                 <ProtectedRoute>
                   <RoleBasedRedirect />
                 </ProtectedRoute>
-              } 
+              }
             />
 
             {/* Fallback route - redirects unknown paths to home */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
         </AuthProvider>
       </Router>
@@ -178,4 +177,4 @@ function UnauthorizedPage() {
   );
 }
 
-export default App
+export default App;
