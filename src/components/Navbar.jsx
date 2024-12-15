@@ -83,24 +83,10 @@ function Navbar() {
           {/* Logo and brand name */}
           <div className="flex items-center">
             <Link 
-              to="/" 
-              className="flex items-center"
+              to="/home" 
+              className="flex items-center text-xl font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
             >
-              {/* Light mode logo */}
-              <img
-                src="/logo-white.png"
-                alt="Academic Chain Logo"
-                className="h-8 w-8 mr-2 dark:hidden"
-              />
-              {/* Dark mode logo */}
-              <img
-                src="/logo-dark.png"
-                alt="Academic Chain Logo"
-                className="h-8 w-8 mr-2 hidden dark:block"
-              />
-              <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
-                Academic Chain
-              </span>
+              Academic Chain
             </Link>
           </div>
   
