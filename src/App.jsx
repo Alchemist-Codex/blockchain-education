@@ -32,7 +32,7 @@ function App() {
           <Routes>
             {/* Make IntroAnimation the root route */}
             <Route path="/" element={<IntroAnimation />} />
-            
+
             {/* Move other public routes under a different path */}
             <Route element={<PublicLayout />}>
               <Route path="/home" element={<Home />} />
@@ -43,7 +43,7 @@ function App() {
 
             {/* Authentication route - no navbar needed */}
             <Route path="/signin" element={<SignIn />} />
-            
+
             {/* Protected routes for students - requires student role */}
             <Route path="/student/*" element={
               <ProtectedRoute requiredUserType={userTypes.STUDENT}>
@@ -54,7 +54,7 @@ function App() {
               <Route path="dashboard" element={<StudentDashboard />} />
               <Route path="profile" element={<Profile />} />
             </Route>
-            
+
             {/* Protected routes for institutions - requires institute role */}
             <Route path="/institution/*" element={
               <ProtectedRoute requiredUserType={userTypes.INSTITUTE}>
@@ -71,13 +71,13 @@ function App() {
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* Smart redirect based on user role */}
-            <Route 
-              path="/" 
+            <Route
+              path="/"
               element={
                 <ProtectedRoute>
                   <RoleBasedRedirect />
                 </ProtectedRoute>
-              } 
+              }
             />
 
             {/* Fallback route - redirects unknown paths to home */}
@@ -86,7 +86,7 @@ function App() {
         </AuthProvider>
       </Router>
     </Web3Provider>
-  )
+  );
 }
 
 /**
@@ -127,12 +127,12 @@ function ProtectedLayout() {
  */
 function RoleBasedRedirect() {
   const { user, userType } = useAuth();
-  
+
   // Redirect to signin if no user
   if (!user) {
     return <Navigate to="/signin" replace />;
   }
-  
+
   // Redirect based on user type
   switch (userType) {
     case userTypes.STUDENT:
@@ -151,7 +151,7 @@ function RoleBasedRedirect() {
  */
 function UnauthorizedPage() {
   const { userType } = useAuth();
-  
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="text-center">
@@ -172,4 +172,4 @@ function UnauthorizedPage() {
   );
 }
 
-export default App
+export default App;

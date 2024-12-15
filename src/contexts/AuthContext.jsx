@@ -1,7 +1,13 @@
-import { useState, useEffect, createContext, useContext } from 'react';
-import { signInWithPopup, GoogleAuthProvider, setPersistence, browserLocalPersistence, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+  signInWithPopup,
+  GoogleAuthProvider,
+  setPersistence,
+  browserLocalPersistence,
+  signOut,
+} from '@firebase/auth';
+import { doc, getDoc, setDoc } from '@firebase/firestore';
+import { auth, db } from '../config/firebase'; // Import both auth and db
 import { useWeb3 } from './Web3Context';
 import { userTypes, studentSchema, instituteSchema, collections } from '../utils/schema';
 import toast from 'react-hot-toast';
@@ -17,6 +23,7 @@ export function AuthProvider({ children }) {
   const [userType, setUserType] = useState(null);
   const [loading, setLoading] = useState(true);
   const { account } = useWeb3();
+
   const googleProvider = new GoogleAuthProvider();
 
   const handleSignInError = (error) => {
@@ -37,7 +44,7 @@ export function AuthProvider({ children }) {
       const result = await signInWithPopup(auth, googleProvider);
       const { user } = result;
       
-      // Store user type in localStorage
+      // Store user type and session in localStorage
       localStorage.setItem('userType', selectedUserType);
       localStorage.setItem('authSession', JSON.stringify({ timestamp: Date.now() }));
       
@@ -89,16 +96,18 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    setPersistence(auth, browserLocalPersistence)
-      .then(() => {
-        const unsubscribe = auth.onAuthStateChanged(async (user) => {
-          if (user) {
+    const initializeAuth = async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+
+        const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
+          if (currentUser) {
             const storedUserType = localStorage.getItem('userType');
-            setUser(user);
+            setUser(currentUser);
             setUserType(storedUserType);
             
             // Update last login time
-            const userRef = doc(db, 'users', user.uid);
+            const userRef = doc(db, 'users', currentUser.uid);
             await setDoc(userRef, {
               lastLogin: new Date().toISOString()
             }, { merge: true });
@@ -106,25 +115,27 @@ export function AuthProvider({ children }) {
             setUser(null);
             setUserType(null);
             localStorage.removeItem('userType');
+            localStorage.removeItem('authSession');
           }
           setLoading(false);
         });
 
         return unsubscribe;
-      })
-      .catch((error) => {
-        console.error('Error setting persistence:', error);
-        setLoading(false);
-      });
-  }, [account]);
+      } catch (error) {
+        console.error('Error initializing authentication:', error);
+      }
+    };
+
+    initializeAuth();
+  }, [auth]);
 
   const signOutUser = async () => {
     try {
       await signOut(auth);
       setUser(null);
       setUserType(null);
-      localStorage.removeItem('userType');
       localStorage.removeItem('authSession');
+      localStorage.removeItem('userType');
       localStorage.removeItem('walletConnected');
       toast.success('Signed out successfully');
     } catch (error) {
