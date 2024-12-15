@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { signOut } from 'firebase/auth'
-import { auth } from '../config/firebase'
+import { useAuth0 } from '@auth0/auth0-react'
 import ThemeToggle from './ThemeToggle'
 import { useAuth } from '../contexts/AuthContext'
 import { userTypes } from '../utils/schema'
@@ -17,6 +16,7 @@ function Navbar() {
   // State and hooks
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { user, setUser, userType } = useAuth()
+  const { logout } = useAuth0()
   const navigate = useNavigate()
 
   /**
@@ -24,7 +24,6 @@ function Navbar() {
    */
   const handleSignOut = async () => {
     try {
-      await signOut(auth)
       // Clear user data from context
       setUser(null)
       // Clear local storage
@@ -33,8 +32,8 @@ function Navbar() {
       localStorage.removeItem('walletConnected')
       // Show success message
       toast.success('Signed out successfully')
-      // Redirect to signin page
-      navigate('/signin')
+      // Use Auth0 logout
+      logout({ returnTo: window.location.origin })
     } catch (error) {
       console.error('Error signing out:', error)
       toast.error('Failed to sign out')
@@ -126,10 +125,10 @@ function Navbar() {
                 {/* User avatar and name */}
                 <div className="flex items-center space-x-2">
                   <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                    {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                    {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <span className="text-gray-700 dark:text-gray-300 hidden sm:inline">
-                    {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}
+                    {user.name?.split(' ')[0] || user.email?.split('@')[0]}
                   </span>
                 </div>
                 <motion.button
