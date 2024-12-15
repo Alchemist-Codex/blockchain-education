@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { ethers } from 'ethers'
+import { BrowserProvider, JsonRpcProvider } from 'ethers'
 import config from '../config'
 import toast from 'react-hot-toast'
 
 // Create context for Web3 functionality
-const Web3Context = createContext()
+export const Web3Context = createContext()
 
 /**
  * Web3Provider Component
@@ -135,11 +135,11 @@ export function Web3Provider({ children }) {
         }
       }
 
-      // Create Web3Provider instance
-      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-      const web3Signer = web3Provider.getSigner();
+      // Initialize provider and signer using ethers v6
+      const browserProvider = new BrowserProvider(window.ethereum);
+      const web3Signer = await browserProvider.getSigner();
 
-      setProvider(web3Provider);
+      setProvider(browserProvider);
       setSigner(web3Signer);
       setAccount(accounts[0]);
       setNetworkId(networkId);
@@ -210,4 +210,6 @@ export function Web3Provider({ children }) {
  * Custom hook to use Web3 context
  * @returns {Object} Web3 context value
  */
-export const useWeb3 = () => useContext(Web3Context) 
+export function useWeb3() {
+  return useContext(Web3Context);
+} 
