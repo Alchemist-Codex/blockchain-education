@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, Link } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 // Page imports
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
@@ -32,7 +32,7 @@ function App() {
           <Routes>
             {/* Make IntroAnimation the root route */}
             <Route path="/" element={<IntroAnimation />} />
-            
+
             {/* Move other public routes under a different path */}
             <Route element={<PublicLayout />}>
               <Route path="/home" element={<Home />} />
@@ -43,29 +43,25 @@ function App() {
 
             {/* Authentication route - no navbar needed */}
             <Route path="/signin" element={<SignIn />} />
-            
+
             {/* Protected routes for students - requires student role */}
-            <Route
-              path="/student"
-              element={
-                <ProtectedRoute requiredUserType={userTypes.STUDENT}>
-                  <ProtectedLayout />
-                </ProtectedRoute>
-              }
-            >
+            <Route path="/student/*" element={
+              <ProtectedRoute requiredUserType={userTypes.STUDENT}>
+                <ProtectedLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<StudentDashboard />} />
               <Route path="profile" element={<Profile />} />
             </Route>
-            
+
             {/* Protected routes for institutions - requires institute role */}
-            <Route
-              path="/institution"
-              element={
-                <ProtectedRoute requiredUserType={userTypes.INSTITUTE}>
-                  <ProtectedLayout />
-                </ProtectedRoute>
-              }
-            >
+            <Route path="/institution/*" element={
+              <ProtectedRoute requiredUserType={userTypes.INSTITUTE}>
+                <ProtectedLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<InstituteDashboard />} />
               <Route path="upload-credential" element={<CredentialUpload />} />
               <Route path="profile" element={<Profile />} />
@@ -75,22 +71,22 @@ function App() {
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* Smart redirect based on user role */}
-            <Route 
-              path="/" 
+            <Route
+              path="/"
               element={
                 <ProtectedRoute>
                   <RoleBasedRedirect />
                 </ProtectedRoute>
-              } 
+              }
             />
 
             {/* Fallback route - redirects unknown paths to home */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
         </AuthProvider>
       </Router>
     </Web3Provider>
-  )
+  );
 }
 
 /**
@@ -131,12 +127,12 @@ function ProtectedLayout() {
  */
 function RoleBasedRedirect() {
   const { user, userType } = useAuth();
-  
+
   // Redirect to signin if no user
   if (!user) {
     return <Navigate to="/signin" replace />;
   }
-  
+
   // Redirect based on user type
   switch (userType) {
     case userTypes.STUDENT:
@@ -155,7 +151,7 @@ function RoleBasedRedirect() {
  */
 function UnauthorizedPage() {
   const { userType } = useAuth();
-  
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="text-center">
@@ -176,4 +172,4 @@ function UnauthorizedPage() {
   );
 }
 
-export default App
+export default App;
