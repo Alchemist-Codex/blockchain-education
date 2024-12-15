@@ -96,55 +96,38 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-  const initializeAuth = async () => {
-    try {
-      await setPersistence(auth, browserLocalPersistence);
+    const initializeAuth = async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
 
-      const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
-        if (currentUser) {
-          const userRef = doc(db, 'users', currentUser.uid);
-          const userDoc = await getDoc(userRef);
-
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            const { sessionToken } = userData;
-
-            // Validate session token
-            if (sessionToken && Date.now() - sessionToken.timestamp < 5 * 60 * 60 * 1000) {
-              // Session is valid
-              localStorage.setItem('authSession', JSON.stringify(sessionToken));
-              setUser(currentUser);
-              setUserType(userData.userType || localStorage.getItem('userType'));
-
-              // Update last login time
-              await setDoc(userRef, { lastLogin: new Date().toISOString() }, { merge: true });
-            } else {
-              // Session expired; clear session token
-              await setDoc(userRef, { sessionToken: null }, { merge: true });
-              localStorage.removeItem('authSession');
-              setUser(null);
-              setUserType(null);
-            }
+        const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
+          if (currentUser) {
+            const storedUserType = localStorage.getItem('userType');
+            setUser(currentUser);
+            setUserType(storedUserType);
+            
+            // Update last login time
+            const userRef = doc(db, 'users', currentUser.uid);
+            await setDoc(userRef, {
+              lastLogin: new Date().toISOString()
+            }, { merge: true });
+          } else {
+            setUser(null);
+            setUserType(null);
+            localStorage.removeItem('userType');
+            localStorage.removeItem('authSession');
           }
-        } else {
-          // No user is signed in
-          setUser(null);
-          setUserType(null);
-          localStorage.removeItem('authSession');
-        }
-        setLoading(false);
-      });
+          setLoading(false);
+        });
 
-      return unsubscribe;
-    } catch (error) {
-      console.error('Error initializing authentication:', error);
-    }
-  };
+        return unsubscribe;
+      } catch (error) {
+        console.error('Error initializing authentication:', error);
+      }
+    };
 
-  initializeAuth();
-}, [auth]);
-
-  
+    initializeAuth();
+  }, [auth]);
 
   const signOutUser = async () => {
     try {
