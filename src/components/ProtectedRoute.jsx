@@ -9,19 +9,26 @@ import { useAuth0 } from '@auth0/auth0-react';
  * @param {string} requiredUserType - The user type required to access this route
  */
 function ProtectedRoute({ children, requiredUserType }) {
-  const { user } = useAuth();
-  const { isAuthenticated, isLoading } = useAuth0();
+  const { user, isLoading: contextLoading } = useAuth();
+  const { isAuthenticated, isLoading: auth0Loading } = useAuth0();
 
-  if (isLoading) {
-    return <div>Loading...</div>;
+  // Show loading state while checking authentication
+  if (auth0Loading || contextLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary-500"></div>
+      </div>
+    );
   }
 
+  // Redirect to signin if not authenticated
   if (!isAuthenticated || !user) {
-    return <Navigate to="/signin" />;
+    return <Navigate to="/signin" replace />;
   }
 
+  // Check for required user type
   if (requiredUserType && user.userType !== requiredUserType) {
-    return <Navigate to="/unauthorized" />;
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return children;

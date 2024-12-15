@@ -12,70 +12,49 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const { account } = useWeb3();
-  const {
-    isAuthenticated,
-    user: auth0User,
-    loginWithPopup,
-    logout,
-    isLoading,
-    getAccessTokenSilently
-  } = useAuth0();
-
-  const [user, setUser] = useState(null);
-  const [userType, setUserType] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const handleSignInError = (error) => {
-    console.error('Sign in error:', error);
-    toast.error(error.message || 'Failed to sign in');
-  };
-
-  const signIn = async (selectedUserType) => {
-    try {
-      await loginWithPopup();
-      localStorage.setItem('userType', selectedUserType);
-      setUserType(selectedUserType);
-    } catch (error) {
-      handleSignInError(error);
-      throw error;
-    }
-  };
-
-  const signOutUser = async () => {
-    try {
-      await logout({ returnTo: window.location.origin });
-      setUser(null);
-      setUserType(null);
-      localStorage.removeItem('userType');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+  const [user, setUser] = useState(() => {
+    // Try to get user from localStorage on initial load
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+  
+  const { isAuthenticated, user: auth0User, isLoading } = useAuth0();
 
   useEffect(() => {
-    // Check for existing session
-    const authSession = localStorage.getItem('authSession');
-    const userType = localStorage.getItem('userType');
-
-    if (isAuthenticated && auth0User && authSession && userType) {
-      setUser({
+    // Update user when Auth0 authentication state changes
+    if (isAuthenticated && auth0User) {
+      const userType = localStorage.getItem('userType');
+      const userData = {
         ...auth0User,
         userType,
         email: auth0User.email,
         name: auth0User.name,
         picture: auth0User.picture
-      });
+      };
+      
+      setUser(userData);
+      // Save user data to localStorage
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('authSession', 'true');
+    } else if (!isLoading && !isAuthenticated) {
+      // Clear user data when not authenticated
+      setUser(null);
+      localStorage.removeItem('user');
+      localStorage.removeItem('authSession');
+      localStorage.removeItem('userType');
     }
-  }, [isAuthenticated, auth0User]);
+  }, [isAuthenticated, auth0User, isLoading]);
 
   const value = {
     user,
-    userType,
-    loading: loading || isLoading,
-    signIn,
-    signOut: signOutUser,
-    setUser
+    setUser,
+    userType: user?.userType,
+    isLoading
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }

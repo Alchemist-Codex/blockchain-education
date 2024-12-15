@@ -35,6 +35,7 @@ function App() {
       authorizationParams={auth0Config.authorizationParams}
       useRefreshTokens={true}
       cacheLocation="localstorage"
+      persistentLogin={true}
     >
       <Web3Provider>
         <Router>
