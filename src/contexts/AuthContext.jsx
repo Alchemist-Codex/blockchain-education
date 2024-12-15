@@ -3,7 +3,7 @@ import { signInWithPopup, GoogleAuthProvider, setPersistence, browserLocalPersis
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { useWeb3 } from './Web3Context';
-import { userTypes } from '../utils/schema';
+import { userTypes, studentSchema, instituteSchema, collections } from '../utils/schema';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem('userType', selectedUserType);
       localStorage.setItem('authSession', JSON.stringify({ timestamp: Date.now() }));
       
-      // Create or update user document in Firestore
+      // Create or update user document in users collection
       const userRef = doc(db, 'users', user.uid);
       await setDoc(userRef, {
         uid: user.uid,
@@ -53,6 +53,31 @@ export function AuthProvider({ children }) {
         createdAt: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
       }, { merge: true });
+
+      // Create or update type-specific profile
+      if (selectedUserType === userTypes.STUDENT) {
+        const studentRef = doc(db, collections.STUDENTS, user.uid);
+        await setDoc(studentRef, {
+          ...studentSchema,
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          walletAddress: account || ''
+        }, { merge: true });
+      } else {
+        const instituteRef = doc(db, collections.INSTITUTIONS, user.uid);
+        await setDoc(instituteRef, {
+          ...instituteSchema,
+          uid: user.uid,
+          email: user.email,
+          instituteName: user.displayName || '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          walletAddress: account || ''
+        }, { merge: true });
+      }
 
       setUser(user);
       setUserType(selectedUserType);
