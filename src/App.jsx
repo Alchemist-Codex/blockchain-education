@@ -22,19 +22,30 @@ import StudentDashboard from './pages/StudentDashboard'
 import InstituteDashboard from './pages/InstituteDashboard'
 import { Auth0Provider } from '@auth0/auth0-react';
 import { auth0Config } from './config/auth0';
+import AuthCallback from './components/AuthCallback';
 
 /**
  * Main App component that handles routing and layout structure
  */
 function App() {
   return (
-    <Auth0Provider {...auth0Config}>
+    <Auth0Provider
+      domain={auth0Config.domain}
+      clientId={auth0Config.clientId}
+      authorizationParams={{
+        redirect_uri: `${window.location.origin}/callback`,
+        ...auth0Config.authorizationParams
+      }}
+    >
       <Web3Provider>
         <Router>
           <AuthProvider>
             <Routes>
               {/* Make IntroAnimation the root route */}
               <Route path="/" element={<IntroAnimation />} />
+
+              {/* Add the Auth0 callback route */}
+              <Route path="/callback" element={<AuthCallback />} />
 
               {/* Move other public routes under a different path */}
               <Route element={<PublicLayout />}>

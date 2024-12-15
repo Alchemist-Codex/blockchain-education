@@ -38,19 +38,13 @@ function SignIn() {
         await handleWalletConnect();
       }
       
-      // Store user type in localStorage before redirecting
+      // Store user type in localStorage
       localStorage.setItem('userType', selectedUserType);
-      
-      // Store wallet connection in localStorage
       localStorage.setItem('walletConnected', 'true');
       
-      // Initiate Auth0 login with custom parameters
+      // Login with Auth0
       await loginWithRedirect({
-        appState: { 
-          returnTo: selectedUserType === userTypes.STUDENT 
-            ? '/student/dashboard' 
-            : '/institution/dashboard'
-        }
+        appState: { returnTo: '/callback' }
       });
       
     } catch (error) {
