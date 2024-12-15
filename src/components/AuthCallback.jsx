@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { createOrUpdateUser, getUserProfile } from '../services/userService';
 
 function AuthCallback() {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -9,24 +10,44 @@ function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && user) {
-      // Set user in your auth context
-      setUser(user);
-      
-      // Get stored user type
-      const userType = localStorage.getItem('userType');
-      
-      // Navigate based on user type
-      if (userType === 'STUDENT') {
-        navigate('/student/dashboard');
-      } else if (userType === 'INSTITUTE') {
-        navigate('/institution/dashboard');
-      } else {
+    const handleCallback = async () => {
+      if (!isLoading && isAuthenticated && user) {
+        try {
+          const userType = localStorage.getItem('userType');
+          
+          // Get or create user profile
+          let userProfile = await getUserProfile(user.email, userType);
+          
+          if (!userProfile) {
+            // Create new user profile if doesn't exist
+            userProfile = await createOrUpdateUser({
+              email: user.email,
+              displayName: user.name,
+              picture: user.picture
+            }, userType);
+          }
+
+          // Set user in context
+          setUser({ ...user, ...userProfile });
+
+          // Navigate based on user type
+          if (userType === 'student') {
+            navigate('/student/dashboard');
+          } else if (userType === 'institute') {
+            navigate('/institution/dashboard');
+          } else {
+            navigate('/signin');
+          }
+        } catch (error) {
+          console.error('Error in callback:', error);
+          navigate('/signin');
+        }
+      } else if (!isLoading && !isAuthenticated) {
         navigate('/signin');
       }
-    } else if (!isLoading && !isAuthenticated) {
-      navigate('/signin');
-    }
+    };
+
+    handleCallback();
   }, [isLoading, isAuthenticated, user, navigate, setUser]);
 
   return (
