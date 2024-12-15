@@ -1,28 +1,19 @@
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-
-// Initialize Firebase services
-// Get Firestore database instance
-const db = getFirestore();
-// Get Firebase Authentication instance
-const auth = getAuth();
+import { useAuth0 } from '@auth0/auth0-react';
 
 /**
- * Fetches a user's profile from Firestore
- * @param {string} userId - The unique identifier of the user
+ * Fetches a user's profile from Auth0
  * @returns {Promise<Object>} The user's profile data
  */
-export const getUserProfile = async (userId) => {
+export const getUserProfile = async () => {
+  const { user, getAccessTokenSilently } = useAuth0();
   try {
-    // Attempt to fetch user document from Firestore
-    const userDoc = await getDoc(doc(db, 'users', userId));
-    // Throw error if user document doesn't exist
-    if (!userDoc.exists()) {
-      throw new Error('User profile not found');
-    }
-    // Return the user's profile data
-    return userDoc.data();
+    const accessToken = await getAccessTokenSilently();
+    const userDetailResponse = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${user.sub}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+    return await userDetailResponse.json();
   } catch (error) {
     console.error('Error fetching user profile:', error);
     throw error;
@@ -30,16 +21,23 @@ export const getUserProfile = async (userId) => {
 };
 
 /**
- * Updates a user's profile in Firestore
- * @param {string} userId - The unique identifier of the user
+ * Updates a user's profile in Auth0
  * @param {Object} data - The data to update in the user's profile
  * @returns {Promise<boolean>} True if update was successful
  */
-export const updateUserProfile = async (userId, data) => {
+export const updateUserProfile = async (data) => {
+  const { user, getAccessTokenSilently } = useAuth0();
   try {
-    // Update the user document with new data
-    await updateDoc(doc(db, 'users', userId), data);
-    return true;
+    const accessToken = await getAccessTokenSilently();
+    const response = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${user.sub}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+    return response.ok;
   } catch (error) {
     console.error('Error updating user profile:', error);
     throw error;
@@ -47,20 +45,13 @@ export const updateUserProfile = async (userId, data) => {
 };
 
 /**
- * Fetches a user's credentials from their profile
- * @param {string} userId - The unique identifier of the user
- * @returns {Promise<Array>} Array of user credentials, empty if none found
+ * Fetches a user's credentials from their metadata
+ * @returns {Promise<Array>} Array of user credentials
  */
-export const getUserCredentials = async (userId) => {
+export const getUserCredentials = async () => {
+  const { user } = useAuth0();
   try {
-    // Fetch user document from Firestore
-    const userDoc = await getDoc(doc(db, 'users', userId));
-    // Return empty array if user document doesn't exist
-    if (!userDoc.exists()) {
-      return [];
-    }
-    // Return credentials array from user data, or empty array if none exist
-    return userDoc.data().credentials || [];
+    return user?.['https://your-namespace/credentials'] || [];
   } catch (error) {
     console.error('Error fetching user credentials:', error);
     throw error;
