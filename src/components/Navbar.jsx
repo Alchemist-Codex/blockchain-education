@@ -68,14 +68,30 @@ function Navbar() {
   }
 
   // Navigation links configuration
-  const navLinks = [
-    ['Dashboard', getDashboardPath()],
-    ['Upload Credential', '/institution/upload-credential'],
-    ['Verify Credential', '/verify'],
-    ['Profile', getProfilePath()],
-    ['About', '/about'],
-    ['FAQ', '/faq']
-  ]
+  const getNavLinks = () => {
+    const commonLinks = [
+      ['Dashboard', getDashboardPath()],
+      ['Profile', getProfilePath()],
+      ['About', '/about'],
+      ['FAQ', '/faq']
+    ];
+
+    if (userType === userTypes.INSTITUTE) {
+      return [
+        ...commonLinks,
+        ['Upload Credential', '/institution/upload-credential']
+      ];
+    }
+
+    if (userType === userTypes.STUDENT) {
+      return [
+        ...commonLinks,
+        ['Verify Credential', '/verify']
+      ];
+    }
+
+    return commonLinks;
+  };
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-md">
@@ -84,7 +100,7 @@ function Navbar() {
           {/* Logo and brand name */}
           <div className="flex items-center">
             <Link 
-              to="/" 
+              to="/home" 
               className="flex items-center"
             >
               {/* Light mode logo */}
@@ -107,7 +123,7 @@ function Navbar() {
   
           {/* Desktop Navigation Links */}
           <div className="hidden sm:flex sm:items-center sm:space-x-8">
-            {user && navLinks.map(([title, path]) => (
+            {user && getNavLinks().map(([title, path]) => (
               <Link
                 key={path}
                 to={path}
@@ -125,9 +141,17 @@ function Navbar() {
               <div className="flex items-center space-x-4">
                 {/* User avatar and name */}
                 <div className="flex items-center space-x-2">
-                  <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                    {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
-                  </div>
+                  {user.photoURL ? (
+                    <img 
+                      src={user.photoURL} 
+                      alt={user.displayName || 'User avatar'} 
+                      className="h-8 w-8 rounded-full"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
+                      {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  )}
                   <span className="text-gray-700 dark:text-gray-300 hidden sm:inline">
                     {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}
                   </span>
@@ -185,7 +209,7 @@ function Navbar() {
               onClick={e => e.stopPropagation()}
             >
               <div className="p-4 space-y-3">
-                {navLinks.map(([title, path]) => (
+                {getNavLinks().map(([title, path]) => (
                   <Link
                     key={path}
                     to={path}

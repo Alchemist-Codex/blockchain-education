@@ -63,7 +63,7 @@ function HomePage() {
             >
               {/* Primary CTA - Issue Credential */}
               <Link 
-                to="/upload" 
+                to="/institution/upload-credential" 
                 className="btn bg-white dark:bg-gray-800 text-primary-600 dark:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transform transition-all"
               >
                 Issue Credential

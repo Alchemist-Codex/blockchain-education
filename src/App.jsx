@@ -86,6 +86,26 @@ function App() {
 
             {/* Fallback route - redirects unknown paths to home */}
             <Route path="*" element={<Navigate to="/home" replace />} />
+
+            {/* Verify Credential - only for students */}
+            <Route 
+              path="/verify" 
+              element={
+                <ProtectedRoute requiredUserType={userTypes.STUDENT}>
+                  <CredentialVerification />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* Upload Credential - only for institutes */}
+            <Route 
+              path="/institution/upload-credential" 
+              element={
+                <ProtectedRoute requiredUserType={userTypes.INSTITUTE}>
+                  <CredentialUpload />
+                </ProtectedRoute>
+              } 
+            />
           </Routes>
         </AuthProvider>
       </Router>
