@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth0 } from '@auth0/auth0-react'
 import ThemeToggle from './ThemeToggle'
 import { useAuth } from '../contexts/AuthContext'
 import { userTypes } from '../utils/schema'
-import MetaMaskConnect from './MetaMaskConnect'
+import toast from 'react-hot-toast'
 
 /**
  * Navbar Component
@@ -14,7 +15,8 @@ import MetaMaskConnect from './MetaMaskConnect'
 function Navbar() {
   // State and hooks
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { user, signOut, userType } = useAuth()
+  const { user, setUser, userType } = useAuth()
+  const { logout } = useAuth0()
   const navigate = useNavigate()
 
   /**
@@ -22,10 +24,19 @@ function Navbar() {
    */
   const handleSignOut = async () => {
     try {
-      await signOut()
-      navigate('/signin')
+      // Clear user data from context
+      setUser(null)
+      // Clear local storage
+      localStorage.removeItem('userType')
+      localStorage.removeItem('authSession')
+      localStorage.removeItem('walletConnected')
+      // Show success message
+      toast.success('Signed out successfully')
+      // Use Auth0 logout
+      logout({ returnTo: window.location.origin })
     } catch (error) {
       console.error('Error signing out:', error)
+      toast.error('Failed to sign out')
     }
   }
 
@@ -71,24 +82,14 @@ function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo and brand name */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center">
-              {/* Light mode logo */}
-              <img
-                src="/logo-white.png"
-                alt="Academic Chain Logo"
-                className="h-8 w-8 mr-2 dark:hidden"
-              />
-              {/* Dark mode logo */}
-              <img
-                src="/logo-dark.png"
-                alt="Academic Chain Logo"
-                className="h-8 w-8 mr-2 hidden dark:block"
-              />
-              <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
-                Academic Chain
-              </span>
-            </Link>
-          </div>
+            <Link 
+            to="/home" 
+            className="flex items-center text-xl font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+            >
+            <img src="public\logo-dark.png" alt="Academic Chain" className="h-8 w-8 mr-2" />
+            Academic Chain
+          </Link>
+        </div>  
   
           {/* Desktop Navigation Links */}
           <div className="hidden sm:flex sm:items-center sm:space-x-8">
@@ -111,10 +112,10 @@ function Navbar() {
                 {/* User avatar and name */}
                 <div className="flex items-center space-x-2">
                   <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                    {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                    {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <span className="text-gray-700 dark:text-gray-300 hidden sm:inline">
-                    {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}
+                    {user.name?.split(' ')[0] || user.email?.split('@')[0]}
                   </span>
                 </div>
                 <motion.button
