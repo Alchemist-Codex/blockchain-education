@@ -21,7 +21,8 @@ function Profile() {
         email: user.email || 'user@example.com',
         institution: 'Not Set',
         role: localStorage.getItem('userType') || 'Student',
-        joinedDate: new Date().toLocaleDateString()
+        joinedDate: new Date().toLocaleDateString(),
+        photoURL: user.photoURL
       })
     }
   }, [user, account])
@@ -65,10 +66,18 @@ function Profile() {
             {/* Profile Header with gradient background */}
             <div className="px-6 py-8 bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-800 dark:to-primary-900">
               <div className="flex items-center">
-                {/* Avatar circle with first letter of name */}
-                <div className="h-24 w-24 rounded-full bg-white dark:bg-gray-700 flex items-center justify-center text-3xl font-bold text-primary-600">
-                  {profile.name.charAt(0)}
-                </div>
+                {/* Avatar circle with image or first letter */}
+                {user.photoURL ? (
+                  <img 
+                    src={user.photoURL} 
+                    alt={profile.name}
+                    className="h-24 w-24 rounded-full object-cover border-4 border-white dark:border-gray-700"
+                  />
+                ) : (
+                  <div className="h-24 w-24 rounded-full bg-white dark:bg-gray-700 flex items-center justify-center text-3xl font-bold text-primary-600">
+                    {profile.name.charAt(0)}
+                  </div>
+                )}
                 {/* Name and role display */}
                 <div className="ml-6">
                   <h1 className="text-2xl font-bold text-white">{profile.name}</h1>

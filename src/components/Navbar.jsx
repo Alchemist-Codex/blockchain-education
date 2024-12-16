@@ -141,9 +141,17 @@ function Navbar() {
               <div className="flex items-center space-x-4">
                 {/* User avatar and name */}
                 <div className="flex items-center space-x-2">
-                  <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                    {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
-                  </div>
+                  {user.photoURL ? (
+                    <img 
+                      src={user.photoURL} 
+                      alt={user.displayName || 'User avatar'} 
+                      className="h-8 w-8 rounded-full"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
+                      {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  )}
                   <span className="text-gray-700 dark:text-gray-300 hidden sm:inline">
                     {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}
                   </span>
