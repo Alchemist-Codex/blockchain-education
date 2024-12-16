@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import LoadingSpinner from './LoadingSpinner';
+import { useAuth0 } from '@auth0/auth0-react';
 
 /**
  * ProtectedRoute Component
@@ -9,36 +9,29 @@ import LoadingSpinner from './LoadingSpinner';
  * @param {string} requiredUserType - The user type required to access this route
  */
 function ProtectedRoute({ children, requiredUserType }) {
-  // Get authentication context values
-  const { user, userType, loading } = useAuth();
-  
-  // Debug logging for route protection
-  console.log('ProtectedRoute:', { user, userType, loading, requiredUserType });
+  const { user, isLoading: contextLoading } = useAuth();
+  const { isAuthenticated, isLoading: auth0Loading } = useAuth0();
 
-  // Show loading spinner while authentication state is being determined
-  if (loading) {
-    return <LoadingSpinner />;
+  // Show loading state while checking authentication
+  if (auth0Loading || contextLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary-500"></div>
+      </div>
+    );
   }
 
-  // Redirect to sign in if no user is authenticated
-  if (!user) {
+  // Redirect to signin if not authenticated
+  if (!isAuthenticated || !user) {
     return <Navigate to="/signin" replace />;
   }
 
-  // Handle user type validation
-  if (requiredUserType && userType !== requiredUserType) {
-    // Redirect users to their appropriate dashboard based on their type
-    if (userType === userTypes.STUDENT) {
-      return <Navigate to="/student/dashboard" replace />;
-    } else if (userType === userTypes.INSTITUTE) {
-      return <Navigate to="/institution/dashboard" replace />;
-    }
-    // If user type doesn't match any known type, redirect to unauthorized page
+  // Check for required user type
+  if (requiredUserType && user.userType !== requiredUserType) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // If all checks pass, render the protected content
   return children;
 }
 
-export default ProtectedRoute; 
+export default ProtectedRoute;

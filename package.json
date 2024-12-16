@@ -2,7 +2,7 @@
   "name": "blockchain-education",
   "private": true,
   "version": "0.0.0",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.2.4",
     "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.5",
     "@headlessui/react": "^1.7.17",
@@ -18,8 +19,9 @@
     "@react-three/fiber": "^8.17.10",
     "buffer": "^6.0.3",
     "ethers": "^6.13.4",
-    "firebase": "^11.0.2",
     "framer-motion": "^11.13.1",
+    "js-cookie": "^3.0.5",
+    "jsonwebtoken": "^9.0.2",
     "particles.js": "^2.0.0",
     "pinata": "^1.9.1",
     "react": "^18.3.1",
@@ -28,6 +30,7 @@
     "react-icons": "^5.4.0",
     "react-router-dom": "^7.0.2",
     "tailwind-scrollbar": "^3.0.5",
+    "terser": "^5.37.0",
     "three": "^0.171.0",
     "web3modal": "^1.9.12"
   },

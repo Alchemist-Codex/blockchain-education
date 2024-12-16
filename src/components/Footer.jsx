@@ -3,6 +3,8 @@
  * Displays the website footer with navigation links and social connections
  * Uses a responsive grid layout that adapts from 1 to 3 columns
  */
+import CurrentYear from './CurrentYear';
+
 function Footer() {
   return (
     // Main footer container with dark theme support
@@ -68,7 +70,7 @@ function Footer() {
               </a>
               {/* Placeholder links for team members */}
               <a 
-                href="" 
+                href="https://linktr.ee/Lykus691" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
                 rel="noopener noreferrer"
@@ -76,7 +78,7 @@ function Footer() {
                 Sougata's Socials
               </a>
               <a 
-                href="" 
+                href="https://linktr.ee/rayyyanjali" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
                 rel="noopener noreferrer"
@@ -89,11 +91,11 @@ function Footer() {
 
         {/* Copyright Section */}
         <div className="border-t border-gray-700 dark:border-gray-600 mt-8 pt-8 text-center text-gray-400 dark:text-gray-300">
-          <p>&copy; 2024 Academic Chain. All rights reserved.</p>
+          <p>&copy; <CurrentYear /> Academic Chain. All rights reserved.</p>
         </div>
       </div>
     </footer>
-  )
+  );
 }
 
-export default Footer
+export default Footer;
