@@ -22,10 +22,12 @@ export function ThemeProvider({ children }) {
     if (isDark) {
       // Apply dark theme
       document.documentElement.classList.add('dark')
+      // document.documentElement.style.backgroundColor = '' // Reset to default
       localStorage.setItem('theme', 'dark')
     } else {
       // Apply light theme
       document.documentElement.classList.remove('dark')
+      document.documentElement.classList.add('light')
       localStorage.setItem('theme', 'light')
     }
   }, [isDark]) // Re-run when isDark changes
@@ -41,4 +43,4 @@ export function ThemeProvider({ children }) {
  * Custom hook to access theme context
  * @returns {Object} { isDark: boolean, setIsDark: function }
  */
-export const useTheme = () => useContext(ThemeContext) 
+export const useTheme = () => useContext(ThemeContext)

@@ -47,7 +47,7 @@ export default function QAFormInstitute() {
                 {/* Institute Wallet Address  */}
             <div>
             <label className="block text-blue-800 dark:text-blue-100 font-medium">Wallet Address</label>
-            <input type="text" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required />
+            <input type="text" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
 
             {/* // Address (Larger Textarea)  */}
