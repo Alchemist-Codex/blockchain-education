@@ -96,7 +96,7 @@ function Navbar() {
             >
               {/* Light Mode Logo */}
               <img 
-                src="/logo-light.png" 
+                src="/logo-white.png" 
                 alt="Light Mode Logo" 
                 className="h-8 w-8 mr-2 block dark:hidden"
               />
