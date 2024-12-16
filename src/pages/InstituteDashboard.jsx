@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth0 } from '@auth0/auth0-react'
+import { useAuth } from '../contexts/AuthContext'
 import { getUserProfile } from '../services/userService'
 import { PageTransition } from '../components/PageTransition'
 
@@ -10,30 +10,20 @@ import { PageTransition } from '../components/PageTransition'
  */
 function InstituteDashboard() {
   // Authentication and state management
-  const { getAccessTokenSilently, user } = useAuth0();
-  const [profile, setProfile] = useState(null);
+  const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState(null);
   const [activeTab, setActiveTab] = useState('issued')
 
   // Fetch user profile data on component mount
   useEffect(() => {
     const fetchUserProfile = async () => {
-      try {
-        if (!user?.email) return;
-        
-        const token = await getAccessTokenSilently({
-          audience: `https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/`,
-          scope: 'read:users'
-        });
-        
-        const userProfile = await getUserProfile(token, user.email);
-        setProfile(userProfile);
-      } catch (error) {
-        console.error('Error fetching profile:', error);
+      if (user) {
+        const profile = await getUserProfile(user.uid);
+        setUserProfile(profile);
       }
     };
-
     fetchUserProfile();
-  }, [getAccessTokenSilently, user]);
+  }, [user]);
 
   // Mock statistics data
   const stats = [
@@ -60,7 +50,7 @@ function InstituteDashboard() {
             animate={{ opacity: 1, y: 0 }}
           >
             <h1 className="text-3xl font-bold mb-2">
-              Welcome, {profile?.instituteName || 'Institution'}!
+              Welcome, {userProfile?.instituteName || 'Institution'}!
             </h1>
             <p className="text-primary-100">
               Manage and issue academic credentials

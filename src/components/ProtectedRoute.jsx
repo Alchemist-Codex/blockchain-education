@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useAuth0 } from '@auth0/auth0-react';
+import LoadingSpinner from './LoadingSpinner';
 
 /**
  * ProtectedRoute Component
@@ -9,29 +9,47 @@ import { useAuth0 } from '@auth0/auth0-react';
  * @param {string} requiredUserType - The user type required to access this route
  */
 function ProtectedRoute({ children, requiredUserType }) {
-  const { user, isLoading: contextLoading } = useAuth();
-  const { isAuthenticated, isLoading: auth0Loading } = useAuth0();
+  // Get authentication context values
+  const { user, userType, loading } = useAuth();
+  
+  // Debug logging for route protection
+  console.log('ProtectedRoute:', { user, userType, loading, requiredUserType });
 
-  // Show loading state while checking authentication
-  if (auth0Loading || contextLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary-500"></div>
-      </div>
-    );
+  // Check session validity
+  const checkSession = () => {
+    const sessionData = localStorage.getItem('authSession');
+    if (!sessionData) return false;
+    
+    const { timestamp } = JSON.parse(sessionData);
+    const isExpired = Date.now() - timestamp > (5 * 60 * 60 * 1000);
+    return !isExpired;
+  };
+
+  // Show loading spinner while authentication state is being determined
+  if (loading) {
+    return <LoadingSpinner />;
   }
 
-  // Redirect to signin if not authenticated
-  if (!isAuthenticated || !user) {
+  // Redirect to sign in if no user or session expired
+  if (!user || !checkSession()) {
+    localStorage.removeItem('authSession');
     return <Navigate to="/signin" replace />;
   }
 
-  // Check for required user type
-  if (requiredUserType && user.userType !== requiredUserType) {
+  // Handle user type validation
+  if (requiredUserType && userType !== requiredUserType) {
+    // Redirect users to their appropriate dashboard based on their type
+    if (userType === userTypes.STUDENT) {
+      return <Navigate to="/student/dashboard" replace />;
+    } else if (userType === userTypes.INSTITUTE) {
+      return <Navigate to="/institution/dashboard" replace />;
+    }
+    // If user type doesn't match any known type, redirect to unauthorized page
     return <Navigate to="/unauthorized" replace />;
   }
 
+  // If all checks pass, render the protected content
   return children;
 }
 
-export default ProtectedRoute;
+export default ProtectedRoute; 

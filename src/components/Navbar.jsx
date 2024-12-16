@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth0 } from '@auth0/auth0-react'
+import { signOut } from 'firebase/auth'
+import { auth } from '../config/firebase'
 import ThemeToggle from './ThemeToggle'
 import { useAuth } from '../contexts/AuthContext'
 import { userTypes } from '../utils/schema'
@@ -15,23 +16,15 @@ import toast from 'react-hot-toast'
 function Navbar() {
   // State and hooks
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { user: contextUser, setUser, userType } = useAuth()
-  const { user: auth0User, logout, isAuthenticated } = useAuth0()
+  const { user, setUser, userType } = useAuth()
   const navigate = useNavigate()
-
-  // Use Auth0 user data for profile picture
-  const userInfo = {
-    ...contextUser,
-    picture: auth0User?.picture,
-    name: auth0User?.name || contextUser?.name,
-    email: auth0User?.email || contextUser?.email
-  }
 
   /**
    * Handles user sign out and navigation
    */
   const handleSignOut = async () => {
     try {
+      await signOut(auth)
       // Clear user data from context
       setUser(null)
       // Clear local storage
@@ -40,8 +33,8 @@ function Navbar() {
       localStorage.removeItem('walletConnected')
       // Show success message
       toast.success('Signed out successfully')
-      // Use Auth0 logout
-      logout({ returnTo: window.location.origin })
+      // Redirect to signin page
+      navigate('/signin')
     } catch (error) {
       console.error('Error signing out:', error)
       toast.error('Failed to sign out')
@@ -91,28 +84,30 @@ function Navbar() {
           {/* Logo and brand name */}
           <div className="flex items-center">
             <Link 
-            to="/home" 
-            className="flex items-center text-xl font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+              to="/" 
+              className="flex items-center"
             >
-              {/* Light Mode Logo */}
-              <img 
-                src="/logo-white.png" 
-                alt="Light Mode Logo" 
-                className="h-8 w-8 mr-2 block dark:hidden"
+              {/* Light mode logo */}
+              <img
+                src="/logo-white.png"
+                alt="Academic Chain Logo"
+                className="h-8 w-8 mr-2 dark:hidden"
               />
-              {/* Dark Mode Logo */}
-              <img 
-                src="/logo-dark.png" 
-                alt="Dark Mode Logo" 
+              {/* Dark mode logo */}
+              <img
+                src="/logo-dark.png"
+                alt="Academic Chain Logo"
                 className="h-8 w-8 mr-2 hidden dark:block"
-             />
+              />
+              <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
                 Academic Chain
-          </Link>
-        </div>  
+              </span>
+            </Link>
+          </div>
   
           {/* Desktop Navigation Links */}
           <div className="hidden sm:flex sm:items-center sm:space-x-8">
-            {contextUser && navLinks.map(([title, path]) => (
+            {user && navLinks.map(([title, path]) => (
               <Link
                 key={path}
                 to={path}
@@ -125,27 +120,16 @@ function Navbar() {
   
           {/* User Controls Section */}
           <div className="flex items-center space-x-4">
-            {contextUser ? (
+            {user ? (
+              // Authenticated user display and controls
               <div className="flex items-center space-x-4">
                 {/* User avatar and name */}
                 <div className="flex items-center space-x-2">
-                  {isAuthenticated && auth0User?.picture ? (
-                    <img 
-                      src={auth0User.picture} 
-                      alt={auth0User.name || 'User'} 
-                      className="h-8 w-8 rounded-full object-cover border-2 border-primary-500"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = `https://ui-avatars.com/api/?name=${userInfo.name || 'U'}&background=6366f1&color=fff`;
-                      }}
-                    />
-                  ) : (
-                    <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                      {userInfo.name?.charAt(0).toUpperCase() || userInfo.email?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                  )}
+                  <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
+                    {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                  </div>
                   <span className="text-gray-700 dark:text-gray-300 hidden sm:inline">
-                    {userInfo.name?.split(' ')[0] || userInfo.email?.split('@')[0]}
+                    {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}
                   </span>
                 </div>
                 <motion.button
@@ -168,7 +152,7 @@ function Navbar() {
             <ThemeToggle />
             
             {/* Mobile Menu Button */}
-            {contextUser && (
+            {user && (
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 sm:hidden"
@@ -184,7 +168,7 @@ function Navbar() {
   
       {/* Mobile Menu */}
       <AnimatePresence>
-        {isMenuOpen && contextUser && (
+        {isMenuOpen && user && (
           <motion.div 
             className="sm:hidden fixed inset-0 bg-gray-800/50 dark:bg-gray-900/50 z-40"
             initial={{ opacity: 0 }}

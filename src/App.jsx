@@ -20,88 +20,73 @@ import { userTypes } from './utils/schema'
 // Dashboard variants
 import StudentDashboard from './pages/StudentDashboard'
 import InstituteDashboard from './pages/InstituteDashboard'
-import { Auth0Provider } from '@auth0/auth0-react';
-import { auth0Config } from './config/auth0';
-import AuthCallback from './components/AuthCallback';
 
 /**
  * Main App component that handles routing and layout structure
  */
 function App() {
   return (
-    <Auth0Provider
-      domain={auth0Config.domain}
-      clientId={auth0Config.clientId}
-      authorizationParams={auth0Config.authorizationParams}
-      useRefreshTokens={true}
-      cacheLocation="localstorage"
-      persistentLogin={true}
-    >
-      <Web3Provider>
-        <Router>
-          <AuthProvider>
-            <Routes>
-              {/* Make IntroAnimation the root route */}
-              <Route path="/" element={<IntroAnimation />} />
+    <Web3Provider>
+      <Router>
+        <AuthProvider>
+          <Routes>
+            {/* Make IntroAnimation the root route */}
+            <Route path="/" element={<IntroAnimation />} />
+            
+            {/* Move other public routes under a different path */}
+            <Route element={<PublicLayout />}>
+              <Route path="/home" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/verify" element={<CredentialVerification />} />
+            </Route>
 
-              {/* Add the Auth0 callback route */}
-              <Route path="/callback" element={<AuthCallback />} />
+            {/* Authentication route - no navbar needed */}
+            <Route path="/signin" element={<SignIn />} />
+            
+            {/* Protected routes for students - requires student role */}
+            <Route path="/student/*" element={
+              <ProtectedRoute requiredUserType={userTypes.STUDENT}>
+                <ProtectedLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<StudentDashboard />} />
+              <Route path="profile" element={<Profile />} />
+            </Route>
+            
+            {/* Protected routes for institutions - requires institute role */}
+            <Route path="/institution/*" element={
+              <ProtectedRoute requiredUserType={userTypes.INSTITUTE}>
+                <ProtectedLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<InstituteDashboard />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="upload-credential" element={<CredentialUpload />} />
+            </Route>
 
-              {/* Move other public routes under a different path */}
-              <Route element={<PublicLayout />}>
-                <Route path="/home" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="/verify" element={<CredentialVerification />} />
-              </Route>
+            {/* Route for unauthorized access attempts */}
+            <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-              {/* Authentication route - no navbar needed */}
-              <Route path="/signin" element={<SignIn />} />
-
-              {/* Protected routes for students - requires student role */}
-              <Route path="/student/*" element={
-                <ProtectedRoute requiredUserType={userTypes.STUDENT}>
-                  <ProtectedLayout />
+            {/* Smart redirect based on user role */}
+            <Route 
+              path="/" 
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRedirect />
                 </ProtectedRoute>
-              }>
-                <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="dashboard" element={<StudentDashboard />} />
-                <Route path="profile" element={<Profile />} />
-              </Route>
+              } 
+            />
 
-              {/* Protected routes for institutions - requires institute role */}
-              <Route path="/institution/*" element={
-                <ProtectedRoute requiredUserType={userTypes.INSTITUTE}>
-                  <ProtectedLayout />
-                </ProtectedRoute>
-              }>
-                <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="dashboard" element={<InstituteDashboard />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="upload-credential" element={<CredentialUpload />} />
-              </Route>
-
-              {/* Route for unauthorized access attempts */}
-              <Route path="/unauthorized" element={<UnauthorizedPage />} />
-
-              {/* Smart redirect based on user role */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <RoleBasedRedirect />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Fallback route - redirects unknown paths to home */}
-              <Route path="*" element={<Navigate to="/home" replace />} />
-            </Routes>
-          </AuthProvider>
-        </Router>
-      </Web3Provider>
-    </Auth0Provider>
-  );
+            {/* Fallback route - redirects unknown paths to home */}
+            <Route path="*" element={<Navigate to="/home" replace />} />
+          </Routes>
+        </AuthProvider>
+      </Router>
+    </Web3Provider>
+  )
 }
 
 /**
@@ -142,12 +127,12 @@ function ProtectedLayout() {
  */
 function RoleBasedRedirect() {
   const { user, userType } = useAuth();
-
+  
   // Redirect to signin if no user
   if (!user) {
     return <Navigate to="/signin" replace />;
   }
-
+  
   // Redirect based on user type
   switch (userType) {
     case userTypes.STUDENT:
@@ -166,7 +151,7 @@ function RoleBasedRedirect() {
  */
 function UnauthorizedPage() {
   const { userType } = useAuth();
-
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="text-center">
@@ -187,4 +172,4 @@ function UnauthorizedPage() {
   );
 }
 
-export default App;
+export default App

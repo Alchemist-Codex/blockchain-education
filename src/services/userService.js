@@ -1,57 +1,68 @@
-import { auth0Config } from '../config/auth0';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
-export const getUserProfile = async (token, email) => {
+// Initialize Firebase services
+// Get Firestore database instance
+const db = getFirestore();
+// Get Firebase Authentication instance
+const auth = getAuth();
+
+/**
+ * Fetches a user's profile from Firestore
+ * @param {string} userId - The unique identifier of the user
+ * @returns {Promise<Object>} The user's profile data
+ */
+export const getUserProfile = async (userId) => {
   try {
-    // Encode the email for URL
-    const encodedEmail = encodeURIComponent(email);
-    
-    // Construct the correct Management API URL
-    const url = `https://${auth0Config.domain}/api/v2/users-by-email?email=${encodedEmail}`;
-
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch user profile');
+    // Attempt to fetch user document from Firestore
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    // Throw error if user document doesn't exist
+    if (!userDoc.exists()) {
+      throw new Error('User profile not found');
     }
-
-    const data = await response.json();
-    // Auth0 returns an array of users, we want the first one
-    return data[0] || null;
+    // Return the user's profile data
+    return userDoc.data();
   } catch (error) {
     console.error('Error fetching user profile:', error);
     throw error;
   }
 };
 
-// Add this function to get the Management API token
-export const getManagementApiToken = async () => {
+/**
+ * Updates a user's profile in Firestore
+ * @param {string} userId - The unique identifier of the user
+ * @param {Object} data - The data to update in the user's profile
+ * @returns {Promise<boolean>} True if update was successful
+ */
+export const updateUserProfile = async (userId, data) => {
   try {
-    const response = await fetch(`https://${auth0Config.domain}/oauth/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        client_id: auth0Config.clientId,
-        client_secret: import.meta.env.VITE_AUTH0_CLIENT_SECRET,
-        audience: `https://${auth0Config.domain}/api/v2/`,
-        grant_type: 'client_credentials'
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to get management token');
-    }
-
-    const data = await response.json();
-    return data.access_token;
+    // Update the user document with new data
+    await updateDoc(doc(db, 'users', userId), data);
+    return true;
   } catch (error) {
-    console.error('Error getting management token:', error);
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetches a user's credentials from their profile
+ * @param {string} userId - The unique identifier of the user
+ * @returns {Promise<Array>} Array of user credentials, empty if none found
+ */
+export const getUserCredentials = async (userId) => {
+  try {
+    // Fetch user document from Firestore
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    // Return empty array if user document doesn't exist
+    if (!userDoc.exists()) {
+      return [];
+    }
+    // Return credentials array from user data, or empty array if none exist
+    return userDoc.data().credentials || [];
+  } catch (error) {
+    console.error('Error fetching user credentials:', error);
     throw error;
   }
 }; 

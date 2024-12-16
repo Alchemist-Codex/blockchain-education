@@ -1,10 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { BrowserProvider, JsonRpcProvider } from 'ethers'
-import config from '../config'
-import toast from 'react-hot-toast'
+import { web3Service } from '../services/web3Service'
 
 // Create context for Web3 functionality
-export const Web3Context = createContext()
+const Web3Context = createContext()
 
 /**
  * Web3Provider Component
@@ -12,11 +10,10 @@ export const Web3Context = createContext()
  */
 export function Web3Provider({ children }) {
   // State management for Web3 connection
-  const [provider, setProvider] = useState(null)
-  const [signer, setSigner] = useState(null)
-  const [account, setAccount] = useState(null)
-  const [networkId, setNetworkId] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [account, setAccount] = useState(null)         // Connected wallet address
+  const [isInstitution, setIsInstitution] = useState(false) // Institution status
+  const [loading, setLoading] = useState(true)         // Loading state
+  const [contract, setContract] = useState(null)       // Smart contract instance
 
   // Set up Web3 connection and MetaMask event listeners
   useEffect(() => {
@@ -88,128 +85,31 @@ export function Web3Provider({ children }) {
 
   const connect = async () => {
     try {
-      setLoading(true)
-
-      if (!window.ethereum) {
-        toast.error('Please install MetaMask');
-        return;
-      }
-
-      // Request account access
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      });
-
-      // Get network ID
-      const networkId = await window.ethereum.request({ 
-        method: 'net_version' 
-      });
-
-      // Check if connected to correct network
-      if (networkId !== config.networkId.toString()) {
-        try {
-          // Try to switch to the correct network
-          await window.ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: `0x${Number(config.networkId).toString(16)}` }],
-          });
-        } catch (switchError) {
-          // If network doesn't exist, add it
-          if (switchError.code === 4902) {
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [{
-                chainId: `0x${Number(config.networkId).toString(16)}`,
-                chainName: config.networkName,
-                rpcUrls: [config.rpcUrl],
-                nativeCurrency: {
-                  name: 'ETH',
-                  symbol: 'ETH',
-                  decimals: 18
-                }
-              }]
-            });
-          } else {
-            throw switchError;
-          }
-        }
-      }
-
-      // Initialize provider and signer using ethers v6
-      const browserProvider = new BrowserProvider(window.ethereum);
-      const web3Signer = await browserProvider.getSigner();
-
-      setProvider(browserProvider);
-      setSigner(web3Signer);
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       setAccount(accounts[0]);
-      setNetworkId(networkId);
-
-      // Store wallet connection in localStorage
       localStorage.setItem('walletConnected', 'true');
-
-      toast.success('Wallet connected successfully!');
     } catch (error) {
-      console.error('Connection error:', error);
-      toast.error('Failed to connect wallet: ' + error.message);
-    } finally {
-      setLoading(false)
+      console.error('Failed to connect:', error);
+      throw error;
     }
-  };
-
-  // Handle account changes
-  useEffect(() => {
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
-        } else {
-          setAccount(null);
-          localStorage.removeItem('walletConnected');
-        }
-      });
-
-      window.ethereum.on('chainChanged', () => {
-        window.location.reload();
-      });
-
-      // Check if wallet was previously connected
-      const checkConnection = async () => {
-        if (localStorage.getItem('walletConnected') === 'true') {
-          await connect();
-        }
-      };
-      
-      checkConnection();
-    }
-
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', () => {});
-        window.ethereum.removeListener('chainChanged', () => {});
-      }
-    };
-  }, []);
-
-  const value = {
-    provider,
-    signer,
-    account,
-    networkId,
-    loading,
-    connect
   };
 
   return (
-    <Web3Context.Provider value={value}>
+    <Web3Context.Provider value={{ 
+      account,           // Connected wallet address
+      isInstitution,     // Institution status
+      loading,           // Loading state
+      contract,          // Smart contract instance
+      web3Service,       // Web3 service utilities
+      connect: connect  // Connection function
+    }}>
       {children}
     </Web3Context.Provider>
-  );
+  )
 }
 
 /**
  * Custom hook to use Web3 context
  * @returns {Object} Web3 context value
  */
-export function useWeb3() {
-  return useContext(Web3Context);
-} 
+export const useWeb3 = () => useContext(Web3Context) 
