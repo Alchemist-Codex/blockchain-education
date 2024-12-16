@@ -15,9 +15,17 @@ import toast from 'react-hot-toast'
 function Navbar() {
   // State and hooks
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { user, setUser, userType } = useAuth()
-  const { logout } = useAuth0()
+  const { user: contextUser, setUser, userType } = useAuth()
+  const { user: auth0User, logout, isAuthenticated } = useAuth0()
   const navigate = useNavigate()
+
+  // Use Auth0 user data for profile picture
+  const userInfo = {
+    ...contextUser,
+    picture: auth0User?.picture,
+    name: auth0User?.name || contextUser?.name,
+    email: auth0User?.email || contextUser?.email
+  }
 
   /**
    * Handles user sign out and navigation
@@ -92,7 +100,7 @@ function Navbar() {
   
           {/* Desktop Navigation Links */}
           <div className="hidden sm:flex sm:items-center sm:space-x-8">
-            {user && navLinks.map(([title, path]) => (
+            {contextUser && navLinks.map(([title, path]) => (
               <Link
                 key={path}
                 to={path}
@@ -105,16 +113,27 @@ function Navbar() {
   
           {/* User Controls Section */}
           <div className="flex items-center space-x-4">
-            {user ? (
-              // Authenticated user display and controls
+            {contextUser ? (
               <div className="flex items-center space-x-4">
                 {/* User avatar and name */}
                 <div className="flex items-center space-x-2">
-                  <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                    {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
-                  </div>
+                  {isAuthenticated && auth0User?.picture ? (
+                    <img 
+                      src={auth0User.picture} 
+                      alt={auth0User.name || 'User'} 
+                      className="h-8 w-8 rounded-full object-cover border-2 border-primary-500"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://ui-avatars.com/api/?name=${userInfo.name || 'U'}&background=6366f1&color=fff`;
+                      }}
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
+                      {userInfo.name?.charAt(0).toUpperCase() || userInfo.email?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  )}
                   <span className="text-gray-700 dark:text-gray-300 hidden sm:inline">
-                    {user.name?.split(' ')[0] || user.email?.split('@')[0]}
+                    {userInfo.name?.split(' ')[0] || userInfo.email?.split('@')[0]}
                   </span>
                 </div>
                 <motion.button
@@ -137,7 +156,7 @@ function Navbar() {
             <ThemeToggle />
             
             {/* Mobile Menu Button */}
-            {user && (
+            {contextUser && (
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 sm:hidden"
@@ -153,7 +172,7 @@ function Navbar() {
   
       {/* Mobile Menu */}
       <AnimatePresence>
-        {isMenuOpen && user && (
+        {isMenuOpen && contextUser && (
           <motion.div 
             className="sm:hidden fixed inset-0 bg-gray-800/50 dark:bg-gray-900/50 z-40"
             initial={{ opacity: 0 }}
