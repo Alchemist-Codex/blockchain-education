@@ -2,10 +2,6 @@
 require("@nomicfoundation/hardhat-toolbox");
 require('dotenv').config({ path: '.env', override: true });
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
-const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL || "";
-const SEPOLIA_WS_URL = process.env.SEPOLIA_WS_URL || "";
-
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   // Solidity compiler configuration
@@ -29,13 +25,6 @@ module.exports = {
     localhost: {
       url: "http://127.0.0.1:7545",  // Ganache RPC URL
       chainId: 1337,                 // Chain ID matching Ganache
-    },
-    sepolia: {
-      url: SEPOLIA_RPC_URL,
-      wsUrl: SEPOLIA_WS_URL, // WebSocket endpoint
-      accounts: [PRIVATE_KEY],
-      chainId: 11155111,
-      networkId: 11155111,
     }
   },
 
