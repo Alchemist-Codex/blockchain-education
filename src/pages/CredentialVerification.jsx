@@ -17,6 +17,12 @@ const CORS_PROXIES = [
  * CredentialVerification Component
  * Handles verification of academic credentials using IPFS and blockchain
  */
+
+/**
+ * Fetches credential data from Firestore based on the provided credential ID.
+ * @param {string} credentialId The credential ID to fetch from Firestore.
+ */
+
 function CredentialVerification() {
   const { web3Service } = useWeb3();
   
@@ -34,18 +40,25 @@ function CredentialVerification() {
    * Validates CID and fetches metadata from IPFS
    */
 
-  const fetching = async (e) =>{
-
-    const docRef = doc(db, "credentials", e);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap){
-      setCredentialId(docSnap.cid)
+  const fetching = async (credentialId) => {
+    try {
+      // Fetching the document from Firestore
+      const docRef = doc(db, "credentials", credentialId);
+      const docSnap = await getDoc(docRef);  // Await the document retrieval
+  
+      if (docSnap.exists()) {
+        // If document exists, update the credentialId state
+        setCredentialId(docSnap.data().cid);
+      } else {
+        // If document does not exist, log an error and notify the user
+        setError("Credential not found in Firestore.");
+        throw new Error("Credential not found in Firestore.");
+      }
+    } catch (error) {
+      console.error("Error fetching credential:", error);
+      setError("Error fetching credential from Firestore.");
+      throw error;  // Propagate error to handle it in the caller
     }
-    else{
-      console.log("Error");
-    }
-
   }
 
 
