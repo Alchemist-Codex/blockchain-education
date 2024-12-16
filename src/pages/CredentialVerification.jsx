@@ -40,7 +40,7 @@ function CredentialVerification() {
     const docSnap = await getDoc(docRef);
 
     if (docSnap){
-      console.log("docSnap")
+      setCredentialId(docSnap.cid)
     }
     else{
       console.log("Error");
