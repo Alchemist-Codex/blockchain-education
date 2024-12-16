@@ -43,6 +43,10 @@ export default function QAForm() {
             <label className="block text-blue-800 dark:text-blue-100 font-medium">Nationality</label>
             <input type="text" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required />
           </div>
+          <div>
+            <label className="block text-blue-800 dark:text-blue-100 font-medium">Wallet Address</label>
+            <input type="text" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required />
+          </div>
         </div>
 
         <h2 className="text-2xl font-bold text-blue-800 dark:text-blue-100 mt-8 mb-6">Course Details</h2>
