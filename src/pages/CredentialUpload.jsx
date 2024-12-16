@@ -16,9 +16,9 @@ import {db} from '../config/firebase';
  */
 
 function generateShortId(prefix = "cert") {
-  // Generate a random number with a timestamp for uniqueness
-  const uniquePart = Date.now().toString().slice(-6); // Last 6 digits of timestamp
-  return `${prefix}-${uniquePart}`;
+  const uniquePart = Math.random().toString(36).substring(2, 8); // Random alphanumeric
+  const timestamp = Date.now().toString().slice(-6);            // Last 6 digits of timestamp
+  return `${prefix}-${uniquePart}-${timestamp}`;
 }
 
 function CredentialUpload() {
@@ -152,7 +152,7 @@ function CredentialUpload() {
 
       if (metadataHash) {
         let short_id = generateShortId();
-        await setDoc(doc(db, "credentials"), {
+        await setDoc(doc(db, "credentials", short_id), {
           cid: metadataHash,
           id: short_id,
         });
