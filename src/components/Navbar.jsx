@@ -86,9 +86,10 @@ function Navbar() {
               to="/home" 
               className="flex items-center text-xl font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
             >
-              Academic Chain
-            </Link>
-          </div>
+            <img src="/logo-dark.png" alt="Academic Chain" className="h-8 w-8 mr-2" />
+            Academic Chain
+          </Link>
+        </div>  
   
           {/* Desktop Navigation Links */}
           <div className="hidden sm:flex sm:items-center sm:space-x-8">
