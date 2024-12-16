@@ -120,7 +120,8 @@ function CredentialUpload() {
       }
 
       // IPFS upload process
-      const { hash, url } = await ipfsService.uploadImage(formData.file);
+      const { hash, url, cid } = await ipfsService.uploadImage(formData.file);
+      console.log(cid);
 
       // Create and upload metadata
       const metadata = {
