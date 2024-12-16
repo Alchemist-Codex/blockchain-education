@@ -7,11 +7,21 @@ import { ipfsService } from '../services/ipfsService'
 import BlockchainVideo from '../components/BlockchainVideo'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { doc, setDoc } from "firebase/firestore"; 
+import {db} from "../config/firebase";
 
 /**
  * CredentialUpload Component
  * Handles the upload and issuance of academic credentials to the blockchain
  */
+
+function generateShortId(prefix = "cert") {
+  const uniquePart = Date.now().toString().slice(-6); // Timestamp-based
+  const randomPart = Math.floor(1000 + Math.random() * 9000); // Random 4-digit number
+  return `${prefix}-${uniquePart}${randomPart}`;
+}
+
+
 function CredentialUpload() {
   // Web3 context for blockchain interaction
   const { account, contract } = useWeb3();
@@ -120,8 +130,17 @@ function CredentialUpload() {
       }
 
       // IPFS upload process
+<<<<<<< Updated upstream
       const { hash, url, cid } = await ipfsService.uploadImage(formData.file);
       console.log(cid);
+=======
+      const { hash: imageHash, url } = await ipfsService.uploadImage(formData.file);
+      
+    
+    
+
+
+>>>>>>> Stashed changes
 
       // Create and upload metadata
       const metadata = {
@@ -138,6 +157,23 @@ function CredentialUpload() {
       // Upload metadata to IPFS
       const metadataHash = await ipfsService.uploadJSON(metadata);
 
+<<<<<<< Updated upstream
+=======
+      if (metadataHash){
+        let short_id = generateShortId();
+        await setDoc(doc(db, "credentials"), {
+          cid : metadataHash,
+          id : short_id,
+        });
+      }
+
+      // Store the hashes
+      setIpfsDetails({
+        imageHash,
+        metadataHash
+      });
+
+>>>>>>> Stashed changes
       // Generate certificate hash
       const certificateString = JSON.stringify(metadata);
       const encoder = new TextEncoder();
@@ -398,6 +434,63 @@ function CredentialUpload() {
               <p className="text-gray-600 mb-4">
                 The certificate has been uploaded to IPFS and recorded on the blockchain.
               </p>
+<<<<<<< Updated upstream
+=======
+              
+              {/* IPFS Details Box */}
+              <div className="bg-gray-50 p-4 rounded-lg mb-6 max-w-md mx-auto">
+                <h4 className="font-semibold text-gray-700 mb-2">IPFS Details</h4>
+                <div className="text-left space-y-2">
+                  <div>
+                    <p className="text-sm text-gray-600">Short Id (Use this for credential verification)</p>
+                    <div className="flex items-center space-x-2">
+                      <code className="text-xs bg-gray-100 p-1 rounded break-all">
+                        {short_id}
+                      </code>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(ipfsDetails.imageHash)}
+                        className="text-primary-600 hover:text-primary-700"
+                        title="Copy to clipboard"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                          <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Metadata CID:</p>
+                    <div className="flex items-center space-x-2">
+                      <code className="text-xs bg-gray-100 p-1 rounded break-all">
+                        {ipfsDetails.metadataHash}
+                      </code>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(ipfsDetails.metadataHash)}
+                        className="text-primary-600 hover:text-primary-700"
+                        title="Copy to clipboard"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                          <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <a
+                      href={`https://gateway.pinata.cloud/ipfs/${ipfsDetails.imageHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary-600 hover:text-primary-700 text-sm underline"
+                    >
+                      View on IPFS Gateway →
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+>>>>>>> Stashed changes
               <button
                 onClick={() => {
                   setStep(1);
