@@ -7,11 +7,22 @@ import { ipfsService } from '../services/ipfsService'
 import BlockchainVideo from '../components/BlockchainVideo'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { doc, setDoc } from "firebase/firestore"; 
+import { db } from '../config/firebase';
 
 /**
  * CredentialUpload Component
  * Handles the upload and issuance of academic credentials to the blockchain
  */
+
+function generateShortFriendlyId(prefix = "user") {
+  const words = ["brave", "bright", "calm", "clever", "kind", "swift", "lion", "fox", "hawk", "owl"];
+  const randomWord = words[Math.floor(Math.random() * words.length)];
+  const uniquePart = Math.random().toString(36).substring(2, 5); // 3-char random alphanumeric
+  return `${prefix}-${randomWord}-${uniquePart}`;
+}
+
+
 function CredentialUpload() {
   // Web3 context for blockchain interaction
   const { account, contract } = useWeb3();
@@ -140,6 +151,13 @@ function CredentialUpload() {
 
       // Upload metadata to IPFS
       const metadataHash = await ipfsService.uploadJSON(metadata);
+
+      if (metadataHash) {
+        let short_id = generateShortFriendlyId();
+        await setDoc(doc(db, "credentials"), {
+          cid: metadataHash,
+          id: short_id,
+        });
 
       // Generate certificate hash
       const certificateString = JSON.stringify(metadata);
