@@ -84,7 +84,7 @@ function Navbar() {
           {/* Logo and brand name */}
           <div className="flex items-center">
             <Link 
-              to="/" 
+              to="/home" 
               className="flex items-center"
             >
               {/* Light mode logo */}
