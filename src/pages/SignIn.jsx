@@ -43,11 +43,9 @@ function SignIn() {
       // Navigate based on stored user type
       const userType = localStorage.getItem('userType');
       if (userType === userTypes.STUDENT) {
-        navigate('/student/qa-form');
-      } else if (userType === userTypes.INSTITUTE) {
-        navigate('/institution/qa-form-institute');
+        navigate('/student/dashboard');
       } else {
-        navigate('/unauthorized');
+        navigate('/institution/dashboard');
       }
     } catch (error) {
       console.error('Sign in error:', error);
