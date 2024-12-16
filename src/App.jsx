@@ -9,6 +9,8 @@ import IntroAnimation from './components/IntroAnimation'
 import CredentialUpload from './pages/CredentialUpload'
 import CredentialVerification from './pages/CredentialVerification'
 import FAQ from './pages/FAQ'
+import QAForm from './pages/QAForm';
+import QAFormInstitute from './pages/QAFormInstitute'
 // Component imports
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -50,9 +52,10 @@ function App() {
                 <ProtectedLayout />
               </ProtectedRoute>
             }>
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<StudentDashboard />} />
-              <Route path="profile" element={<Profile />} />
+             <Route index element={<Navigate to="qa-form" replace />} />
+            <Route path="qa-form" element={<QAForm />} />
+            <Route path="dashboard" element={<StudentDashboard />} />
+            <Route path="profile" element={<Profile />} />
             </Route>
             
             {/* Protected routes for institutions - requires institute role */}
@@ -61,7 +64,8 @@ function App() {
                 <ProtectedLayout />
               </ProtectedRoute>
             }>
-              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route index element={<Navigate to="qa-form-institute" replace />} />
+              <Route path="qa-form-institute" element={<QAFormInstitute />} />
               <Route path="dashboard" element={<InstituteDashboard />} />
               <Route path="profile" element={<Profile />} />
               <Route path="upload-credential" element={<CredentialUpload />} />
@@ -127,18 +131,16 @@ function ProtectedLayout() {
  */
 function RoleBasedRedirect() {
   const { user, userType } = useAuth();
-  
-  // Redirect to signin if no user
+
   if (!user) {
     return <Navigate to="/signin" replace />;
   }
-  
-  // Redirect based on user type
+
   switch (userType) {
     case userTypes.STUDENT:
-      return <Navigate to="/student/dashboard" replace />;
+      return <Navigate to="/student/qa-form" replace />;
     case userTypes.INSTITUTE:
-      return <Navigate to="/institution/dashboard" replace />;
+      return <Navigate to="/institution/qa-form-institute" replace />;
     default:
       console.log('Unknown user type:', userType);
       return <Navigate to="/signin" replace />;
@@ -162,7 +164,7 @@ function UnauthorizedPage() {
           You don't have permission to access this page.
         </p>
         <Link
-          to={userType === userTypes.STUDENT ? '/student/dashboard' : '/institution/dashboard'}
+          to={userType === userTypes.STUDENT ? '/student/qa-form' : '/institution/qa-form-institute'}
           className="text-primary-600 hover:text-primary-700 dark:text-primary-400"
         >
           Go to Dashboard
