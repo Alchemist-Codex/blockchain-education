@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
 import { pinataService } from '../services/pinataService'
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 // Configuration constants for IPFS gateways and CORS proxies
 const GATEWAY_URL = 'rose-hollow-mollusk-554.mypinata.cloud';
@@ -22,7 +24,8 @@ function CredentialVerification() {
   const [verificationStatus, setVerificationStatus] = useState(null)  // Status of verification process
   const [isVerifying, setIsVerifying] = useState(false)              // Verification in progress
   const [isDownloading, setIsDownloading] = useState(false)          // Download in progress
-  const [credentialId, setCredentialId] = useState('')               // IPFS CID input
+  const [credentialId, setCredentialId] = useState('')  
+  const [shortId , setShortId] = useState('')            // IPFS CID input
   const [credentialDetails, setCredentialDetails] = useState(null)   // Verified credential data
   const [error, setError] = useState(null)                           // Error state
 
@@ -30,10 +33,26 @@ function CredentialVerification() {
    * Handles credential verification process
    * Validates CID and fetches metadata from IPFS
    */
+
+  const fetching = async (e) =>{
+
+    const docRef = doc(db, "credentials", e);
+    const docSnap = await getDoc(docRef);
+
+    if(docSnap){
+      setCredentialId(docSnap.cid);
+      console.log(docSnap);
+    }
+
+  }
+
+
   const handleVerification = async (e) => {
     e.preventDefault()
     setIsVerifying(true)
     setError(null)
+
+    await fetching(shortId);
     
     try {
       // Validate CID format
@@ -216,8 +235,8 @@ function CredentialVerification() {
               </label>
               <input 
                 type="text"
-                value={credentialId}
-                onChange={(e) => setCredentialId(e.target.value)}
+                value={shortId}
+                onChange={(e) => setShortId(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
                          bg-white dark:bg-gray-700 text-gray-900 dark:text-white
                          focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
