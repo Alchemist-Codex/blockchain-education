@@ -29,6 +29,10 @@ function CredentialUpload() {
   })
   const [isBlockchainUploading, setIsBlockchainUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [ipfsDetails, setIpfsDetails] = useState({
+    imageHash: '',
+    metadataHash: ''
+  });
 
   // Animation configuration
   const fadeIn = {
@@ -120,7 +124,7 @@ function CredentialUpload() {
       }
 
       // IPFS upload process
-      const { hash, url } = await ipfsService.uploadImage(formData.file);
+      const { hash: imageHash, url } = await ipfsService.uploadImage(formData.file);
 
       // Create and upload metadata
       const metadata = {
@@ -129,13 +133,19 @@ function CredentialUpload() {
         credentialType: formData.credentialType,
         institution: formData.institution,
         issuerAddress: account,
-        imageHash: hash,
+        imageHash: imageHash,
         imageUrl: url,
         issueDate: new Date().toISOString()
       };
 
       // Upload metadata to IPFS
       const metadataHash = await ipfsService.uploadJSON(metadata);
+
+      // Store the hashes
+      setIpfsDetails({
+        imageHash,
+        metadataHash
+      });
 
       // Generate certificate hash
       const certificateString = JSON.stringify(metadata);
@@ -149,7 +159,7 @@ function CredentialUpload() {
       const tx = await contract.issueCredential(
         formData.studentAddress,
         hashHex,
-        hash,
+        imageHash,
         metadataHash
       );
 
@@ -274,7 +284,7 @@ function CredentialUpload() {
                   </div>
 
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Upload Certificate
                     </label>
                     {isBlockchainUploading ? (
@@ -397,6 +407,60 @@ function CredentialUpload() {
               <p className="text-gray-600 mb-4">
                 The certificate has been uploaded to IPFS and recorded on the blockchain.
               </p>
+              
+              {/* IPFS Details Box */}
+              <div className="bg-gray-50 p-4 rounded-lg mb-6 max-w-md mx-auto">
+                <h4 className="font-semibold text-gray-700 mb-2">IPFS Details</h4>
+                <div className="text-left space-y-2">
+                  <div>
+                    <p className="text-sm text-gray-600">Certificate CID:</p>
+                    <div className="flex items-center space-x-2">
+                      <code className="text-xs bg-gray-100 p-1 rounded break-all">
+                        {ipfsDetails.imageHash}
+                      </code>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(ipfsDetails.imageHash)}
+                        className="text-primary-600 hover:text-primary-700"
+                        title="Copy to clipboard"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                          <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Metadata CID:</p>
+                    <div className="flex items-center space-x-2">
+                      <code className="text-xs bg-gray-100 p-1 rounded break-all">
+                        {ipfsDetails.metadataHash}
+                      </code>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(ipfsDetails.metadataHash)}
+                        className="text-primary-600 hover:text-primary-700"
+                        title="Copy to clipboard"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                          <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <a
+                      href={`https://gateway.pinata.cloud/ipfs/${ipfsDetails.imageHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary-600 hover:text-primary-700 text-sm underline"
+                    >
+                      View on IPFS Gateway →
+                    </a>
+                  </div>
+                </div>
+              </div>
+
               <button
                 onClick={() => {
                   setStep(1);
@@ -408,6 +472,7 @@ function CredentialUpload() {
                     file: null
                   });
                   setImagePreview(null);
+                  setIpfsDetails({ imageHash: '', metadataHash: '' });
                 }}
                 className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
               >
