@@ -7,22 +7,11 @@ import { ipfsService } from '../services/ipfsService'
 import BlockchainVideo from '../components/BlockchainVideo'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { doc, setDoc } from "firebase/firestore"; 
-import { db } from '../config/firebase';
 
 /**
  * CredentialUpload Component
  * Handles the upload and issuance of academic credentials to the blockchain
  */
-
-function generateShortFriendlyId(prefix = "user") {
-  const words = ["brave", "bright", "calm", "clever", "kind", "swift", "lion", "fox", "hawk", "owl"];
-  const randomWord = words[Math.floor(Math.random() * words.length)];
-  const uniquePart = Math.random().toString(36).substring(2, 5); // 3-char random alphanumeric
-  return `${prefix}-${randomWord}-${uniquePart}`;
-}
-
-
 function CredentialUpload() {
   // Web3 context for blockchain interaction
   const { account, contract } = useWeb3();
@@ -40,10 +29,6 @@ function CredentialUpload() {
   })
   const [isBlockchainUploading, setIsBlockchainUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [ipfsDetails, setIpfsDetails] = useState({
-    imageHash: '',
-    metadataHash: ''
-  });
 
   // Animation configuration
   const fadeIn = {
@@ -152,13 +137,6 @@ function CredentialUpload() {
       // Upload metadata to IPFS
       const metadataHash = await ipfsService.uploadJSON(metadata);
 
-      if (metadataHash) {
-        let short_id = generateShortFriendlyId();
-        await setDoc(doc(db, "credentials"), {
-          cid: metadataHash,
-          id: short_id,
-        });
-
       // Generate certificate hash
       const certificateString = JSON.stringify(metadata);
       const encoder = new TextEncoder();
@@ -167,38 +145,18 @@ function CredentialUpload() {
       const hashArray = Array.from(new Uint8Array(certificateHash));
       const hashHex = '0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-      try {
-        // Record on blockchain
-        const tx = await contract.issueCredential(
-          formData.studentAddress,
-          hashHex,
-          hash,
-          metadataHash
-        );
+      // Record on blockchain
+      const tx = await contract.issueCredential(
+        formData.studentAddress,
+        hashHex,
+        hash,
+        metadataHash
+      );
 
-        await tx.wait();
-        
-        // Store IPFS details
-        setIpfsDetails({
-          imageHash: hash,
-          metadataHash: metadataHash
-        });
-        
-        setStep(2);
-        toast.success('Certificate issued successfully!');
-      } catch (error) {
-        // If the contract call fails, we'll still show success for IPFS upload
-        console.warn('Blockchain recording failed, but IPFS upload successful:', error);
-        
-        // Store IPFS details anyway
-        setIpfsDetails({
-          imageHash: hash,
-          metadataHash: metadataHash
-        });
-        
-        setStep(2);
-        toast.success('Certificate uploaded to IPFS successfully! (Blockchain recording skipped)');
-      }
+      await tx.wait();
+      
+      setStep(2);
+      toast.success('Certificate issued successfully!');
 
     } catch (error) {
       console.error('Error:', error);
@@ -316,7 +274,7 @@ function CredentialUpload() {
                   </div>
 
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Upload Certificate
                     </label>
                     {isBlockchainUploading ? (
@@ -439,42 +397,6 @@ function CredentialUpload() {
               <p className="text-gray-600 mb-4">
                 The certificate has been uploaded to IPFS and recorded on the blockchain.
               </p>
-              
-              {/* IPFS Details Box */}
-              <div className="bg-gray-50 p-4 rounded-lg mb-6 max-w-md mx-auto">
-                <h4 className="font-semibold text-gray-700 mb-2">IPFS Details</h4>
-                <div className="text-left space-y-2">
-                  <div>
-                    <p className="text-sm text-gray-600">Metadata CID:</p>
-                    <div className="flex items-center space-x-2">
-                      <code className="text-xs bg-gray-100 p-1 rounded break-all">
-                        {ipfsDetails.metadataHash}
-                      </code>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(ipfsDetails.metadataHash)}
-                        className="text-primary-600 hover:text-primary-700"
-                        title="Copy to clipboard"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                          <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <a
-                      href={`https://gateway.pinata.cloud/ipfs/${ipfsDetails.metadataHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-600 hover:text-primary-700 text-sm underline"
-                    >
-                      View on IPFS Gateway →
-                    </a>
-                  </div>
-                </div>
-              </div>
-
               <button
                 onClick={() => {
                   setStep(1);
@@ -486,7 +408,6 @@ function CredentialUpload() {
                     file: null
                   });
                   setImagePreview(null);
-                  setIpfsDetails({ imageHash: '', metadataHash: '' });
                 }}
                 className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
               >
