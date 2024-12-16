@@ -68,14 +68,30 @@ function Navbar() {
   }
 
   // Navigation links configuration
-  const navLinks = [
-    ['Dashboard', getDashboardPath()],
-    ['Upload Credential', '/institution/upload-credential'],
-    ['Verify Credential', '/verify'],
-    ['Profile', getProfilePath()],
-    ['About', '/about'],
-    ['FAQ', '/faq']
-  ]
+  const getNavLinks = () => {
+    const commonLinks = [
+      ['Dashboard', getDashboardPath()],
+      ['Profile', getProfilePath()],
+      ['About', '/about'],
+      ['FAQ', '/faq']
+    ];
+
+    if (userType === userTypes.INSTITUTE) {
+      return [
+        ...commonLinks,
+        ['Upload Credential', '/institution/upload-credential']
+      ];
+    }
+
+    if (userType === userTypes.STUDENT) {
+      return [
+        ...commonLinks,
+        ['Verify Credential', '/verify']
+      ];
+    }
+
+    return commonLinks;
+  };
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-md">
@@ -107,7 +123,7 @@ function Navbar() {
   
           {/* Desktop Navigation Links */}
           <div className="hidden sm:flex sm:items-center sm:space-x-8">
-            {user && navLinks.map(([title, path]) => (
+            {user && getNavLinks().map(([title, path]) => (
               <Link
                 key={path}
                 to={path}
@@ -185,7 +201,7 @@ function Navbar() {
               onClick={e => e.stopPropagation()}
             >
               <div className="p-4 space-y-3">
-                {navLinks.map(([title, path]) => (
+                {getNavLinks().map(([title, path]) => (
                   <Link
                     key={path}
                     to={path}
