@@ -1,116 +1,57 @@
-import { useAuth0 } from '@auth0/auth0-react';
-import { studentSchema, instituteSchema, userTypes } from '../utils/schema';
+import { auth0Config } from '../config/auth0';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
-export const createOrUpdateUser = async (userData, userType) => {
-  const { getAccessTokenSilently } = useAuth0();
+export const getUserProfile = async (token, email) => {
   try {
-    const token = await getAccessTokenSilently();
+    // Encode the email for URL
+    const encodedEmail = encodeURIComponent(email);
     
-    // First, create/update in users table
-    const userResponse = await fetch(`${API_URL}/users`, {
-      method: 'POST',
+    // Construct the correct Management API URL
+    const url = `https://${auth0Config.domain}/api/v2/users-by-email?email=${encodedEmail}`;
+
+    const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email: userData.email,
-        userType: userType,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      })
-    });
-
-    if (!userResponse.ok) throw new Error('Failed to create user');
-
-    // Then, create/update in specific type table
-    const specificTableData = userType === userTypes.STUDENT 
-      ? {
-          ...studentSchema,
-          ...userData,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      : {
-          ...instituteSchema,
-          ...userData,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-
-    const specificResponse = await fetch(`${API_URL}/${userType}s`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(specificTableData)
-    });
-
-    if (!specificResponse.ok) throw new Error(`Failed to create ${userType} profile`);
-
-    return await specificResponse.json();
-  } catch (error) {
-    console.error('Error in createOrUpdateUser:', error);
-    throw error;
-  }
-};
-
-export const getUserProfile = async (email, userType) => {
-  const { getAccessTokenSilently } = useAuth0();
-  try {
-    const token = await getAccessTokenSilently();
-    
-    const response = await fetch(`${API_URL}/${userType}s/${email}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
       }
     });
 
-    if (!response.ok) throw new Error('Failed to fetch user profile');
-    return await response.json();
+    if (!response.ok) {
+      throw new Error('Failed to fetch user profile');
+    }
+
+    const data = await response.json();
+    // Auth0 returns an array of users, we want the first one
+    return data[0] || null;
   } catch (error) {
     console.error('Error fetching user profile:', error);
     throw error;
   }
 };
 
-/**
- * Updates a user's profile in Auth0
- * @param {Object} data - The data to update in the user's profile
- * @returns {Promise<boolean>} True if update was successful
- */
-export const updateUserProfile = async (data) => {
-  const { user, getAccessTokenSilently } = useAuth0();
+// Add this function to get the Management API token
+export const getManagementApiToken = async () => {
   try {
-    const accessToken = await getAccessTokenSilently();
-    const response = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${user.sub}`, {
-      method: 'PATCH',
+    const response = await fetch(`https://${auth0Config.domain}/oauth/token`, {
+      method: 'POST',
       headers: {
-        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({
+        client_id: auth0Config.clientId,
+        client_secret: import.meta.env.VITE_AUTH0_CLIENT_SECRET,
+        audience: `https://${auth0Config.domain}/api/v2/`,
+        grant_type: 'client_credentials'
+      })
     });
-    return response.ok;
-  } catch (error) {
-    console.error('Error updating user profile:', error);
-    throw error;
-  }
-};
 
-/**
- * Fetches a user's credentials from their metadata
- * @returns {Promise<Array>} Array of user credentials
- */
-export const getUserCredentials = async () => {
-  const { user } = useAuth0();
-  try {
-    return user?.['https://your-namespace/credentials'] || [];
+    if (!response.ok) {
+      throw new Error('Failed to get management token');
+    }
+
+    const data = await response.json();
+    return data.access_token;
   } catch (error) {
-    console.error('Error fetching user credentials:', error);
+    console.error('Error getting management token:', error);
     throw error;
   }
 }; 
