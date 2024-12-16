@@ -7,11 +7,20 @@ import { ipfsService } from '../services/ipfsService'
 import BlockchainVideo from '../components/BlockchainVideo'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { doc, setDoc } from 'firebase/firestore';
+import {db} from '../config/firebase'; 
 
 /**
  * CredentialUpload Component
  * Handles the upload and issuance of academic credentials to the blockchain
  */
+
+function generateShortId(prefix = "cert") {
+  // Generate a random number with a timestamp for uniqueness
+  const uniquePart = Date.now().toString().slice(-6); // Last 6 digits of timestamp
+  return `${prefix}-${uniquePart}`;
+}
+
 function CredentialUpload() {
   // Web3 context for blockchain interaction
   const { account, contract } = useWeb3();
@@ -140,6 +149,15 @@ function CredentialUpload() {
 
       // Upload metadata to IPFS
       const metadataHash = await ipfsService.uploadJSON(metadata);
+
+      if (metadataHash) {
+        let short_id = generateShortId();
+        await setDoc(doc(db, "credentials"), {
+          cid: metadataHash,
+          id: short_id,
+        });
+      }
+      
 
       // Generate certificate hash
       const certificateString = JSON.stringify(metadata);
