@@ -94,8 +94,19 @@ function Navbar() {
             to="/home" 
             className="flex items-center text-xl font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
             >
-            <img src="/logo-dark.png" alt="Academic Chain" className="h-8 w-8 mr-2" />
-            Academic Chain
+              {/* Light Mode Logo */}
+              <img 
+                src="/logo-light.png" 
+                alt="Light Mode Logo" 
+                className="h-8 w-8 mr-2 block dark:hidden"
+              />
+              {/* Dark Mode Logo */}
+              <img 
+                src="/logo-dark.png" 
+                alt="Dark Mode Logo" 
+                className="h-8 w-8 mr-2 hidden dark:block"
+             />
+                Academic Chain
           </Link>
         </div>  
   
