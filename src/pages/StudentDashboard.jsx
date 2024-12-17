@@ -31,18 +31,25 @@ function StudentDashboard() {
         try {
           // Get user profile
           const profile = await getUserProfile(user.uid);
+          console.log('Fetched user profile:', profile); // Debug log
           setUserProfile(profile);
 
           // Fetch credentials if profile has any
           if (profile?.credentials?.length > 0) {
+            console.log('Found credentials in profile:', profile.credentials); // Debug log
             const credentialsRef = collection(db, 'credentials');
             const credentialPromises = profile.credentials.map(async (credId) => {
               const credDoc = await getDoc(doc(db, 'credentials', credId));
+              console.log('Credential doc:', credId, credDoc.exists(), credDoc.data()); // Debug log
               return credDoc.exists() ? { id: credDoc.id, ...credDoc.data() } : null;
             });
 
             const fetchedCredentials = await Promise.all(credentialPromises);
-            setCredentials(fetchedCredentials.filter(cred => cred !== null));
+            const filteredCredentials = fetchedCredentials.filter(cred => cred !== null);
+            console.log('Filtered credentials:', filteredCredentials); // Debug log
+            setCredentials(filteredCredentials);
+          } else {
+            console.log('No credentials found in profile'); // Debug log
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
