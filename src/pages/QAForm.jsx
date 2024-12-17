@@ -43,17 +43,24 @@ export default function QAForm() {
 
   // Handle form submission
   const handleSubmit = async (e) => {
-     e.preventDefault(); // Prevent page reload
-
-    const userRef = doc(db, 'student', emailSanitize(studentDetails.email)); // Reference to the user's document
-    const postsRef = collection(userRef, 'data'); // Reference to the 'posts' subcollection
-    await addDoc(postsRef, {
-      ...studentDetails,
-  });
-
-  // Now create a subcollection called 'posts' inside the 'userID123' document
-    navigate('/student/dashboard'); // Redirect on success
-
+    e.preventDefault(); // Prevent page reload
+  
+    try {
+      const userRef = doc(db, 'student', emailSanitize(studentDetails.email)); // Reference to the user's document
+      const postsRef = collection(userRef, 'data'); // Reference to the 'posts' subcollection
+      
+      await addDoc(postsRef, {
+        ...studentDetails,
+      });
+  
+      // After successful submission, navigate to the dashboard
+      navigate('/student/dashboard');
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      // Optionally, you can show an error message to the user here
+    }
+  };
+  
   // Handle input field changes
   const handleStudentDetailsChange = (e) => {
     setStudentDetails({ ...studentDetails, [e.target.name]: e.target.value });
