@@ -1,450 +1,423 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
-import { ethers } from 'ethers'
-import { toast } from 'react-hot-toast'
-import { ipfsService } from '../services/ipfsService'
-import BlockchainVideo from '../components/BlockchainVideo'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
-import { doc, setDoc } from "firebase/firestore"; 
-import {db} from '../config/firebase';
+import { pinataService } from '../services/pinataService'
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
+
+// Configuration constants for IPFS gateways and CORS proxies
+const GATEWAY_URL = 'rose-hollow-mollusk-554.mypinata.cloud';
+const CORS_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://cors.eu.org/'
+];
+
 /**
- * CredentialUpload Component
- * Handles the upload and issuance of academic credentials to the blockchain
+ * CredentialVerification Component
+ * Handles verification of academic credentials using IPFS and blockchain
  */
 
-function generateShortFriendlyId(prefix = "user") {
-  const words = ["brave", "bright", "calm", "clever", "kind", "swift", "lion", "fox", "hawk", "owl"];
-  const randomWord = words[Math.floor(Math.random() * words.length)];
-  const uniquePart = Math.random().toString(36).substring(2, 5); // 3-char random alphanumeric
-  return `${prefix}-${randomWord}-${uniquePart}`;
-}
+/**
+ * Fetches credential data from Firestore based on the provided credential ID.
+ * @param {string} credentialId The credential ID to fetch from Firestore.
+ */
 
-function CredentialUpload() {
-  // Web3 context for blockchain interaction
-  const { account, contract } = useWeb3();
+function CredentialVerification() {
+  const { web3Service } = useWeb3();
   
-  // Component state management
-  const [step, setStep] = useState(1)                  // Current step in upload process
-  const [uploading, setUploading] = useState(false)    // IPFS upload state
-  const [imagePreview, setImagePreview] = useState(null) // Preview of uploaded file
-  const [formData, setFormData] = useState({
-    studentAddress: '',    // Student's wallet address
-    studentName: '',       // Student's name
-    credentialType: '',    // Type of credential
-    institution: '',       // Issuing institution
-    file: null            // Credential file
-  })
-  const [isBlockchainUploading, setIsBlockchainUploading] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [certificateId, setCertificateId] = useState(null)
+  // State management
+  const [verificationStatus, setVerificationStatus] = useState(null)  // Status of verification process
+  const [isVerifying, setIsVerifying] = useState(false)              // Verification in progress
+  const [isDownloading, setIsDownloading] = useState(false)          // Download in progress
+  const [credentialId, setCredentialId] = useState('')  
+  const [shortId , setShortId] = useState('')            // IPFS CID input
+  const [credentialDetails, setCredentialDetails] = useState(null)   // Verified credential data
+  const [error, setError] = useState(null)                           // Error state
 
-  // Animation configuration
-  const fadeIn = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+  /**
+   * Handles credential verification process
+   * Validates CID and fetches metadata from IPFS
+   */
+
+  const fetching = async (credentialId) => {
+    try {
+      // Fetching the document from Firestore
+      const docRef = doc(db, "credentials", credentialId);
+      const docSnap = await getDoc(docRef);  // Await the document retrieval
+  
+      if (docSnap.exists()) {
+        // If document exists, update the credentialId state
+        setCredentialId(docSnap.data().cid);
+      } else {
+        // If document does not exist, log an error and notify the user
+        setError("Credential not found in Firestore.");
+        throw new Error("Credential not found in Firestore.");
+      }
+    } catch (error) {
+      console.error("Error fetching credential:", error);
+      setError("Error fetching credential from Firestore.");
+      throw error;  // Propagate error to handle it in the caller
+    }
+  }
+
+
+  const handleVerification = async (e) => {
+    e.preventDefault()
+    setIsVerifying(true)
+    setError(null)
+
+    try {
+      // First validate if shortId is provided
+      if (!shortId.trim()) {
+        throw new Error('Please enter a valid Certificate ID')
+      }
+
+      await fetching(shortId);
+      
+      // Now validate the CID we got from Firestore
+      if (!credentialId) {
+        throw new Error('No valid credential found for this Certificate ID')
+      }
+
+      console.log('Fetching metadata from Pinata:', credentialId)
+      
+      try {
+        // Fetch and validate metadata
+        const metadata = await pinataService.main(credentialId)
+        
+        if (!metadata) {
+          throw new Error('No metadata found')
+        }
+
+        // Validate image hash format
+        if (!metadata.imageHash?.startsWith('baf')) {
+          console.warn('Image hash format unexpected:', metadata.imageHash)
+        }
+
+        // Set verification details
+        setCredentialDetails({
+          ...metadata,
+          blockchainHash: 'Verified from IPFS',
+          verificationTime: new Date().toLocaleString()
+        })
+        
+        setVerificationStatus('success')
+      } catch (pinataError) {
+        console.error('Pinata Error:', pinataError)
+        throw new Error(`Pinata Error: ${pinataError.message || 'Content not found or invalid'}`)
+      }
+    } catch (error) {
+      console.error('Error verifying credential:', error)
+      setError(error.message || 'Failed to verify credential')
+      setVerificationStatus('error')
+    } finally {
+      setIsVerifying(false)
+    }
   }
 
   /**
-   * Handles file upload and validation
-   * Validates file type and size, creates preview
+   * Handles certificate download
+   * Attempts download through multiple CORS proxies
    */
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // File type validation
-    const validTypes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'application/pdf'
-    ];
+  const handleDownload = async () => {
+    if (!credentialDetails?.imageHash || isDownloading) return;
+    setIsDownloading(true);
+    setError(null);
     
-    if (!validTypes.includes(file.type)) {
-      toast.error('Please upload a valid file (JPG, JPEG, PNG, or PDF)');
-      return;
-    }
-
-    // File size validation (5MB max)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('File size should be less than 5MB');
-      return;
-    }
-
-    // Create file preview
-    try {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-
-      setFormData(prev => ({
-        ...prev,
-        file: file
-      }));
-    } catch (error) {
-      console.error('File preview failed:', error);
-      setImagePreview(null);
-      toast.error('Failed to preview file');
-    }
-  };
-
-  /**
-   * Handles form submission and credential issuance
-   * Uploads to IPFS and records on blockchain
-   */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Validation checks
-    if (isSubmitting) return;
-    if (!formData.file) {
-      toast.error('Please upload a certificate file first');
-      return;
-    }
-    if (!account) {
-      toast.error('Please connect your wallet first');
-      return;
-    }
-    if (!contract) {
-      toast.error('Smart contract not initialized');
-      return;
-    }
+    let downloadError = null;
+    let activeLink = null;
+    let activeUrl = null;
 
     try {
-      setIsSubmitting(true);
-      setIsBlockchainUploading(true);
+      // Try each CORS proxy until successful
+      for (const proxy of CORS_PROXIES) {
+        try {
+          // Construct download URL with Pinata gateway token
+          const downloadUrl = `https://${GATEWAY_URL}/ipfs/${credentialDetails.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
+          const proxyUrl = `${proxy}${encodeURIComponent(downloadUrl)}`;
+          
+          // Set up request with timeout
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      // MetaMask connection check
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      });
-      
-      if (!accounts || accounts.length === 0) {
-        throw new Error('No authorized account found');
+          const response = await fetch(proxyUrl, {
+            signal: controller.signal,
+            headers: {
+              'Accept': 'image/jpeg, image/png, image/*, application/octet-stream'
+            }
+          });
+
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) {
+            throw new Error(`Download failed: ${response.status}`);
+          }
+
+          // Determine file type and extension
+          const contentType = response.headers.get('content-type');
+          let fileExtension;
+          if (contentType?.includes('jpeg') || contentType?.includes('jpg')) {
+            fileExtension = 'jpg';
+          } else if (contentType?.includes('png')) {
+            fileExtension = 'png';
+          } else if (contentType?.includes('pdf')) {
+            fileExtension = 'pdf';
+          } else {
+            fileExtension = credentialDetails.originalFileName?.split('.').pop() || 'file';
+          }
+
+          // Create and trigger download
+          const blob = await response.blob();
+          activeUrl = window.URL.createObjectURL(blob);
+          activeLink = document.createElement('a');
+          activeLink.href = activeUrl;
+          
+          // Generate filename
+          const fileName = credentialDetails.originalFileName || 
+            `${credentialDetails.institution}_${credentialDetails.credentialType}_${credentialDetails.studentName}`
+              .replace(/[^a-zA-Z0-9]/g, '_')
+              .toLowerCase() + '.' + fileExtension;
+          
+          activeLink.download = fileName;
+          document.body.appendChild(activeLink);
+          activeLink.click();
+          break;
+        } catch (error) {
+          console.warn(`Download failed with proxy ${proxy}:`, error);
+          downloadError = error;
+          
+          // Clean up failed attempt
+          if (activeUrl) {
+            window.URL.revokeObjectURL(activeUrl);
+            activeUrl = null;
+          }
+          if (activeLink && activeLink.parentNode) {
+            activeLink.parentNode.removeChild(activeLink);
+            activeLink = null;
+          }
+          continue;
+        }
       }
 
-      // IPFS upload process
-      const { hash, url } = await ipfsService.uploadImage(formData.file);
-
-      // Create and upload metadata
-      const metadata = {
-        studentName: formData.studentName,
-        studentAddress: formData.studentAddress,
-        credentialType: formData.credentialType,
-        institution: formData.institution,
-        issuerAddress: account,
-        imageHash: hash,
-        imageUrl: url,
-        issueDate: new Date().toISOString()
-      };
-
-      // Upload metadata to IPFS
-      const metadataHash = await ipfsService.uploadJSON(metadata);
-
-      if (metadataHash){
-        let short_id = generateShortFriendlyId();
-        await setDoc(doc(db, "credentials", short_id), {
-          cid: metadataHash,
-          id: short_id,
-        });
-        setCertificateId(short_id);
+      if (downloadError && !activeLink) {
+        console.error('All download attempts failed:', downloadError);
+        setError('Failed to download certificate. Please try again.');
       }
-
-      // Generate certificate hash
-      const certificateString = JSON.stringify(metadata);
-      const encoder = new TextEncoder();
-      const data = encoder.encode(certificateString);
-      const certificateHash = await window.crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(certificateHash));
-      const hashHex = '0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-      // Record on blockchain
-      const tx = await contract.issueCredential(
-        formData.studentAddress,
-        hashHex,
-        hash,
-        metadataHash
-      );
-
-      await tx.wait();
-      
-      setStep(2);
-      toast.success('Certificate issued successfully!');
-
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error(`Failed: ${error.message}`);
     } finally {
-      setIsSubmitting(false);
-      setIsBlockchainUploading(false);
+      // Clean up resources after delay
+      setTimeout(() => {
+        if (activeUrl) {
+          window.URL.revokeObjectURL(activeUrl);
+        }
+        if (activeLink && activeLink.parentNode) {
+          activeLink.parentNode.removeChild(activeLink);
+        }
+        setIsDownloading(false);
+      }, 1500);
     }
   };
 
-  // JSX rendering with conditional components based on upload state
+  // Component render with sections for:
+  // - Header
+  // - Verification form
+  // - Results display
+  // - How it works section
   return (
-    <>
-      <Navbar />
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-          {isBlockchainUploading ? (
-            // Show video during upload
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 transition-colors duration-200">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header Section */}
+        <motion.div 
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            Verify Academic Credential
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            Instantly verify the authenticity of academic credentials on the blockchain
+          </p>
+        </motion.div>
+
+        {/* Verification Form */}
+        <motion.div 
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <form onSubmit={handleVerification} className="space-y-6">
             <div>
-              <BlockchainVideo />
-              <div className="text-center mt-4">
-                <h2 className="text-xl font-bold mb-2">Issuing Certificate</h2>
-                <p className="text-gray-600">Please wait while transaction is being processed...</p>
-              </div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Credential ID
+              </label>
+              <input 
+                type="text"
+                value={shortId}
+                onChange={(e) => setShortId(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
+                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                         focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
+                placeholder="Enter Credential ID"
+                required
+              />
             </div>
-          ) : step === 1 ? (
-            // Show regular form
-            <>
-              <h2 className="text-xl font-bold mb-4">Issue New Certificate</h2>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="space-y-4"
-                >
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Credential Type
-                    </label>
-                    <select 
-                      name="credentialType"
-                      value={formData.credentialType}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        credentialType: e.target.value
-                      }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                               bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                               focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
-                      required
-                    >
-                      <option value="">Select type</option>
-                      <option value="degree">Degree</option>
-                      <option value="certificate">Certificate</option>
-                      <option value="diploma">Diploma</option>
-                    </select>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Institution Name
-                    </label>
-                    <input 
-                      type="text"
-                      name="institution"
-                      value={formData.institution}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        institution: e.target.value
-                      }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                               bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                               focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Student Wallet Address
-                    </label>
-                    <input 
-                      type="text"
-                      name="studentAddress"
-                      value={formData.studentAddress}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        studentAddress: e.target.value
-                      }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                               bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                               focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Student Name
-                    </label>
-                    <input 
-                      type="text"
-                      name="studentName"
-                      value={formData.studentName}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        studentName: e.target.value
-                      }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                               bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                               focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Upload Certificate
-                    </label>
-                    {isBlockchainUploading ? (
-                      // Show video during upload
-                      <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md">
-                        <div className="w-full">
-                          <BlockchainVideo />
-                          <div className="text-center text-sm text-gray-500 mt-2">
-                            Uploading to Blockchain...
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      // Show regular upload box when not uploading
-                      <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md relative">
-                        <div className="space-y-1 text-center">
-                          {imagePreview ? (
-                            <div className="relative">
-                              <img
-                                src={imagePreview}
-                                alt="Certificate Preview"
-                                className="mx-auto h-32 object-contain"
-                              />
-                              <button
-                                onClick={() => {
-                                  setImagePreview(null);
-                                  setFormData(prev => ({ ...prev, file: null }));
-                                }}
-                                className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <svg
-                                className="mx-auto h-12 w-12 text-gray-400"
-                                stroke="currentColor"
-                                fill="none"
-                                viewBox="0 0 48 48"
-                              >
-                                <path
-                                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                                  strokeWidth={2}
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                              <div className="flex text-sm text-gray-600 dark:text-gray-400">
-                                <label
-                                  htmlFor="file-upload"
-                                  className="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
-                                >
-                                  <span>Upload a file</span>
-                                  <input
-                                    id="file-upload"
-                                    name="file-upload"
-                                    type="file"
-                                    className="sr-only"
-                                    accept=".jpg,.jpeg,.png,.pdf"
-                                    onChange={handleFileChange}
-                                    disabled={isSubmitting}
-                                  />
-                                </label>
-                                <p className="pl-1">or drag and drop</p>
-                              </div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Supported formats: JPG, JPEG, PNG, or PDF up to 5MB
-                              </p>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="flex justify-end">
-                      <button
-                        type="submit"
-                        className={`px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-md
-                                 hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors
-                                 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        disabled={isSubmitting || uploading}
-                      >
-                        {isSubmitting ? (
-                          <div className="flex items-center space-x-2">
-                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span>Processing...</span>
-                          </div>
-                        ) : (
-                          'Continue'
-                        )}
-                      </button>
-                    </div>
-                  </form>
-                </motion.div>
-              </AnimatePresence>
-            </>
-          ) : (
-            // Show success page
-            <motion.div
-              key="success"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="text-center py-8"
-            >
-              <div className="text-green-500 mb-4">
-                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+            {error && (
+              <div className="text-red-500 text-sm">
+                {error}
               </div>
-              <h3 className="text-xl font-bold mb-2">Certificate Issued Successfully!</h3>
-              <p className="text-gray-600 mb-4">
-                The certificate has been uploaded to IPFS and recorded on the blockchain.
-              </p>
-              {certificateId && (
-                <p className="text-gray-800 mb-4 font-medium">
-                  Certificate ID: <span className="font-bold">{certificateId}</span>
-                </p>
-              )}
-              <button
-                onClick={() => {
-                  setStep(1);
-                  setFormData({
-                    studentAddress: '',
-                    studentName: '',
-                    credentialType: '',
-                    institution: '',
-                    file: null
-                  });
-                  setImagePreview(null);
-                  setCertificateId(null);
-                }}
-                className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
+            )}
+
+            <div className="flex justify-center">
+              <motion.button
+                type="submit"
+                className="px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white rounded-md
+                         hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                disabled={isVerifying}
               >
-                Issue Another Certificate
-              </button>
-            </motion.div>
-          )}
-        </div>
+                {isVerifying ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Verifying...
+                  </span>
+                ) : (
+                  'Verify Credential'
+                )}
+              </motion.button>
+            </div>
+          </form>
+
+          {/* Verification Result */}
+          <AnimatePresence mode="wait">
+            {verificationStatus === 'success' && credentialDetails && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700"
+              >
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900 mb-4">
+                    <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Credential Verified!
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 mb-6">
+                    This credential has been verified on the blockchain
+                  </p>
+
+                  {/* Credential Details */}
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 text-left">
+                    <dl className="space-y-4">
+                      {[
+                        ['Credential Type', credentialDetails.credentialType],
+                        ['Institution', credentialDetails.institution],
+                        ['Issue Date', new Date(credentialDetails.issueDate).toLocaleDateString()],
+                        ['Student Name', credentialDetails.studentName],
+                        ['Student Address', credentialDetails.studentAddress],
+                        ['Issuer Address', credentialDetails.issuerAddress],
+                        ['Blockchain Hash', credentialDetails.blockchainHash],
+                        ['Verification Time', credentialDetails.verificationTime]
+                      ].map(([label, value]) => (
+                        <div key={label} className="flex justify-between">
+                          <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">{label}</dt>
+                          <dd className="text-sm text-gray-900 dark:text-white">{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+
+                  {/* Download Button */}
+                  <motion.button
+                    onClick={handleDownload}
+                    disabled={isDownloading}
+                    className="mt-6 px-4 py-2 bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 
+                             border border-primary-600 dark:border-primary-400 rounded-md
+                             hover:bg-primary-50 dark:hover:bg-gray-600 transition-colors
+                             disabled:opacity-50 disabled:cursor-not-allowed"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {isDownloading ? 'Downloading...' : 'Download Certificate'}
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+
+            {verificationStatus === 'error' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mt-8 text-center text-red-500"
+              >
+                <p>Failed to verify credential. Please check the ID and try again.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* How It Works Section */}
+        <motion.div 
+          className="mt-12 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+            How Verification Works
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
+                title: "Secure Verification",
+                description: "Credentials are verified using blockchain technology"
+              },
+              {
+                icon: "M12 6v6m0 0v6m0-6h6m-6 0H6",
+                title: "Instant Results",
+                description: "Get verification results in seconds"
+              },
+              {
+                icon: "M9 12h6m-6 1h6m-6 1h6m-6 1h6m-6 1h6m-6 1h6m-6 1h6",
+                title: "Detailed Information",
+                description: "View complete credential details"
+              }
+            ].map((item, index) => (
+              <motion.div
+                key={item.title}
+                className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.2 }}
+              >
+                <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{item.title}</h3>
+                <p className="text-gray-600 dark:text-gray-300">{item.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
       </div>
-      <Footer />
-    </>
+    </div>
   )
 }
 
-export default CredentialUpload 
+export default CredentialVerification;
