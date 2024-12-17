@@ -3,7 +3,7 @@ import { signInWithPopup, GoogleAuthProvider, setPersistence, browserLocalPersis
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { useWeb3 } from './Web3Context';
-import { userTypes, studentSchema, instituteSchema, collections } from '../utils/schema';
+import { userTypes, collections } from '../utils/schema';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
