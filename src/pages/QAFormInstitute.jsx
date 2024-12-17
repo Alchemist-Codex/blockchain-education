@@ -57,7 +57,7 @@ export default function QAFormInstitute() {
             createdAt: new Date().toISOString()
           };
     
-          const instituteRef = doc(db, 'institution', user.uid);
+          const instituteRef = doc(db, 'institutions', user.uid);
           await setDoc(instituteRef, formattedData);
     
           toast.success('Form submitted successfully');
@@ -108,7 +108,7 @@ export default function QAFormInstitute() {
               <label htmlFor="address" className="text-lg text-blue-800 dark:text-blue-100 font-medium">Address</label>
               <textarea id="address" onChange={handleStudentDetailsChange} name="address" rows="4" className="mt-2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" required></textarea>
             </div>
-
+ 
             {/* Reset and Submit Buttons */}
             <div className="flex justify-between items-center gap-6 mt-6">
               <button type="reset" onClick={resetHandler} className="bg-gray-400 text-white dark:bg-gray-800 px-4 py-2 rounded-md">Reset</button>
