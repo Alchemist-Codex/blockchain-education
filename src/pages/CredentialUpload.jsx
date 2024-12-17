@@ -194,7 +194,7 @@ function CredentialUpload() {
             const studentData = docSnapshot.data();
             const currentCredentials = studentData.credentials || [];
             
-            // Check for duplicates
+            // Check for duplicates before updating
             if (!currentCredentials.includes(short_id)) {
               return updateDoc(studentRef, {
                 credentials: arrayUnion(short_id),
@@ -204,13 +204,12 @@ function CredentialUpload() {
           });
           
           await Promise.all(updatePromises);
-          console.log("Successfully added credential to student record(s)");
           toast.success("Credential linked to student successfully");
           
         } catch (error) {
           console.error("Error updating credentials:", error);
           toast.error("Failed to link credential to student");
-          throw error; // Re-throw to be caught by the parent try-catch
+          throw error;
         }
       }
       
