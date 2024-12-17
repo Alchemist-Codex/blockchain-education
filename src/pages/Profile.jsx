@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PageTransition } from '../components/PageTransition'
 import { useAuth } from '../contexts/AuthContext'
 import { useWeb3 } from '../contexts/Web3Context'
 import toast from 'react-hot-toast'
 import { Navigate } from 'react-router-dom'
 import LoadingSpinner from '../components/LoadingSpinner'
+import Layout from '../components/Layout'
 
 function Profile() {
   const { user, loading } = useAuth()
@@ -52,8 +52,7 @@ function Profile() {
   }
 
   return (
-    <PageTransition>
-      {/* Main container with responsive padding */}
+    <Layout>
       <div className="relative min-h-screen py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Animated card container with fade-in effect */}
@@ -181,7 +180,7 @@ function Profile() {
           </motion.div>
         </div>
       </div>
-    </PageTransition>
+    </Layout>
   )
 }
 
