@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion'
 import { ThemeProvider } from '../components/ThemeProvider';
 import ParticleBackground from '../components/ParticleBackground';
-import ThemeToggle from '../components/ThemeToggle';
 // import BackgroundAnimation from '../components/BackgroundAnimation'
 
 /**
@@ -60,7 +59,6 @@ function About() {
   return (
     <ThemeProvider>
       <ParticleBackground />
-      <ThemeToggle />
       <div className="relative min-h-screen py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Hero Section with animated entrance */}
