@@ -130,96 +130,87 @@ function CredentialVerification() {
     setIsDownloading(true);
     setError(null);
     
-    let downloadError = null;
-    let activeLink = null;
-    let activeUrl = null;
-
     try {
-      // Try each CORS proxy until successful
-      for (const proxy of CORS_PROXIES) {
-        try {
-          // Construct download URL with Pinata gateway token
-          const downloadUrl = `https://${GATEWAY_URL}/ipfs/${credentialDetails.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
-          const proxyUrl = `${proxy}${encodeURIComponent(downloadUrl)}`;
-          
-          // Set up request with timeout
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-          const response = await fetch(proxyUrl, {
-            signal: controller.signal,
-            headers: {
-              'Accept': 'image/jpeg, image/png, image/*, application/octet-stream'
-            }
-          });
-
-          clearTimeout(timeoutId);
-          
-          if (!response.ok) {
-            throw new Error(`Download failed: ${response.status}`);
+      // Try direct download first without CORS proxy
+      const downloadUrl = `https://${GATEWAY_URL}/ipfs/${credentialDetails.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
+      
+      try {
+        const response = await fetch(downloadUrl, {
+          headers: {
+            'Accept': 'image/jpeg, image/png, image/*, application/octet-stream'
           }
+        });
 
-          // Determine file type and extension
-          const contentType = response.headers.get('content-type');
-          let fileExtension;
-          if (contentType?.includes('jpeg') || contentType?.includes('jpg')) {
-            fileExtension = 'jpg';
-          } else if (contentType?.includes('png')) {
-            fileExtension = 'png';
-          } else if (contentType?.includes('pdf')) {
-            fileExtension = 'pdf';
-          } else {
-            fileExtension = credentialDetails.originalFileName?.split('.').pop() || 'file';
-          }
+        if (!response.ok) {
+          throw new Error(`Direct download failed: ${response.status}`);
+        }
 
-          // Create and trigger download
-          const blob = await response.blob();
-          activeUrl = window.URL.createObjectURL(blob);
-          activeLink = document.createElement('a');
-          activeLink.href = activeUrl;
-          
-          // Generate filename
-          const fileName = credentialDetails.originalFileName || 
-            `${credentialDetails.institution}_${credentialDetails.credentialType}_${credentialDetails.studentName}`
-              .replace(/[^a-zA-Z0-9]/g, '_')
-              .toLowerCase() + '.' + fileExtension;
-          
-          activeLink.download = fileName;
-          document.body.appendChild(activeLink);
-          activeLink.click();
-          break;
-        } catch (error) {
-          console.warn(`Download failed with proxy ${proxy}:`, error);
-          downloadError = error;
-          
-          // Clean up failed attempt
-          if (activeUrl) {
-            window.URL.revokeObjectURL(activeUrl);
-            activeUrl = null;
+        // Create and trigger download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        
+        // Generate filename
+        const fileExtension = credentialDetails.originalFileName?.split('.').pop() || 'pdf';
+        const fileName = credentialDetails.originalFileName || 
+          `${credentialDetails.institution}_${credentialDetails.credentialType}_${credentialDetails.studentName}`
+            .replace(/[^a-zA-Z0-9]/g, '_')
+            .toLowerCase() + '.' + fileExtension;
+        
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Cleanup
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }, 1000);
+
+      } catch (directError) {
+        console.warn('Direct download failed, trying CORS proxies:', directError);
+        
+        // Try each CORS proxy as fallback
+        let downloaded = false;
+        for (const proxy of CORS_PROXIES) {
+          try {
+            const proxyUrl = `${proxy}${encodeURIComponent(downloadUrl)}`;
+            const response = await fetch(proxyUrl);
+            
+            if (!response.ok) continue;
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Cleanup
+            setTimeout(() => {
+              window.URL.revokeObjectURL(url);
+              document.body.removeChild(a);
+            }, 1000);
+
+            downloaded = true;
+            break;
+          } catch (proxyError) {
+            console.warn(`Download failed with proxy ${proxy}:`, proxyError);
+            continue;
           }
-          if (activeLink && activeLink.parentNode) {
-            activeLink.parentNode.removeChild(activeLink);
-            activeLink = null;
-          }
-          continue;
+        }
+
+        if (!downloaded) {
+          throw new Error('All download attempts failed');
         }
       }
-
-      if (downloadError && !activeLink) {
-        console.error('All download attempts failed:', downloadError);
-        setError('Failed to download certificate. Please try again.');
-      }
+    } catch (error) {
+      console.error('Download error:', error);
+      setError('Failed to download certificate. Please try again.');
     } finally {
-      // Clean up resources after delay
-      setTimeout(() => {
-        if (activeUrl) {
-          window.URL.revokeObjectURL(activeUrl);
-        }
-        if (activeLink && activeLink.parentNode) {
-          activeLink.parentNode.removeChild(activeLink);
-        }
-        setIsDownloading(false);
-      }, 1500);
+      setIsDownloading(false);
     }
   };
 
@@ -397,7 +388,7 @@ function CredentialVerification() {
                 description: "Get verification results in seconds"
               },
               {
-                icon: "M9 12h6m-6 1h6m-6 1h6m-6 1h6m-6 1h6m-6 1h6m-6 1h6",
+                icon: "M9 12h6m-6 1h6m-6 1h6m-6 1h6m-6 1h6m-6 1h6",
                 title: "Detailed Information",
                 description: "View complete credential details"
               }
