@@ -67,12 +67,22 @@ function CredentialVerification() {
     setIsVerifying(true)
     setError(null)
 
-    await fetching(shortId);
-    
     try {
-      // Validate CID format
-      if (!credentialId.startsWith('bafk')) {
-        throw new Error('Please enter a valid metadata CID (starts with "bafk")')
+      // First validate if shortId is provided
+      if (!shortId.trim()) {
+        throw new Error('Please enter a valid Certificate ID')
+      }
+
+      try {
+        await fetching(shortId);
+      } catch (firestoreError) {
+        // Handle Firestore-specific errors
+        throw new Error('Invalid Certificate ID. Please check and try again.')
+      }
+      
+      // Now validate the CID we got from Firestore
+      if (!credentialId) {
+        throw new Error('No valid credential found for this Certificate ID')
       }
 
       console.log('Fetching metadata from Pinata:', credentialId)
