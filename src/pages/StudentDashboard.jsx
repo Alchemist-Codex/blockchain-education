@@ -23,43 +23,75 @@ function StudentDashboard() {
   const [activeTab, setActiveTab] = useState('received')
   // State for storing credentials
   const [credentials, setCredentials] = useState([]);
+  // State for managing loading state
+  const [loading, setLoading] = useState(true);
 
   // Fetch user profile and credentials when component mounts
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (user) {
-        try {
-          // Get user profile
-          const profile = await getUserProfile(user.uid);
-          console.log('Fetched user profile:', profile); // Debug log
-          setUserProfile(profile);
+    const fetchStudentCredentials = async () => {
+      if (!user) return;
 
-          // Fetch credentials if profile has any
-          if (profile?.credentials?.length > 0) {
-            console.log('Found credentials in profile:', profile.credentials); // Debug log
-            const credentialsRef = collection(db, 'credentials');
-            const credentialPromises = profile.credentials.map(async (credId) => {
-              const credDoc = await getDoc(doc(db, 'credentials', credId));
-              console.log('Credential doc:', credId, credDoc.exists(), credDoc.data()); // Debug log
-              return credDoc.exists() ? { id: credDoc.id, ...credDoc.data() } : null;
-            });
+      try {
+        setLoading(true);
+        // First, get the student document
+        const studentDoc = await getDoc(doc(db, 'students', user.uid));
+        console.log('Student doc:', studentDoc.data());
 
-            const fetchedCredentials = await Promise.all(credentialPromises);
-            const filteredCredentials = fetchedCredentials.filter(cred => cred !== null);
-            console.log('Filtered credentials:', filteredCredentials); // Debug log
-            setCredentials(filteredCredentials);
-          } else {
-            console.log('No credentials found in profile'); // Debug log
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-          toast.error('Failed to load credentials');
+        if (!studentDoc.exists()) {
+          console.log('No student document found');
+          return;
         }
+
+        const studentData = studentDoc.data();
+        setUserProfile(studentData);
+
+        // Check if student has credentials
+        if (!studentData.credentials || studentData.credentials.length === 0) {
+          console.log('No credentials found for student');
+          setCredentials([]);
+          return;
+        }
+
+        console.log('Found credentials:', studentData.credentials);
+
+        // Fetch each credential document
+        const credentialPromises = studentData.credentials.map(async (credentialId) => {
+          const credDoc = await getDoc(doc(db, 'credentials', credentialId));
+          if (credDoc.exists()) {
+            return { id: credDoc.id, ...credDoc.data() };
+          }
+          console.log('Credential not found:', credentialId);
+          return null;
+        });
+
+        const fetchedCredentials = await Promise.all(credentialPromises);
+        const validCredentials = fetchedCredentials.filter(cred => cred !== null);
+        console.log('Fetched credentials:', validCredentials);
+        
+        setCredentials(validCredentials);
+      } catch (error) {
+        console.error('Error fetching credentials:', error);
+        toast.error('Failed to load credentials');
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchUserData();
+    fetchStudentCredentials();
   }, [user]);
+
+  if (loading) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen p-6 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading credentials...</p>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
 
   // Static statistics data
   const stats = [
@@ -136,18 +168,20 @@ function StudentDashboard() {
                           {credential.type}
                         </h3>
                         <p className="text-gray-500 dark:text-gray-400">
-                          {credential.institution} • {new Date(credential.createdAt).getFullYear()}
+                          {credential.institution} • {new Date(credential.createdAt).toLocaleDateString()}
                         </p>
                         <p className="text-sm text-gray-400 dark:text-gray-500">
                           ID: {credential.id}
                         </p>
                       </div>
-                      <button 
-                        className="text-primary-600 hover:text-primary-700 dark:text-primary-400"
-                        onClick={() => window.open(`https://ipfs.io/ipfs/${credential.cid}`, '_blank')}
-                      >
-                        View
-                      </button>
+                      {credential.cid && (
+                        <button 
+                          className="text-primary-600 hover:text-primary-700 dark:text-primary-400"
+                          onClick={() => window.open(`https://ipfs.io/ipfs/${credential.cid}`, '_blank')}
+                        >
+                          View
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 ))
