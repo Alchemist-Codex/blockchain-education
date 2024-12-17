@@ -27,7 +27,13 @@ service cloud.firestore {
     match /students/{studentId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update: if isUserAuthenticated(studentId);
+      allow update: if isAuthenticated() && (
+        // Allow update if user is the student
+        isUserAuthenticated(studentId) ||
+        // Allow update if user is an institution and only updating credentials array
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == 'institute' &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['credentials', 'lastUpdated'])
+      );
       allow delete: if false;
     }
 
@@ -52,4 +58,4 @@ service cloud.firestore {
       allow read, write: if false;
     }
   }
-}
+} 
