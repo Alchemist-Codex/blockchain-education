@@ -17,15 +17,15 @@ export default function QAForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-blue-800 dark:text-blue-100 font-medium">Name</label>
-            <input type="text" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required />
+            <input type="text" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
           <div>
             <label className="block text-blue-800 dark:text-blue-100 font-medium">Age</label>
-            <input type="number" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required />
+            <input type="number" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
           <div>
             <label className="block text-blue-800 dark:text-blue-100 font-medium">Gender</label>
-            <select className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required>
+            <select className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
               <option>Male</option>
               <option>Female</option>
               <option>Other</option>
@@ -33,19 +33,15 @@ export default function QAForm() {
           </div>
           <div>
             <label className="block text-blue-800 dark:text-blue-100 font-medium">Email</label>
-            <input type="email" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required />
+            <input type="email" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
           <div>
             <label className="block text-blue-800 dark:text-blue-100 font-medium">Mobile Number</label>
-            <input type="tel" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required />
+            <input type="tel" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
           <div>
             <label className="block text-blue-800 dark:text-blue-100 font-medium">Nationality</label>
-            <input type="text" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required />
-          </div>
-          <div>
-            <label className="block text-blue-800 dark:text-blue-100 font-medium">Wallet Address</label>
-            <input type="text" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required />
+            <input type="text" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
         </div>
 
@@ -53,19 +49,19 @@ export default function QAForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-blue-800 dark:text-blue-100 font-medium">Institute Name</label>
-            <input type="text" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required />
+            <input type="text" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
           <div>
             <label className="block text-blue-800 dark:text-blue-100 font-medium">Course</label>
-            <input type="text" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required />
+            <input type="text" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
           <div>
             <label className="block text-blue-800 dark:text-blue-100 font-medium">Starting Date</label>
-            <input type="date" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required />
+            <input type="date" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
           <div>
             <label className="block text-blue-800 dark:text-blue-100 font-medium">Ending Date</label>
-            <input type="date" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md" required />
+            <input type="date" className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
         </div>
 
