@@ -38,6 +38,7 @@ function CredentialUpload() {
   })
   const [isBlockchainUploading, setIsBlockchainUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [certificateId, setCertificateId] = useState(null)
 
   // Animation configuration
   const fadeIn = {
@@ -152,6 +153,7 @@ function CredentialUpload() {
           cid: metadataHash,
           id: short_id,
         });
+        setCertificateId(short_id);
       }
 
       // Generate certificate hash
@@ -414,6 +416,11 @@ function CredentialUpload() {
               <p className="text-gray-600 mb-4">
                 The certificate has been uploaded to IPFS and recorded on the blockchain.
               </p>
+              {certificateId && (
+                <p className="text-gray-800 mb-4 font-medium">
+                  Certificate ID: <span className="font-bold">{certificateId}</span>
+                </p>
+              )}
               <button
                 onClick={() => {
                   setStep(1);
@@ -425,6 +432,7 @@ function CredentialUpload() {
                     file: null
                   });
                   setImagePreview(null);
+                  setCertificateId(null);
                 }}
                 className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
               >
