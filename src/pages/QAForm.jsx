@@ -46,7 +46,7 @@ export default function QAForm() {
     e.preventDefault(); // Prevent page reload
 
     try {
-      await setDoc(doc(db, "student-data", emailSanitize(studentDetails.email)), {
+      await setDoc(doc(db, "studentdata", emailSanitize(studentDetails.email)), {
         ...studentDetails,
       });
       navigate('/student/dashboard'); // Redirect on success
