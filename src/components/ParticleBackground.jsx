@@ -19,7 +19,7 @@ const ParticleBackground = ({ isDarkTheme }) => {
             type: 'circle',
             stroke: {
               width: 1,
-              color: isDarkTheme ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'
+              color: isDarkTheme ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.3)'
             }
           },
           opacity: {
