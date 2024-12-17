@@ -8,6 +8,12 @@ import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firesto
 import { db } from '../config/firebase';
 import { toast } from 'react-hot-toast';
 
+// Define constants
+const USER_TYPES = {
+  STUDENT: 'student',
+  INSTITUTE: 'institute'
+};
+
 function StudentDashboard() {
   // Get user from auth context
   const { user } = useAuth();
