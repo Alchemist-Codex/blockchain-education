@@ -1,9 +1,21 @@
+import { useState, useEffect } from 'react';
 import ParticleBackground from './ParticleBackground';
-import { useTheme } from 'next-themes';
 
 const Layout = ({ children }) => {
-  const { theme } = useTheme();
-  const isDarkTheme = theme === 'dark';
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
+
+  useEffect(() => {
+    // Check if user prefers dark mode
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setIsDarkTheme(prefersDark);
+
+    // Listen for theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e) => setIsDarkTheme(e.matches);
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   return (
     <div>
