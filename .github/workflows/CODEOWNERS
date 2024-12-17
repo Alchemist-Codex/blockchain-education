@@ -1,0 +1,5 @@
+# This is a CODEOWNERS file.
+# Lines starting with '#' are comments.
+
+# Define owners for the entire repository
+* @ritaban06 @ritabancollege06
