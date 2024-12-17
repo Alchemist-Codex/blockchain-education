@@ -21,6 +21,16 @@ function generateShortFriendlyId(prefix = "user") {
   return `${prefix}-${randomWord}-${uniquePart}`;
 }
 
+const copyToClipboard = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  } catch (err) {
+    toast.error('Failed to copy to clipboard');
+    console.error('Failed to copy:', err);
+  }
+};
+
 function CredentialUpload() {
   // Web3 context for blockchain interaction
   const { account, contract } = useWeb3();
@@ -417,9 +427,29 @@ function CredentialUpload() {
                 The certificate has been uploaded to IPFS and recorded on the blockchain.
               </p>
               {certificateId && (
-                <p className="text-gray-800 mb-4 font-medium">
-                  Certificate ID: <span className="font-bold">{certificateId}</span>
-                </p>
+                <div className="text-gray-800 mb-4 font-medium flex items-center justify-center gap-2">
+                  Certificate ID: 
+                  <span className="font-bold">{certificateId}</span>
+                  <button
+                    onClick={() => copyToClipboard(certificateId)}
+                    className="p-1.5 text-gray-600 hover:text-gray-800 transition-colors"
+                    title="Copy to clipboard"
+                  >
+                    <svg 
+                      className="w-5 h-5" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2} 
+                        d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" 
+                      />
+                    </svg>
+                  </button>
+                </div>
               )}
               <button
                 onClick={() => {
