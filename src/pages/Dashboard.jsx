@@ -34,10 +34,8 @@ function Dashboard() {
 
   // Mock statistics data
   const stats = [
-    { label: 'Total Credentials', value: '12' },
-    { label: 'Issued', value: '8' },
-    { label: 'Received', value: '4' },
-    { label: 'Pending', value: '2' }
+    { label: 'Total Credentials', value: profile.credentials.length },
+    { label: 'Issued', value: profile.credentials.length },
   ]
 
   return (
