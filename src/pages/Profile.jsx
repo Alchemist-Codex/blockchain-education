@@ -163,7 +163,7 @@ function Profile() {
                 ) : (
                   <div className="mt-6">
                     {/* Edit profile button */}
-                    <div className="flex justify-end">
+                    {/* <div className="flex justify-end">
                       <button
                         onClick={() => setIsEditing(true)}
                         className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md 
@@ -172,7 +172,7 @@ function Profile() {
                       >
                         Edit Profile
                       </button>
-                    </div>
+                    </div> */}
                   </div>
                 )}
               </AnimatePresence>
