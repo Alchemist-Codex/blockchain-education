@@ -6,7 +6,7 @@ const ParticleBackground = ({ isDarkTheme }) => {
       window.particlesJS('particles-js', {
         particles: {
           number: {
-            value: 120,
+            value: 50,
             density: {
               enable: true,
               value_area: 800
@@ -16,47 +16,45 @@ const ParticleBackground = ({ isDarkTheme }) => {
             value: isDarkTheme ? '#ffffff' : '#000000'
           },
           shape: {
-            type: 'circle'
+            type: 'circle',
+            stroke: {
+              width: 1,
+              color: isDarkTheme ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'
+            }
           },
           opacity: {
-            value: isDarkTheme ? 0.9 : 0.8,
-            random: false,
+            value: isDarkTheme ? 0.5 : 0.3,
+            random: true,
             anim: {
               enable: true,
               speed: 1,
-              opacity_min: isDarkTheme ? 0.6 : 0.5,
+              opacity_min: 0.1,
               sync: false
             }
           },
           size: {
-            value: isDarkTheme ? 5 : 4,
+            value: 15,
             random: true,
             anim: {
               enable: true,
               speed: 2,
-              size_min: isDarkTheme ? 3 : 2,
+              size_min: 5,
               sync: false
             }
           },
           line_linked: {
-            enable: true,
-            distance: 150,
-            color: isDarkTheme ? '#ffffff' : '#000000',
-            opacity: isDarkTheme ? 0.7 : 0.6,
-            width: isDarkTheme ? 2 : 1.5
+            enable: false
           },
           move: {
             enable: true,
-            speed: 2.5,
-            direction: 'none',
-            random: false,
+            speed: 2,
+            direction: 'top',
+            random: true,
             straight: false,
             out_mode: 'out',
             bounce: false,
             attract: {
-              enable: true,
-              rotateX: 600,
-              rotateY: 1200
+              enable: false
             }
           }
         },
@@ -65,7 +63,7 @@ const ParticleBackground = ({ isDarkTheme }) => {
           events: {
             onhover: {
               enable: true,
-              mode: 'grab'
+              mode: 'bubble'
             },
             onclick: {
               enable: true,
@@ -74,11 +72,15 @@ const ParticleBackground = ({ isDarkTheme }) => {
             resize: true
           },
           modes: {
-            grab: {
-              distance: 140,
-              line_linked: {
-                opacity: isDarkTheme ? 1 : 0.8
-              }
+            bubble: {
+              distance: 200,
+              size: 20,
+              duration: 2,
+              opacity: 0.8,
+              speed: 3
+            },
+            push: {
+              particles_nb: 4
             }
           }
         },
