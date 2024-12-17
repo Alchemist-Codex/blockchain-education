@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { signInWithPopup, GoogleAuthProvider, setPersistence, browserLocalPersistence, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { useWeb3 } from './Web3Context';
 import { userTypes, collections } from '../utils/schema';
@@ -32,6 +32,10 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const emailSanitize = (email) => {
+    return email.replace(/[@.]/g, "_"); // Replace "@" and "." with "_"
+  };
+
   const signInWithGoogle = async (selectedUserType) => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -42,7 +46,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem('authSession', JSON.stringify({ timestamp: Date.now() }));
       
       // Create or update user document in users collection
-      const userRef = doc(db, 'users', user.uid);
+      const userRef = doc(db, 'users', emailSanitize(user.email));
       await setDoc(userRef, {
         uid: user.uid,
         email: user.email,
@@ -56,7 +60,7 @@ export function AuthProvider({ children }) {
 
       // Create or update type-specific profile
       if (selectedUserType === userTypes.STUDENT) {
-        const studentRef = doc(db, collections.STUDENTS, user.uid);
+        const studentRef = doc(db, collections.STUDENTS, emailSanitize(user.email));
         await setDoc(studentRef, {
           uid: user.uid,
           email: user.email,
