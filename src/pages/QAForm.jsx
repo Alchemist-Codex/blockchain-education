@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, collection, addDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
 
 export default function QAForm() {
@@ -45,16 +45,14 @@ export default function QAForm() {
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent page reload
 
-    try {
-      await setDoc(doc(db, "studentdata", emailSanitize(studentDetails.email)), {
-        ...studentDetails,
-      });
-      navigate('/student/dashboard'); // Redirect on success
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("Failed to save data. Please try again.");
-    }
-  };
+    const userRef = doc(db, 'student', emailSanitize(studentDetails.email)); // Reference to the user's document
+    const postsRef = collection(userRef, 'data'); // Reference to the 'posts' subcollection
+    await addDoc(postsRef, {
+      ...studentDetails,
+  });
+
+  // Now create a subcollection called 'posts' inside the 'userID123' document
+    navigate('/student/dashboard'); // Redirect on success
 
   // Handle input field changes
   const handleStudentDetailsChange = (e) => {
