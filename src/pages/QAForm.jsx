@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, addDoc, collection } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
+import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 const QAForm = () => {
   const navigate = useNavigate();
+  const { user, userType } = useAuth();
 
   const emailSanitize = (email) => email.replace(/[@.]/g, "_");
 
@@ -39,22 +42,30 @@ const QAForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation (can be extended)
-    if (!/\S+@\S+\.\S+/.test(studentDetails.email)) {
-      alert('Please enter a valid email address.');
+    if (!user) {
+      toast.error('You must be logged in to submit this form');
+      return;
+    }
+
+    if (userType !== 'student') {
+      toast.error('Only students can submit this form');
       return;
     }
 
     try {
-      const userRef = doc(db, 'student', emailSanitize(studentDetails.email));
-      const postsRef = collection(userRef, 'data');
+      // Store in students collection using user's UID
+      const studentRef = doc(db, 'students', user.uid);
+      await setDoc(studentRef, {
+        ...studentDetails,
+        userId: user.uid,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
 
-      await addDoc(postsRef, { ...studentDetails });
-
+      toast.success('Form submitted successfully');
       navigate('/student/dashboard');
     } catch (error) {
-      console.error("Error adding document: ", error);
-      alert('There was an issue with submitting your form. Please try again.');
+      console.error("Error submitting form:", error);
+      toast.error('Failed to submit form. Please try again.');
     }
   };
 
