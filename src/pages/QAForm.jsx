@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { doc, setDoc } from "firebase/firestore";
+import {db} from "../config/firebase"
 
 export default function QAForm() {
   const navigate = useNavigate();
@@ -10,17 +12,21 @@ export default function QAForm() {
     email: '',
     mobileNumber: '',
     nationality: '',
-  });
-  const [courseDetails, setCourseDetails] = useState({
     instituteName: '',
     course: '',
     startDate: '',
-    endDate: '',
+    endDate: ''
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     // Add form submission logic if needed
+
+    await setDoc(doc(db, "student-data", studentDetails.email), {
+      studentDetails
+    });
+    
+
     navigate('/student/dashboard');
   };
 
@@ -28,9 +34,7 @@ export default function QAForm() {
     setStudentDetails({ ...studentDetails, [e.target.name]: e.target.value });
   };
 
-  const handleCourseDetailsChange = (e) => {
-    setCourseDetails({ ...courseDetails, [e.target.name]: e.target.value });
-  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-blue-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8">
@@ -115,8 +119,8 @@ export default function QAForm() {
             <input
               type="text"
               name="instituteName"
-              value={courseDetails.instituteName}
-              onChange={handleCourseDetailsChange}
+              value={studentDetails.instituteName}
+              onChange={handleStudentDetailsChange}
               className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -126,8 +130,8 @@ export default function QAForm() {
             <input
               type="text"
               name="course"
-              value={courseDetails.course}
-              onChange={handleCourseDetailsChange}
+              value={studentDetails.course}
+              onChange={handleStudentDetailsChange}
               className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -137,8 +141,8 @@ export default function QAForm() {
             <input
               type="date"
               name="startDate"
-              value={courseDetails.startDate}
-              onChange={handleCourseDetailsChange}
+              value={studentDetails.startDate}
+              onChange={handleStudentDetailsChange}
               className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -148,8 +152,8 @@ export default function QAForm() {
             <input
               type="date"
               name="endDate"
-              value={courseDetails.endDate}
-              onChange={handleCourseDetailsChange}
+              value={studentDetails.endDate}
+              onChange={handleStudentDetailsChange}
               className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
