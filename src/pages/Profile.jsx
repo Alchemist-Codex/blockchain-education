@@ -1,14 +1,14 @@
 import React from 'react';
 
-function Profile({ userType }) {
+function ProfilePage({ userType }) {
   return (
-    <div className="min-h-screen bg-blue-50 p-6 md:p-12">
-      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8">
+    <div className="min-h-screen p-6 md:p-12 bg-blue-50 dark:bg-gray-900 dark:text-white">
+      <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
         {userType === 'student' ? (
           <>
-            <h1 className="text-2xl font-bold text-blue-700 mb-6">Student Profile</h1>
+            <h1 className="text-2xl font-bold text-blue-700 dark:text-blue-300 mb-6">Student Profile</h1>
             <div className="mb-8">
-              <h2 className="text-xl font-semibold text-blue-600 mb-4">Student Details</h2>
+              <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-400 mb-4">Student Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <p><strong>Name:</strong> John Doe</p>
                 <p><strong>Age:</strong> 22</p>
@@ -19,7 +19,7 @@ function Profile({ userType }) {
               </div>
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-blue-600 mb-4">Course Details</h2>
+              <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-400 mb-4">Course Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <p><strong>Institute Name:</strong> Academic Institute</p>
                 <p><strong>Course:</strong> Computer Science</p>
@@ -30,9 +30,9 @@ function Profile({ userType }) {
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-bold text-blue-700 mb-6">Institute Profile</h1>
+            <h1 className="text-2xl font-bold text-blue-700 dark:text-blue-300 mb-6">Institute Profile</h1>
             <div className="mb-8">
-              <h2 className="text-xl font-semibold text-blue-600 mb-4">Institute Details</h2>
+              <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-400 mb-4">Institute Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <p><strong>Name:</strong> Academic Institute</p>
                 <p><strong>Email:</strong> contact@academicinstitute.com</p>
@@ -48,4 +48,4 @@ function Profile({ userType }) {
   );
 }
 
-export default Profile;
+export default ProfilePage;
