@@ -58,10 +58,10 @@ export function AuthProvider({ children }) {
       if (selectedUserType === userTypes.STUDENT) {
         const studentRef = doc(db, collections.STUDENTS, user.uid);
         await setDoc(studentRef, {
-          ...studentSchema,
           uid: user.uid,
           email: user.email,
           displayName: user.displayName || '',
+          userType: userTypes.STUDENT,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           walletAddress: account || ''
@@ -69,10 +69,10 @@ export function AuthProvider({ children }) {
       } else {
         const instituteRef = doc(db, collections.INSTITUTIONS, user.uid);
         await setDoc(instituteRef, {
-          ...instituteSchema,
           uid: user.uid,
           email: user.email,
           instituteName: user.displayName || '',
+          userType: userTypes.INSTITUTE,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           walletAddress: account || ''
