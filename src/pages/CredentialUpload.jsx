@@ -160,42 +160,57 @@ function CredentialUpload() {
       if (metadataHash) {
         try {
           // Generate a unique short ID
-          let short_id = generateShortFriendlyId();
-      
-          // Create a new document in the "credentials" collection
+          const short_id = generateShortFriendlyId("cred");
+          
+          // First, create the credential document
           await setDoc(doc(db, "credentials", short_id), {
             cid: metadataHash,
             id: short_id,
+            studentAddress: formData.studentAddress,
+            createdAt: new Date().toISOString(),
+            type: formData.credentialType,
+            institution: formData.institution
           });
-      
-          // Set the certificate ID in your app state
+          
+          // Set the certificate ID in state
           setCertificateId(short_id);
-      
-          // Query the "students" collection for matching walletAddress
-          const q = query(collection(db, "students"), where("walletAddress", "==", metadata.studentAddress));
+          
+          // Query for the student document
+          const studentsRef = collection(db, "students");
+          const q = query(studentsRef, where("walletAddress", "==", formData.studentAddress));
           const querySnapshot = await getDocs(q);
-      
+          
           if (querySnapshot.empty) {
-            console.warn("No matching students found for walletAddress:", metadata.studentAddress);
+            console.warn(`No student found with wallet address: ${formData.studentAddress}`);
+            toast.warning("Student record not found. Credential created but not linked to student.");
             return;
           }
-      
-          // Update each matching student's credentials array
-          const updatePromises = querySnapshot.docs.map((docSnapshot) => {
-            const docRef = doc(db, "students", docSnapshot.id);
-      
-            // Add short_id to the credentials array
-            return updateDoc(docRef, {
-              credentials: arrayUnion(short_id),
-            });
+          
+          // Update all matching student documents
+          const updatePromises = querySnapshot.docs.map(async (docSnapshot) => {
+            const studentRef = doc(db, "students", docSnapshot.id);
+            
+            // Get current credentials array
+            const studentData = docSnapshot.data();
+            const currentCredentials = studentData.credentials || [];
+            
+            // Check for duplicates
+            if (!currentCredentials.includes(short_id)) {
+              return updateDoc(studentRef, {
+                credentials: arrayUnion(short_id),
+                lastUpdated: new Date().toISOString()
+              });
+            }
           });
-      
-          // Wait for all updates to complete
+          
           await Promise.all(updatePromises);
-      
-          console.log("Successfully added credential to students.");
+          console.log("Successfully added credential to student record(s)");
+          toast.success("Credential linked to student successfully");
+          
         } catch (error) {
           console.error("Error updating credentials:", error);
+          toast.error("Failed to link credential to student");
+          throw error; // Re-throw to be caught by the parent try-catch
         }
       }
       
