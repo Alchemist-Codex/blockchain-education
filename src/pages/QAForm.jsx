@@ -168,7 +168,7 @@ export default function QAForm() {
           </div>
         </div>
         <div className="flex justify-end mt-4">
-          <button type="reset" onClick={handleReset} className="bg-gray-400 dark:bg-gray-800 text-white px-4 py-2 rounded-md mr-4">Reset</button>
+          <button type="reset"  className="bg-gray-400 dark:bg-gray-800 text-white px-4 py-2 rounded-md mr-4">Reset</button>
           <button onClick={handleSubmit} className="bg-blue-600 dark:bg-indigo-950 text-white px-4 py-2 rounded-md">Submit</button>
         </div>
       </form>
