@@ -1,10 +1,21 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { signInWithPopup, GoogleAuthProvider, setPersistence, browserLocalPersistence, signOut } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { useWeb3 } from './Web3Context';
-import { userTypes, collections } from '../utils/schema';
 import toast from 'react-hot-toast';
+
+// Define constants at the top
+const USER_TYPES = {
+  STUDENT: 'student',
+  INSTITUTE: 'institute'
+};
+
+const COLLECTIONS = {
+  USERS: 'users',
+  STUDENTS: 'students',
+  INSTITUTIONS: 'institutions'
+};
 
 const AuthContext = createContext();
 
@@ -32,12 +43,9 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const emailSanitize = (email) => {
-    return email.replace(/[@.]/g, "_"); // Replace "@" and "." with "_"
-  };
-
   const signInWithGoogle = async (selectedUserType) => {
     try {
+      // Sign in with Google
       const result = await signInWithPopup(auth, googleProvider);
       const { user } = result;
       
@@ -45,9 +53,8 @@ export function AuthProvider({ children }) {
       localStorage.setItem('userType', selectedUserType);
       localStorage.setItem('authSession', JSON.stringify({ timestamp: Date.now() }));
       
-      // Create or update user document in users collection
-      const userRef = doc(db, 'users', emailSanitize(user.email));
-      await setDoc(userRef, {
+      // Base user data
+      const userData = {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName,
@@ -56,35 +63,33 @@ export function AuthProvider({ children }) {
         walletAddress: account || '',
         createdAt: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
-      }, { merge: true });
+      };
+
+      // Create or update user document in users collection
+      const userRef = doc(db, COLLECTIONS.USERS, user.uid);
+      await setDoc(userRef, userData, { merge: true });
 
       // Create or update type-specific profile
-      if (selectedUserType === userTypes.STUDENT) {
-        const studentRef = doc(db, collections.STUDENTS, emailSanitize(user.email));
+      if (selectedUserType === USER_TYPES.STUDENT) {
+        const studentRef = doc(db, COLLECTIONS.STUDENTS, user.uid);
         await setDoc(studentRef, {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName || '',
-          userType: userTypes.STUDENT,
-          createdAt: new Date().toISOString(),
+          ...userData,
+          userType: USER_TYPES.STUDENT,
           updatedAt: new Date().toISOString(),
-          walletAddress: account || ''
         }, { merge: true });
       } else {
-        const instituteRef = doc(db, collections.INSTITUTIONS, user.uid);
+        const instituteRef = doc(db, COLLECTIONS.INSTITUTIONS, user.uid);
         await setDoc(instituteRef, {
-          uid: user.uid,
-          email: user.email,
+          ...userData,
           instituteName: user.displayName || '',
-          userType: userTypes.INSTITUTE,
-          createdAt: new Date().toISOString(),
+          userType: USER_TYPES.INSTITUTE,
           updatedAt: new Date().toISOString(),
-          walletAddress: account || ''
         }, { merge: true });
       }
 
       setUser(user);
       setUserType(selectedUserType);
+      toast.success('Signed in successfully');
       return user;
     } catch (error) {
       handleSignInError(error);
@@ -93,8 +98,10 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    setPersistence(auth, browserLocalPersistence)
-      .then(() => {
+    const initAuth = async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        
         const unsubscribe = auth.onAuthStateChanged(async (user) => {
           if (user) {
             const storedUserType = localStorage.getItem('userType');
@@ -102,7 +109,7 @@ export function AuthProvider({ children }) {
             setUserType(storedUserType);
             
             // Update last login time
-            const userRef = doc(db, 'users', user.uid);
+            const userRef = doc(db, COLLECTIONS.USERS, user.uid);
             await setDoc(userRef, {
               lastLogin: new Date().toISOString()
             }, { merge: true });
@@ -115,11 +122,13 @@ export function AuthProvider({ children }) {
         });
 
         return unsubscribe;
-      })
-      .catch((error) => {
-        console.error('Error setting persistence:', error);
+      } catch (error) {
+        console.error('Error initializing auth:', error);
         setLoading(false);
-      });
+      }
+    };
+
+    initAuth();
   }, [account]);
 
   const signOutUser = async () => {
