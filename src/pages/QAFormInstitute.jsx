@@ -42,20 +42,29 @@ export default function QAFormInstitute() {
           return;
         }
     
+        if (!instituteDetails.iname || !instituteDetails.email || !instituteDetails.site || 
+            !instituteDetails.year || !instituteDetails.address) {
+          toast.error('Please fill in all required fields');
+          return;
+        }
+    
         try {
-          // Store in students collection using user's UID
-          const instituteRef = doc(db, 'institution', user.uid);
-          await setDoc(instituteRef, {
+          const formattedData = {
             ...instituteDetails,
             userId: user.uid,
-            updatedAt: new Date().toISOString()
-          }, { merge: true });
+            year: Number(instituteDetails.year),
+            updatedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString()
+          };
+    
+          const instituteRef = doc(db, 'institution', user.uid);
+          await setDoc(instituteRef, formattedData);
     
           toast.success('Form submitted successfully');
           navigate('/institution/dashboard');
         } catch (error) {
           console.error("Error submitting form:", error);
-          toast.error('Failed to submit form. Please try again.');
+          toast.error('Failed to submit form: ' + error.message);
         }
     
   };
