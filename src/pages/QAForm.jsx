@@ -18,6 +18,21 @@ export default function QAForm() {
     endDate: ''
   });
 
+  const handleReset = ()=>{
+    setStudentDetails({
+      name: '',
+      age: '',
+      gender: '',
+      email: '',
+      mobileNumber: '',
+      nationality: '',
+      instituteName: '',
+      course: '',
+      startDate: '',
+      endDate: ''
+    })
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Add form submission logic if needed
@@ -160,8 +175,8 @@ export default function QAForm() {
           </div>
         </div>
         <div className="flex justify-end mt-4">
-          <button type="reset" className="bg-gray-400 dark:bg-gray-800 text-white px-4 py-2 rounded-md mr-4">Reset</button>
-          <button type="submit" onSubmit={handleSubmit} className="bg-blue-600 dark:bg-indigo-950 text-white px-4 py-2 rounded-md">Submit</button>
+          <button type="reset" onClick={handleReset} className="bg-gray-400 dark:bg-gray-800 text-white px-4 py-2 rounded-md mr-4">Reset</button>
+          <button type="submit" onClick={handleSubmit} className="bg-blue-600 dark:bg-indigo-950 text-white px-4 py-2 rounded-md">Submit</button>
         </div>
       </form>
     </div>
