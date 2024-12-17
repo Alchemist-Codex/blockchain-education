@@ -19,22 +19,22 @@ const ParticleBackground = ({ isDarkTheme }) => {
             type: 'circle'
           },
           opacity: {
-            value: 0.8,
+            value: isDarkTheme ? 0.8 : 0.8,
             random: false,
             anim: {
               enable: true,
               speed: 1,
-              opacity_min: 0.5,
+              opacity_min: isDarkTheme ? 0.5 : 0.5,
               sync: false
             }
           },
           size: {
-            value: 4,
+            value: isDarkTheme ? 4 : 4,
             random: true,
             anim: {
               enable: true,
               speed: 2,
-              size_min: 2,
+              size_min: isDarkTheme ? 2 : 2,
               sync: false
             }
           },
@@ -42,8 +42,8 @@ const ParticleBackground = ({ isDarkTheme }) => {
             enable: true,
             distance: 150,
             color: isDarkTheme ? '#ffffff' : '#000000',
-            opacity: 0.6,
-            width: 1.5
+            opacity: isDarkTheme ? 0.6 : 0.6,
+            width: isDarkTheme ? 1.5 : 1.5
           },
           move: {
             enable: true,
@@ -77,7 +77,7 @@ const ParticleBackground = ({ isDarkTheme }) => {
             grab: {
               distance: 140,
               line_linked: {
-                opacity: 1
+                opacity: isDarkTheme ? 1 : 1
               }
             }
           }
