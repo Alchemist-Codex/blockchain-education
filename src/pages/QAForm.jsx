@@ -3,7 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { doc, setDoc } from "firebase/firestore";
 import {db} from "../config/firebase"
 
+
 export default function QAForm() {
+
+  const emailSanitize = (e)=>{
+    e.replace("@","_");
+    return e;
+  }
   const navigate = useNavigate();
   const [studentDetails, setStudentDetails] = useState({
     name: '',
@@ -18,26 +24,13 @@ export default function QAForm() {
     endDate: ''
   });
 
-  const handleReset = ()=>{
-    setStudentDetails({
-      name: '',
-      age: '',
-      gender: '',
-      email: '',
-      mobileNumber: '',
-      nationality: '',
-      instituteName: '',
-      course: '',
-      startDate: '',
-      endDate: ''
-    })
-  }
+  
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    
     // Add form submission logic if needed
 
-    await setDoc(doc(db, "student-data", studentDetails.email), {
+    await setDoc(doc(db, "student-data", emailSanitize(studentDetails.email)), {
       studentDetails,
     });
     
@@ -176,7 +169,7 @@ export default function QAForm() {
         </div>
         <div className="flex justify-end mt-4">
           <button type="reset" onClick={handleReset} className="bg-gray-400 dark:bg-gray-800 text-white px-4 py-2 rounded-md mr-4">Reset</button>
-          <button type="submit" onClick={handleSubmit} className="bg-blue-600 dark:bg-indigo-950 text-white px-4 py-2 rounded-md">Submit</button>
+          <button onClick={handleSubmit} className="bg-blue-600 dark:bg-indigo-950 text-white px-4 py-2 rounded-md">Submit</button>
         </div>
       </form>
     </div>
