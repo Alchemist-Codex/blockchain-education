@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import "particles.js";
 
 export const BackgroundAnimation = ({ children }) => {
   return (
     <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900 py-12 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        {/* Animated background elements */}
+        {/* Animated floating elements */}
         <motion.div
           className="absolute inset-0 overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.2 }}
         >
-          {[...Array(3)].map((_, i) => (
+          {[...Array(5)].map((_, i) => (
             <motion.div
               key={i}
               className="absolute rounded-full bg-primary-600/10 dark:bg-primary-400/10"
