@@ -23,7 +23,7 @@ export default function QAForm() {
     // Add form submission logic if needed
 
     await setDoc(doc(db, "student-data", studentDetails.email), {
-      studentDetails
+      studentDetails,
     });
     
 
@@ -161,7 +161,7 @@ export default function QAForm() {
         </div>
         <div className="flex justify-end mt-4">
           <button type="reset" className="bg-gray-400 dark:bg-gray-800 text-white px-4 py-2 rounded-md mr-4">Reset</button>
-          <button type="submit" onClick={handleSubmit} className="bg-blue-600 dark:bg-indigo-950 text-white px-4 py-2 rounded-md">Submit</button>
+          <button type="submit" onSubmit={handleSubmit} className="bg-blue-600 dark:bg-indigo-950 text-white px-4 py-2 rounded-md">Submit</button>
         </div>
       </form>
     </div>
