@@ -131,20 +131,18 @@ function CredentialVerification() {
     setError(null);
     
     try {
-      // First fetch the metadata using the CID from Firestore
       const metadata = await pinataService.main(credentialId);
       
       if (!metadata || !metadata.imageHash) {
         throw new Error('No valid image hash found in metadata');
       }
 
-      // Now use the imageHash from the metadata for download
       const downloadUrl = `https://${GATEWAY_URL}/ipfs/${metadata.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
       
       try {
         const response = await fetch(downloadUrl, {
           headers: {
-            'Accept': 'image/jpeg, image/png, image/*, application/octet-stream'
+            'Accept': '*/*'
           }
         });
 
@@ -152,24 +150,26 @@ function CredentialVerification() {
           throw new Error(`Direct download failed: ${response.status}`);
         }
 
-        // Create and trigger download
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         
-        // Generate filename
-        const fileExtension = credentialDetails.originalFileName?.split('.').pop() || 'pdf';
-        const fileName = credentialDetails.originalFileName || 
-          `${credentialDetails.institution}_${credentialDetails.credentialType}_${credentialDetails.studentName}`
+        let fileName;
+        if (metadata.originalFileName) {
+          fileName = metadata.originalFileName;
+        } else {
+          const contentType = response.headers.get('content-type');
+          const extension = contentType ? contentType.split('/').pop() : 'file';
+          fileName = `${metadata.institution}_${metadata.credentialType}_${metadata.studentName}`
             .replace(/[^a-zA-Z0-9]/g, '_')
-            .toLowerCase() + '.' + fileExtension;
+            .toLowerCase() + '.' + extension;
+        }
         
         a.download = fileName;
         document.body.appendChild(a);
         a.click();
         
-        // Cleanup
         setTimeout(() => {
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
@@ -178,7 +178,6 @@ function CredentialVerification() {
       } catch (directError) {
         console.warn('Direct download failed, trying CORS proxies:', directError);
         
-        // Try each CORS proxy as fallback
         let downloaded = false;
         for (const proxy of CORS_PROXIES) {
           try {
@@ -195,7 +194,6 @@ function CredentialVerification() {
             document.body.appendChild(a);
             a.click();
             
-            // Cleanup
             setTimeout(() => {
               window.URL.revokeObjectURL(url);
               document.body.removeChild(a);
