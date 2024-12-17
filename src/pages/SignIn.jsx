@@ -111,15 +111,7 @@ function SignIn() {
                 <FcGoogle className="h-5 w-5" />
               </span>
               {isSigningIn ? 'Signing in...' : 'Sign in with Google'}
-            </button>
-            
-              {/* Sign Up button */}
-              <button
-                onClick={() => navigate('/signup')}
-                className="group relative w-full flex justify-center py-3 px-4 mt-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                Sign Up
-              </button>
+            </button>     
             
           </div>
         </motion.div>
