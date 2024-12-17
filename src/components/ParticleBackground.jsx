@@ -18,27 +18,27 @@ const ParticleBackground = ({ isDarkTheme }) => {
           shape: {
             type: 'circle',
             stroke: {
-              width: 1,
-              color: isDarkTheme ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.3)'
+              width: isDarkTheme ? 2 : 1,
+              color: isDarkTheme ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.3)'
             }
           },
           opacity: {
-            value: isDarkTheme ? 0.5 : 0.3,
+            value: isDarkTheme ? 0.8 : 0.3,
             random: true,
             anim: {
               enable: true,
               speed: 1,
-              opacity_min: 0.1,
+              opacity_min: isDarkTheme ? 0.4 : 0.1,
               sync: false
             }
           },
           size: {
-            value: 15,
+            value: isDarkTheme ? 20 : 15,
             random: true,
             anim: {
               enable: true,
               speed: 2,
-              size_min: 5,
+              size_min: isDarkTheme ? 8 : 5,
               sync: false
             }
           },
@@ -74,9 +74,9 @@ const ParticleBackground = ({ isDarkTheme }) => {
           modes: {
             bubble: {
               distance: 200,
-              size: 20,
+              size: isDarkTheme ? 30 : 20,
               duration: 2,
-              opacity: 0.8,
+              opacity: isDarkTheme ? 1 : 0.8,
               speed: 3
             },
             push: {
