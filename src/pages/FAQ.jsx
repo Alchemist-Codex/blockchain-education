@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import BackgroundAnimation from '../components/BackgroundAnimation'
+import Layout from '../components/Layout'
 
 /**
  * FAQ Component
@@ -69,117 +69,119 @@ function FAQ() {
   ]
 
   return (
-    <BackgroundAnimation>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Page Header */}
-        <motion.div 
-          className="text-center mb-16"
-          {...fadeIn}
-        >
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Frequently Asked Questions
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300">
-            Find answers to common questions about Academic Chain
-          </p>
-        </motion.div>
-        {/* FAQ Categories with Accordion */}
-        {faqs.map((category, categoryIndex) => (
-          <motion.div
-            key={category.category}
-            className="mb-12"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: categoryIndex * 0.1 }}
-          >
-            {/* Category Title */}
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              {category.category}
-            </h2>
-            {/* Questions List */}
-            <div className="space-y-4">
-              {category.questions.map((faq, index) => {
-                const isOpen = openIndex === `${categoryIndex}-${index}`
-                
-                return (
-                  <motion.div
-                    key={index}
-                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden"
-                    initial={false}
-                  >
-                    {/* Question Button with Toggle Arrow */}
-                    <motion.button
-                      className="w-full px-6 py-4 flex justify-between items-center text-left"
-                      onClick={() => setOpenIndex(isOpen ? null : `${categoryIndex}-${index}`)}
-                    >
-                      <span className="text-gray-900 dark:text-white font-medium">
-                        {faq.question}
-                      </span>
-                      {/* Animated Arrow Icon */}
-                      <motion.svg
-                        className="w-5 h-5 text-gray-500 dark:text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        animate={{ rotate: isOpen ? 180 : 0 }}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </motion.svg>
-                    </motion.button>
-                    {/* Animated Answer Panel */}
-                    <AnimatePresence>
-                      {isOpen && (
-                        <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: "auto" }}
-                          exit={{ height: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="px-6 pb-4 text-gray-600 dark:text-gray-300">
-                            {faq.answer}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                )
-              })}
-            </div>
-          </motion.div>
-        ))}
-
+    <Layout>
+      <div className="min-h-screen bg-gray-50/80 dark:bg-gray-900/90 py-12 transition-colors duration-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Page Header */}
           <motion.div 
-            className="mt-16 text-center bg-white dark:bg-gray-800 rounded-xl p-8"
+            className="text-center mb-16"
             {...fadeIn}
           >
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Need Further Assistance?
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              If you can't find the answer you're looking for, our dedicated support team is here to help.
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Frequently Asked Questions
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300">
+              Find answers to common questions about Academic Chain
             </p>
-            <a href="mailto:sup.academicchain@gmail.com" className="text-decoration-none">
-              <motion.button
-                className="px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white rounded-lg
-                          hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Get in Touch with Support
-              </motion.button>
-            </a>
-            <p className="text-gray-600 dark:text-gray-300 mt-4">
-              We'll respond to your inquiry as soon as possible.
-            </p>
-          </motion.div> 
+          </motion.div>
+          {/* FAQ Categories with Accordion */}
+          {faqs.map((category, categoryIndex) => (
+            <motion.div
+              key={category.category}
+              className="mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: categoryIndex * 0.1 }}
+            >
+              {/* Category Title */}
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                {category.category}
+              </h2>
+              {/* Questions List */}
+              <div className="space-y-4">
+                {category.questions.map((faq, index) => {
+                  const isOpen = openIndex === `${categoryIndex}-${index}`
+                  
+                  return (
+                    <motion.div
+                      key={index}
+                      className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-sm overflow-hidden"
+                      initial={false}
+                    >
+                      {/* Question Button with Toggle Arrow */}
+                      <motion.button
+                        className="w-full px-6 py-4 flex justify-between items-center text-left"
+                        onClick={() => setOpenIndex(isOpen ? null : `${categoryIndex}-${index}`)}
+                      >
+                        <span className="text-gray-900 dark:text-white font-medium">
+                          {faq.question}
+                        </span>
+                        {/* Animated Arrow Icon */}
+                        <motion.svg
+                          className="w-5 h-5 text-gray-500 dark:text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          animate={{ rotate: isOpen ? 180 : 0 }}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </motion.svg>
+                      </motion.button>
+                      {/* Animated Answer Panel */}
+                      <AnimatePresence>
+                        {isOpen && (
+                          <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: "auto" }}
+                            exit={{ height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-6 pb-4 text-gray-600 dark:text-gray-300">
+                              {faq.answer}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            </motion.div>
+          ))}
+
+            <motion.div 
+              className="mt-16 text-center bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl p-8"
+              {...fadeIn}
+            >
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                Need Further Assistance?
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                If you can't find the answer you're looking for, our dedicated support team is here to help.
+              </p>
+              <a href="mailto:sup.academicchain@gmail.com" className="text-decoration-none">
+                <motion.button
+                  className="px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white rounded-lg
+                            hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Get in Touch with Support
+                </motion.button>
+              </a>
+              <p className="text-gray-600 dark:text-gray-300 mt-4">
+                We'll respond to your inquiry as soon as possible.
+              </p>
+            </motion.div> 
+        </div>
       </div>
-    </BackgroundAnimation>
+    </Layout>
   )
 }
 

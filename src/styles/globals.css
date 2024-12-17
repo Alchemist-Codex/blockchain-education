@@ -1,0 +1,7 @@
+#particles-js {
+    pointer-events: none;
+  }
+  
+  #particles-js canvas {
+    pointer-events: auto;
+  } 
