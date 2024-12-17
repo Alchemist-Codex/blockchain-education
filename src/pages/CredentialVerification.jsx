@@ -126,13 +126,20 @@ function CredentialVerification() {
    * Attempts download through multiple CORS proxies
    */
   const handleDownload = async () => {
-    if (!credentialDetails?.imageHash || isDownloading) return;
+    if (!credentialId || isDownloading) return;
     setIsDownloading(true);
     setError(null);
     
     try {
-      // Try direct download first without CORS proxy
-      const downloadUrl = `https://${GATEWAY_URL}/ipfs/${credentialDetails.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
+      // First fetch the metadata using the CID from Firestore
+      const metadata = await pinataService.main(credentialId);
+      
+      if (!metadata || !metadata.imageHash) {
+        throw new Error('No valid image hash found in metadata');
+      }
+
+      // Now use the imageHash from the metadata for download
+      const downloadUrl = `https://${GATEWAY_URL}/ipfs/${metadata.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
       
       try {
         const response = await fetch(downloadUrl, {
