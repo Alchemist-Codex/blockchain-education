@@ -55,7 +55,7 @@ function App() {
              <Route index element={<Navigate to="qa-form" replace />} />
             <Route path="qa-form" element={<QAForm />} />
             <Route path="dashboard" element={<StudentDashboard />} />
-            <Route path="profile" element={<Profile />} />
+            <Route path="profile" element={<Profile userType="student"/>} />
             </Route>
             
             {/* Protected routes for institutions - requires institute role */}

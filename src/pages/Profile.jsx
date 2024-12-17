@@ -1,10 +1,10 @@
 import React from 'react';
 
-function ProfilePage({ userType }) {
+function ProfilePage(props) {
   return (
     <div className="min-h-screen p-6 md:p-12 bg-blue-50 dark:bg-gray-900 dark:text-white">
       <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
-        {userType === 'student' ? (
+        {props.userType === 'student' ? (
           <>
             <h1 className="text-2xl font-bold text-blue-700 dark:text-blue-300 mb-6">Student Profile</h1>
             <div className="mb-8">
