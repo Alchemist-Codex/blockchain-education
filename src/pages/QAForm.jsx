@@ -43,7 +43,7 @@ export default function QAForm() {
 
   // Handle form submission
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent page reload
+     e.preventDefault(); // Prevent page reload
 
     const userRef = doc(db, 'student', emailSanitize(studentDetails.email)); // Reference to the user's document
     const postsRef = collection(userRef, 'data'); // Reference to the 'posts' subcollection
