@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { PageTransition } from '../components/PageTransition'
-import { BackgroundAnimation } from '../components/BackgroundAnimation'
+import BackgroundAnimation from '../components/BackgroundAnimation'
 
 /**
  * About Page Component

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BackgroundAnimation } from '../components/BackgroundAnimation'
+import BackgroundAnimation from '../components/BackgroundAnimation'
 
 /**
  * FAQ Component

@@ -3,6 +3,53 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import "particles.js";
 
+export const BackgroundAnimation = ({ children }) => {
+  return (
+    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900 py-12 transition-colors duration-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        {/* Animated background elements */}
+        <motion.div
+          className="absolute inset-0 overflow-hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.2 }}
+        >
+          {[...Array(3)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute rounded-full bg-primary-600/10 dark:bg-primary-400/10"
+              style={{
+                width: Math.random() * 200 + 50,
+                height: Math.random() * 200 + 50,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                y: [0, Math.random() * 50 - 25],
+                x: [0, Math.random() * 50 - 25],
+              }}
+              transition={{
+                duration: Math.random() * 5 + 5,
+                repeat: Infinity,
+                repeatType: "reverse",
+              }}
+            />
+          ))}
+        </motion.div>
+        
+        {/* Content with fade-in animation */}
+        <motion.div
+          className="relative z-10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          {children}
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
 const AnimatedPage = () => {
   const navigate = useNavigate();
   const [particlesLoaded, setParticlesLoaded] = useState(false);

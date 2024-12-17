@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BackgroundAnimation } from '../components/BackgroundAnimation';
+import BackgroundAnimation from '../components/BackgroundAnimation'
 
 export default function QAFormInstitute() {
   const navigate = useNavigate();

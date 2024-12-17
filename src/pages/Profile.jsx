@@ -6,7 +6,7 @@ import { useWeb3 } from '../contexts/Web3Context'
 import toast from 'react-hot-toast'
 import { Navigate } from 'react-router-dom'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { BackgroundAnimation } from '../components/BackgroundAnimation'
+import BackgroundAnimation from '../components/BackgroundAnimation'
 
 function Profile() {
   const { user, loading } = useAuth()
