@@ -6,7 +6,7 @@ const ParticleBackground = ({ isDarkTheme }) => {
       window.particlesJS('particles-js', {
         particles: {
           number: {
-            value: 100,
+            value: 120,
             density: {
               enable: true,
               value_area: 800
@@ -19,22 +19,22 @@ const ParticleBackground = ({ isDarkTheme }) => {
             type: 'circle'
           },
           opacity: {
-            value: isDarkTheme ? 0.8 : 0.8,
+            value: isDarkTheme ? 0.9 : 0.8,
             random: false,
             anim: {
               enable: true,
               speed: 1,
-              opacity_min: isDarkTheme ? 0.5 : 0.5,
+              opacity_min: isDarkTheme ? 0.6 : 0.5,
               sync: false
             }
           },
           size: {
-            value: isDarkTheme ? 4 : 4,
+            value: isDarkTheme ? 5 : 4,
             random: true,
             anim: {
               enable: true,
               speed: 2,
-              size_min: isDarkTheme ? 2 : 2,
+              size_min: isDarkTheme ? 3 : 2,
               sync: false
             }
           },
@@ -42,12 +42,12 @@ const ParticleBackground = ({ isDarkTheme }) => {
             enable: true,
             distance: 150,
             color: isDarkTheme ? '#ffffff' : '#000000',
-            opacity: isDarkTheme ? 0.6 : 0.6,
-            width: isDarkTheme ? 1.5 : 1.5
+            opacity: isDarkTheme ? 0.7 : 0.6,
+            width: isDarkTheme ? 2 : 1.5
           },
           move: {
             enable: true,
-            speed: 2,
+            speed: 2.5,
             direction: 'none',
             random: false,
             straight: false,
@@ -77,7 +77,7 @@ const ParticleBackground = ({ isDarkTheme }) => {
             grab: {
               distance: 140,
               line_linked: {
-                opacity: isDarkTheme ? 1 : 1
+                opacity: isDarkTheme ? 1 : 0.8
               }
             }
           }

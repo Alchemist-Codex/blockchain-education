@@ -1,25 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useTheme } from './ThemeProvider';
 import ParticleBackground from './ParticleBackground';
 
 const Layout = ({ children }) => {
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
-
-  useEffect(() => {
-    // Check if user prefers dark mode
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDarkTheme(prefersDark);
-
-    // Listen for theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e) => setIsDarkTheme(e.matches);
-    mediaQuery.addEventListener('change', handleChange);
-
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
+  const { isDark } = useTheme();
 
   return (
     <div>
-      <ParticleBackground isDarkTheme={isDarkTheme} />
+      <ParticleBackground isDarkTheme={isDark} />
       <div className="content-wrapper">
         {children}
       </div>
