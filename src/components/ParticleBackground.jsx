@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
+import { useTheme } from './ThemeProvider'; // Import the theme context
 
-const ParticleBackground = ({ isDarkTheme }) => {
+const ParticleBackground = () => {
+  const { isDark } = useTheme(); // Get the current theme state
+
   useEffect(() => {
     if (window.particlesJS) {
       window.particlesJS('particles-js', {
@@ -9,41 +12,41 @@ const ParticleBackground = ({ isDarkTheme }) => {
             value: 50,
             density: {
               enable: true,
-              value_area: 800
-            }
+              value_area: 800,
+            },
           },
           color: {
-            value: isDarkTheme ? '#ffffff' : '#000000'
+            value: isDark ? '#ffffff' : '#000000', // Dynamically set color based on theme
           },
           shape: {
             type: 'circle',
             stroke: {
-              width: isDarkTheme ? 2 : 1,
-              color: isDarkTheme ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.3)'
-            }
+              width: isDark ? 2 : 1,
+              color: isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.3)',
+            },
           },
           opacity: {
-            value: isDarkTheme ? 0.8 : 0.3,
+            value: isDark ? 0.8 : 0.3,
             random: true,
             anim: {
               enable: true,
               speed: 1,
-              opacity_min: isDarkTheme ? 0.4 : 0.1,
-              sync: false
-            }
+              opacity_min: isDark ? 0.4 : 0.1,
+              sync: false,
+            },
           },
           size: {
-            value: isDarkTheme ? 20 : 15,
+            value: isDark ? 20 : 15,
             random: true,
             anim: {
               enable: true,
               speed: 2,
-              size_min: isDarkTheme ? 8 : 5,
-              sync: false
-            }
+              size_min: isDark ? 8 : 5,
+              sync: false,
+            },
           },
           line_linked: {
-            enable: false
+            enable: false,
           },
           move: {
             enable: true,
@@ -54,40 +57,40 @@ const ParticleBackground = ({ isDarkTheme }) => {
             out_mode: 'out',
             bounce: false,
             attract: {
-              enable: false
-            }
-          }
+              enable: false,
+            },
+          },
         },
         interactivity: {
           detect_on: 'canvas',
           events: {
             onhover: {
               enable: true,
-              mode: 'bubble'
+              mode: 'bubble',
             },
             onclick: {
               enable: true,
-              mode: 'push'
+              mode: 'push',
             },
-            resize: true
+            resize: true,
           },
           modes: {
             bubble: {
               distance: 200,
-              size: isDarkTheme ? 30 : 20,
+              size: isDark ? 30 : 20,
               duration: 2,
-              opacity: isDarkTheme ? 1 : 0.8,
-              speed: 3
+              opacity: isDark ? 1 : 0.8,
+              speed: 3,
             },
             push: {
-              particles_nb: 4
-            }
-          }
+              particles_nb: 4,
+            },
+          },
         },
-        retina_detect: true
+        retina_detect: true,
       });
     }
-  }, [isDarkTheme]);
+  }, [isDark]); // Re-run when the theme changes
 
   return (
     <div
@@ -99,10 +102,10 @@ const ParticleBackground = ({ isDarkTheme }) => {
         width: '100%',
         height: '100%',
         zIndex: -1,
-        background: 'transparent'
+        background: 'transparent',
       }}
     />
   );
 };
 
-export default ParticleBackground; 
+export default ParticleBackground;
