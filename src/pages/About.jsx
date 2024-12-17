@@ -57,7 +57,7 @@ function About() {
 
   return (
     <Layout>
-      <div className="relative min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+      <div className="relative min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-gray-50/50 dark:bg-gray-900/50">
         <div className="max-w-7xl mx-auto">
           {/* Hero Section with animated entrance */}
           <motion.div 
@@ -100,7 +100,7 @@ function About() {
             {features.map((feature, index) => (
               <motion.div 
                 key={feature.title}
-                className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg"
+                className="p-6 bg-white/70 dark:bg-gray-800/70 rounded-lg shadow-lg"
                 whileHover={{ scale: 1.02 }}
                 transition={{ duration: 0.2 }}
               >
