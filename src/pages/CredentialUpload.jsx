@@ -7,7 +7,7 @@ import { ipfsService } from '../services/ipfsService'
 import BlockchainVideo from '../components/BlockchainVideo'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { doc, setDoc } from "firebase/firestore"; 
+import { doc, setDoc, query, where, getDocs, collection, arrayUnion, updateDoc } from "firebase/firestore"; 
 import {db} from '../config/firebase';
 /**
  * CredentialUpload Component
@@ -157,14 +157,48 @@ function CredentialUpload() {
       // Upload metadata to IPFS
       const metadataHash = await ipfsService.uploadJSON(metadata);
 
-      if (metadataHash){
-        let short_id = generateShortFriendlyId();
-        await setDoc(doc(db, "credentials", short_id), {
-          cid: metadataHash,
-          id: short_id,
-        });
-        setCertificateId(short_id);
+      if (metadataHash) {
+        try {
+          // Generate a unique short ID
+          let short_id = generateShortFriendlyId();
+      
+          // Create a new document in the "credentials" collection
+          await setDoc(doc(db, "credentials", short_id), {
+            cid: metadataHash,
+            id: short_id,
+          });
+      
+          // Set the certificate ID in your app state
+          setCertificateId(short_id);
+      
+          // Query the "students" collection for matching walletAddress
+          const q = query(collection(db, "students"), where("walletAddress", "==", metadata.studentAddress));
+          const querySnapshot = await getDocs(q);
+      
+          if (querySnapshot.empty) {
+            console.warn("No matching students found for walletAddress:", metadata.studentAddress);
+            return;
+          }
+      
+          // Update each matching student's credentials array
+          const updatePromises = querySnapshot.docs.map((docSnapshot) => {
+            const docRef = doc(db, "students", docSnapshot.id);
+      
+            // Add short_id to the credentials array
+            return updateDoc(docRef, {
+              credentials: arrayUnion(short_id),
+            });
+          });
+      
+          // Wait for all updates to complete
+          await Promise.all(updatePromises);
+      
+          console.log("Successfully added credential to students.");
+        } catch (error) {
+          console.error("Error updating credentials:", error);
+        }
       }
+      
 
       // Generate certificate hash
       const certificateString = JSON.stringify(metadata);
