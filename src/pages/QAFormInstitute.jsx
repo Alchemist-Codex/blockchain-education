@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BackgroundAnimation } from '../components/BackgroundAnimation';
 
 export default function QAFormInstitute() {
   const navigate = useNavigate();
@@ -11,8 +12,8 @@ export default function QAFormInstitute() {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-blue-50 dark:bg-slate-900">
-    <div className="bg-blue-100  dark:bg-blue-900 p-8 rounded-lg shadow-lg w-full max-w-4xl">
+    <BackgroundAnimation>
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-4xl">
         <h2 className="text-3xl font-bold text-center text-blue-800  dark:text-blue-100 mb-6">Institute Details</h2>
         <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Institute Name and Email  */}
@@ -62,8 +63,7 @@ export default function QAFormInstitute() {
                 <button type="submit" className="w-full lg:w-auto px-6 py-3 bg-blue-600  dark:bg-indigo-950 text-white rounded-lg hover:bg-blue-700 focus:outline-none">Submit</button>
             </div>
         </form>
-    </div>
-</div>
-
+      </div>
+    </BackgroundAnimation>
   );
 }
