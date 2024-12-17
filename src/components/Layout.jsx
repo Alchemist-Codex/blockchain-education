@@ -20,7 +20,9 @@ const Layout = ({ children }) => {
   return (
     <div>
       <ParticleBackground isDarkTheme={isDarkTheme} />
-      {children}
+      <div className="content-wrapper">
+        {children}
+      </div>
     </div>
   );
 };
