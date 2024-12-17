@@ -1,17 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, setDoc, collection, addDoc } from "firebase/firestore";
+import { doc, addDoc, collection } from "firebase/firestore";
 import { db } from "../config/firebase";
 
-export default function QAForm() {
+const QAForm = () => {
   const navigate = useNavigate();
 
-  // Function to sanitize email
-  const emailSanitize = (email) => {
-    return email.replace(/[@.]/g, "_"); // Replace "@" and "." with "_"
-  };
+  const emailSanitize = (email) => email.replace(/[@.]/g, "_");
 
-  // State to manage form inputs
   const [studentDetails, setStudentDetails] = useState({
     name: '',
     age: '',
@@ -25,7 +21,6 @@ export default function QAForm() {
     endDate: ''
   });
 
-  // Reset form handler
   const resetHandler = () => {
     setStudentDetails({
       name: '',
@@ -41,27 +36,28 @@ export default function QAForm() {
     });
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent page reload
-  
+    e.preventDefault();
+
+    // Basic validation (can be extended)
+    if (!/\S+@\S+\.\S+/.test(studentDetails.email)) {
+      alert('Please enter a valid email address.');
+      return;
+    }
+
     try {
-      const userRef = doc(db, 'student', emailSanitize(studentDetails.email)); // Reference to the user's document
-      const postsRef = collection(userRef, 'data'); // Reference to the 'posts' subcollection
-      
-      await addDoc(postsRef, {
-        ...studentDetails,
-      });
-  
-      // After successful submission, navigate to the dashboard
+      const userRef = doc(db, 'student', emailSanitize(studentDetails.email));
+      const postsRef = collection(userRef, 'data');
+
+      await addDoc(postsRef, { ...studentDetails });
+
       navigate('/student/dashboard');
     } catch (error) {
       console.error("Error adding document: ", error);
-      // Optionally, you can show an error message to the user here
+      alert('There was an issue with submitting your form. Please try again.');
     }
   };
-  
-  // Handle input field changes
+
   const handleStudentDetailsChange = (e) => {
     setStudentDetails({ ...studentDetails, [e.target.name]: e.target.value });
   };
@@ -70,128 +66,41 @@ export default function QAForm() {
     <div className="min-h-screen flex items-center justify-center bg-blue-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8">
       <form
         className="bg-blue-100 dark:bg-blue-900 p-8 rounded-lg shadow-md max-w-4xl mx-auto"
-        onSubmit={handleSubmit} // Attach onSubmit to form
+        onSubmit={handleSubmit}
       >
         <h2 className="text-2xl font-bold text-blue-800 dark:text-blue-100 mb-6">Student Details</h2>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-blue-800 dark:text-blue-100 font-medium">Name</label>
-            <input
-              type="text"
-              name="name"
-              value={studentDetails.name}
-              onChange={handleStudentDetailsChange}
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-blue-800 dark:text-blue-100 font-medium">Age</label>
-            <input
-              type="number"
-              name="age"
-              value={studentDetails.age}
-              onChange={handleStudentDetailsChange}
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-blue-800 dark:text-blue-100 font-medium">Gender</label>
-            <select
-              name="gender"
-              value={studentDetails.gender}
-              onChange={handleStudentDetailsChange}
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">Select</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-blue-800 dark:text-blue-100 font-medium">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={studentDetails.email}
-              onChange={handleStudentDetailsChange}
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-blue-800 dark:text-blue-100 font-medium">Mobile Number</label>
-            <input
-              type="tel"
-              name="mobileNumber"
-              value={studentDetails.mobileNumber}
-              onChange={handleStudentDetailsChange}
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-blue-800 dark:text-blue-100 font-medium">Nationality</label>
-            <input
-              type="text"
-              name="nationality"
-              value={studentDetails.nationality}
-              onChange={handleStudentDetailsChange}
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+          {['name', 'age', 'gender', 'email', 'mobileNumber', 'nationality'].map((field, index) => (
+            <div key={index}>
+              <label className="block text-blue-800 dark:text-blue-100 font-medium">{field}</label>
+              <input
+                type={field === 'age' || field === 'mobileNumber' ? 'number' : 'text'}
+                name={field}
+                value={studentDetails[field]}
+                onChange={handleStudentDetailsChange}
+                className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          ))}
         </div>
 
         <h2 className="text-2xl font-bold text-blue-800 dark:text-blue-100 mt-8 mb-6">Course Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-blue-800 dark:text-blue-100 font-medium">Institute Name</label>
-            <input
-              type="text"
-              name="instituteName"
-              value={studentDetails.instituteName}
-              onChange={handleStudentDetailsChange}
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-blue-800 dark:text-blue-100 font-medium">Course</label>
-            <input
-              type="text"
-              name="course"
-              value={studentDetails.course}
-              onChange={handleStudentDetailsChange}
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-blue-800 dark:text-blue-100 font-medium">Starting Date</label>
-            <input
-              type="date"
-              name="startDate"
-              value={studentDetails.startDate}
-              onChange={handleStudentDetailsChange}
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-blue-800 dark:text-blue-100 font-medium">Ending Date</label>
-            <input
-              type="date"
-              name="endDate"
-              value={studentDetails.endDate}
-              onChange={handleStudentDetailsChange}
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+          {['instituteName', 'course', 'startDate', 'endDate'].map((field, index) => (
+            <div key={index}>
+              <label className="block text-blue-800 dark:text-blue-100 font-medium">{field}</label>
+              <input
+                type={field === 'startDate' || field === 'endDate' ? 'date' : 'text'}
+                name={field}
+                value={studentDetails[field]}
+                onChange={handleStudentDetailsChange}
+                className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          ))}
         </div>
 
         <div className="flex justify-end mt-4">
@@ -213,3 +122,5 @@ export default function QAForm() {
     </div>
   );
 }
+
+export default QAForm;
