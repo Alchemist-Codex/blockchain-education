@@ -22,7 +22,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     host: true,
-    open: true
+    open: false
   },
   
   // Production build configuration
