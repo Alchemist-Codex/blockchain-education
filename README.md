@@ -12,7 +12,7 @@ A decentralized platform to securely store, manage, and verify academic credenti
 6. [Deployment](#deployment)  
 7. [Contributing](#contributing)  
 8. [License](#license)  
-9. [Docker Imaage](#docker)  
+9. [Docker Image](#docker)  
 
 ---
 
