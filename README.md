@@ -12,6 +12,7 @@ A decentralized platform to securely store, manage, and verify academic credenti
 6. [Deployment](#deployment)  
 7. [Contributing](#contributing)  
 8. [License](#license)  
+9. [Docker Imaage](#docker)  
 
 ---
 
@@ -134,3 +135,9 @@ Contributions are welcome! Follow these steps to contribute:
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.  
 
 --- 
+
+## Docker
+
+[Docker Image](docker pull ritaban06/academic-chain)
+
+---
