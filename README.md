@@ -138,6 +138,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Docker
 
-[Docker Image](docker pull ritaban06/academic-chain)
+[Docker Image](https://hub.docker.com/r/ritaban06/academic-chain)
 
 ---
