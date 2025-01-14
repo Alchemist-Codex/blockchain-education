@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
 import { ethers } from 'ethers'
@@ -56,6 +56,11 @@ function CredentialUpload() {
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6 }
   }
+
+  useEffect(() => {
+    console.log('Current step:', step);
+    console.log('isBlockchainUploading:', isBlockchainUploading);
+  }, [step, isBlockchainUploading]);
 
   /**
    * Handles file upload and validation
@@ -129,6 +134,7 @@ function CredentialUpload() {
     try {
       setIsSubmitting(true);
       setIsBlockchainUploading(true);
+      console.log('Starting upload process...');
 
       // MetaMask connection check
       const accounts = await window.ethereum.request({ 
@@ -235,14 +241,17 @@ function CredentialUpload() {
       );
 
       await tx.wait();
-      
+      console.log('Transaction completed, updating step...');
       setStep(2);
+      console.log('Step updated to:', 2);
       toast.success('Certificate issued successfully!');
 
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Upload error:', error);
       toast.error(`Failed: ${error.message}`);
+      setStep(1);
     } finally {
+      console.log('Upload process completed, step:', step);
       setIsSubmitting(false);
       setIsBlockchainUploading(false);
     }
