@@ -181,20 +181,24 @@ function CredentialUpload() {
           const querySnapshot = await getDocs(q);
           
           if (querySnapshot.empty) {
-            console.warn(`No student found with wallet address: ${formData.studentAddress}`);
-            toast.warning("Student record not found. Credential created but not linked to student.");
+            // Create a new student document if none exists
+            const newStudentRef = doc(db, "students", generateShortFriendlyId("stud"));
+            await setDoc(newStudentRef, {
+              walletAddress: formData.studentAddress,
+              credentials: [short_id],
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            });
+            toast.success("New student record created and credential linked");
             return;
           }
           
-          // Update all matching student documents
+          // Update existing student documents
           const updatePromises = querySnapshot.docs.map(async (docSnapshot) => {
             const studentRef = doc(db, "students", docSnapshot.id);
-            
-            // Get current credentials array
             const studentData = docSnapshot.data();
             const currentCredentials = studentData.credentials || [];
             
-            // Check for duplicates before updating
             if (!currentCredentials.includes(short_id)) {
               return updateDoc(studentRef, {
                 credentials: arrayUnion(short_id),
@@ -208,7 +212,7 @@ function CredentialUpload() {
           
         } catch (error) {
           console.error("Error updating credentials:", error);
-          toast.error("Failed to link credential to student");
+          toast.error(`Failed to link credential: ${error.message}`);
           throw error;
         }
       }
