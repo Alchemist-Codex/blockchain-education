@@ -33,7 +33,7 @@ function Footer() {
                 FAQ
               </a>
               <a href="/contact" className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors">
-                Contact
+                Contact 
               </a>
             </div>
           </div>
