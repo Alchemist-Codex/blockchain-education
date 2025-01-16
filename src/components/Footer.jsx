@@ -44,7 +44,7 @@ function Footer() {
             <div className="space-y-2">
               {/* External links with security attributes */}
               <a 
-                href="https://github.com/ritaban06/blockchain-education" 
+                href="https://github.com/Alchemist-Codex/blockchain-education" 
                 className="block text-gray-400 dark:text-gray-300 hover:text-white transition-colors"
                 target="_blank" 
                 rel="noopener noreferrer" // Security best practice for external links
