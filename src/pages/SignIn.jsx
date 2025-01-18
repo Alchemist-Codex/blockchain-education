@@ -32,17 +32,22 @@ function SignIn() {
   const handleGoogleSignIn = async () => {
     try {
       setIsSigningIn(true);
-      // Ensure wallet is connected before proceeding
       if (!account) {
         await handleWalletConnect();
       }
       const user = await signInWithGoogle(selectedUserType);
       
-      // Navigate to appropriate dashboard based on user type
-      if (selectedUserType === userTypes.STUDENT) {
-        navigate('/student/dashboard');
+      // Store wallet connection in localStorage
+      localStorage.setItem('walletConnected', 'true');
+      
+      // Navigate based on stored user type
+      const userType = localStorage.getItem('userType');
+      if (userType === userTypes.STUDENT) {
+        navigate('/student/qa-form');
+      } else if (userType === userTypes.INSTITUTE) {
+        navigate('/institution/qa-form-institute');
       } else {
-        navigate('/institution/dashboard');
+        navigate('/unauthorized');
       }
     } catch (error) {
       console.error('Sign in error:', error);
@@ -78,7 +83,7 @@ function SignIn() {
                 className={`px-4 py-2 rounded-md ${
                   selectedUserType === userTypes.STUDENT
                     ? 'bg-primary-600 text-white'
-                    : 'bg-gray-200 text-gray-700'
+                    : 'bg-gray-200 text-gray-950'
                 }`}
               >
                 Student
@@ -88,7 +93,7 @@ function SignIn() {
                 className={`px-4 py-2 rounded-md ${
                   selectedUserType === userTypes.INSTITUTE
                     ? 'bg-primary-600 text-white'
-                    : 'bg-gray-200 text-gray-700'
+                    : 'bg-gray-200 text-gray-950'
                 }`}
               >
                 Institution
@@ -106,7 +111,8 @@ function SignIn() {
                 <FcGoogle className="h-5 w-5" />
               </span>
               {isSigningIn ? 'Signing in...' : 'Sign in with Google'}
-            </button>
+            </button>     
+            
           </div>
         </motion.div>
       </div>

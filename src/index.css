@@ -9,9 +9,11 @@
   }
   
   body {
-    @apply bg-gray-50;
+    @apply bg-blue-100;
   }
-  
+  .dark body {
+    @apply bg-slate-950; /* Dark mode background */
+  }
   :root {
     --primary: 224 64% 33%;
     --primary-foreground: 210 40% 98%;

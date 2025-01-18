@@ -4,6 +4,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 import { getUserProfile } from '../services/userService'
 import { PageTransition } from '../components/PageTransition'
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { toast } from 'react-hot-toast';
+
+// Define constants
+const USER_TYPES = {
+  STUDENT: 'student',
+  INSTITUTE: 'institute'
+};
 
 function StudentDashboard() {
   // Get user from auth context
@@ -12,17 +21,77 @@ function StudentDashboard() {
   const [userProfile, setUserProfile] = useState(null);
   // State for managing active tab
   const [activeTab, setActiveTab] = useState('received')
+  // State for storing credentials
+  const [credentials, setCredentials] = useState([]);
+  // State for managing loading state
+  const [loading, setLoading] = useState(true);
 
-  // Fetch user profile data when component mounts or user changes
+  // Fetch user profile and credentials when component mounts
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (user) {
-        const profile = await getUserProfile(user.uid);
-        setUserProfile(profile);
+    const fetchStudentCredentials = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        // First, get the student document
+        const studentDoc = await getDoc(doc(db, 'students', user.uid));
+        console.log('Student doc:', studentDoc.data());
+
+        if (!studentDoc.exists()) {
+          console.log('No student document found');
+          return;
+        }
+
+        const studentData = studentDoc.data();
+        setUserProfile(studentData);
+
+        // Check if student has credentials
+        if (!studentData.credentials || studentData.credentials.length === 0) {
+          console.log('No credentials found for student');
+          setCredentials([]);
+          return;
+        }
+
+        console.log('Found credentials:', studentData.credentials);
+
+        // Fetch each credential document
+        const credentialPromises = studentData.credentials.map(async (credentialId) => {
+          const credDoc = await getDoc(doc(db, 'credentials', credentialId));
+          if (credDoc.exists()) {
+            return { id: credDoc.id, ...credDoc.data() };
+          }
+          console.log('Credential not found:', credentialId);
+          return null;
+        });
+
+        const fetchedCredentials = await Promise.all(credentialPromises);
+        const validCredentials = fetchedCredentials.filter(cred => cred !== null);
+        console.log('Fetched credentials:', validCredentials);
+        
+        setCredentials(validCredentials);
+      } catch (error) {
+        console.error('Error fetching credentials:', error);
+        toast.error('Failed to load credentials');
+      } finally {
+        setLoading(false);
       }
     };
-    fetchUserProfile();
+
+    fetchStudentCredentials();
   }, [user]);
+
+  if (loading) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen p-6 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading credentials...</p>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
 
   // Static statistics data
   const stats = [
@@ -80,37 +149,47 @@ function StudentDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">My Credentials</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              My Credentials
+            </h2>
             <div className="space-y-4">
-              {/* Sample credential items with animation */}
-              {[
-                { title: 'Bachelor of Science', institution: 'Tech University', date: '2024' },
-                { title: 'Web Development Certificate', institution: 'Code Academy', date: '2023' }
-              ].map((credential, index) => (
-                <motion.div
-                  key={index}
-                  className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <div className="flex justify-between items-center">
-                    {/* Credential details */}
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                        {credential.title}
-                      </h3>
-                      <p className="text-gray-500 dark:text-gray-400">
-                        {credential.institution} • {credential.date}
-                      </p>
+              {credentials.length > 0 ? (
+                credentials.map((credential, index) => (
+                  <motion.div
+                    key={credential.id}
+                    className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                          {credential.type}
+                        </h3>
+                        <p className="text-gray-500 dark:text-gray-400">
+                          {credential.institution} • {new Date(credential.createdAt).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500">
+                          ID: {credential.id}
+                        </p>
+                      </div>
+                      {credential.cid && (
+                        <button 
+                          className="text-primary-600 hover:text-primary-700 dark:text-primary-400"
+                          onClick={() => window.open(`https://ipfs.io/ipfs/${credential.cid}`, '_blank')}
+                        >
+                          
+                        </button>
+                      )}
                     </div>
-                    {/* View credential button */}
-                    <button className="text-primary-600 hover:text-primary-700 dark:text-primary-400">
-                      View
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                  No credentials found
+                </p>
+              )}
             </div>
           </motion.div>
         </motion.div>

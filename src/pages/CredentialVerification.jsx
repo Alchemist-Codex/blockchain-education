@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
 import { pinataService } from '../services/pinataService'
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 // Configuration constants for IPFS gateways and CORS proxies
 const GATEWAY_URL = 'rose-hollow-mollusk-554.mypinata.cloud';
@@ -15,6 +17,12 @@ const CORS_PROXIES = [
  * CredentialVerification Component
  * Handles verification of academic credentials using IPFS and blockchain
  */
+
+/**
+ * Fetches credential data from Firestore based on the provided credential ID.
+ * @param {string} credentialId The credential ID to fetch from Firestore.
+ */
+
 function CredentialVerification() {
   const { web3Service } = useWeb3();
   
@@ -22,7 +30,8 @@ function CredentialVerification() {
   const [verificationStatus, setVerificationStatus] = useState(null)  // Status of verification process
   const [isVerifying, setIsVerifying] = useState(false)              // Verification in progress
   const [isDownloading, setIsDownloading] = useState(false)          // Download in progress
-  const [credentialId, setCredentialId] = useState('')               // IPFS CID input
+  const [credentialId, setCredentialId] = useState('')  
+  const [shortId , setShortId] = useState('')            // IPFS CID input
   const [credentialDetails, setCredentialDetails] = useState(null)   // Verified credential data
   const [error, setError] = useState(null)                           // Error state
 
@@ -30,15 +39,50 @@ function CredentialVerification() {
    * Handles credential verification process
    * Validates CID and fetches metadata from IPFS
    */
+
+  const fetching = async (credentialId) => {
+    try {
+      // Fetching the document from Firestore
+      const docRef = doc(db, "credentials", credentialId);
+      const docSnap = await getDoc(docRef);  // Await the document retrieval
+  
+      if (docSnap.exists()) {
+        // If document exists, update the credentialId state
+        setCredentialId(docSnap.data().cid);
+      } else {
+        // If document does not exist, log an error and notify the user
+        setError("Credential not found in Firestore.");
+        throw new Error("Credential not found in Firestore.");
+      }
+    } catch (error) {
+      console.error("Error fetching credential:", error);
+      setError("Error fetching credential from Firestore.");
+      throw error;  // Propagate error to handle it in the caller
+    }
+  }
+
+
   const handleVerification = async (e) => {
     e.preventDefault()
     setIsVerifying(true)
     setError(null)
-    
+
     try {
-      // Validate CID format
-      if (!credentialId.startsWith('bafk')) {
-        throw new Error('Please enter a valid metadata CID (starts with "bafk")')
+      // First validate if shortId is provided
+      if (!shortId.trim()) {
+        throw new Error('Please enter a valid Certificate ID')
+      }
+
+      try {
+        await fetching(shortId);
+      } catch (firestoreError) {
+        // Handle Firestore-specific errors
+        throw new Error('Invalid Certificate ID. Please check and try again.')
+      }
+      
+      // Now validate the CID we got from Firestore
+      if (!credentialId) {
+        throw new Error('No valid credential found for this Certificate ID')
       }
 
       console.log('Fetching metadata from Pinata:', credentialId)
@@ -82,100 +126,96 @@ function CredentialVerification() {
    * Attempts download through multiple CORS proxies
    */
   const handleDownload = async () => {
-    if (!credentialDetails?.imageHash || isDownloading) return;
+    if (!credentialId || isDownloading) return;
     setIsDownloading(true);
     setError(null);
     
-    let downloadError = null;
-    let activeLink = null;
-    let activeUrl = null;
-
     try {
-      // Try each CORS proxy until successful
-      for (const proxy of CORS_PROXIES) {
-        try {
-          // Construct download URL with Pinata gateway token
-          const downloadUrl = `https://${GATEWAY_URL}/ipfs/${credentialDetails.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
-          const proxyUrl = `${proxy}${encodeURIComponent(downloadUrl)}`;
-          
-          // Set up request with timeout
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const metadata = await pinataService.main(credentialId);
+      
+      if (!metadata || !metadata.imageHash) {
+        throw new Error('No valid image hash found in metadata');
+      }
 
-          const response = await fetch(proxyUrl, {
-            signal: controller.signal,
-            headers: {
-              'Accept': 'image/jpeg, image/png, image/*, application/octet-stream'
-            }
-          });
-
-          clearTimeout(timeoutId);
-          
-          if (!response.ok) {
-            throw new Error(`Download failed: ${response.status}`);
+      const downloadUrl = `https://${GATEWAY_URL}/ipfs/${metadata.imageHash}?pinataGatewayToken=${import.meta.env.VITE_GATEWAY_KEY}`;
+      
+      try {
+        const response = await fetch(downloadUrl, {
+          headers: {
+            'Accept': '*/*'
           }
+        });
 
-          // Determine file type and extension
+        if (!response.ok) {
+          throw new Error(`Direct download failed: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        
+        let fileName;
+        if (metadata.originalFileName) {
+          fileName = metadata.originalFileName;
+        } else {
           const contentType = response.headers.get('content-type');
-          let fileExtension;
-          if (contentType?.includes('jpeg') || contentType?.includes('jpg')) {
-            fileExtension = 'jpg';
-          } else if (contentType?.includes('png')) {
-            fileExtension = 'png';
-          } else if (contentType?.includes('pdf')) {
-            fileExtension = 'pdf';
-          } else {
-            fileExtension = credentialDetails.originalFileName?.split('.').pop() || 'file';
-          }
+          const extension = contentType ? contentType.split('/').pop() : 'file';
+          fileName = `${metadata.institution}_${metadata.credentialType}_${metadata.studentName}`
+            .replace(/[^a-zA-Z0-9]/g, '_')
+            .toLowerCase() + '.' + extension;
+        }
+        
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }, 1000);
 
-          // Create and trigger download
-          const blob = await response.blob();
-          activeUrl = window.URL.createObjectURL(blob);
-          activeLink = document.createElement('a');
-          activeLink.href = activeUrl;
-          
-          // Generate filename
-          const fileName = credentialDetails.originalFileName || 
-            `${credentialDetails.institution}_${credentialDetails.credentialType}_${credentialDetails.studentName}`
-              .replace(/[^a-zA-Z0-9]/g, '_')
-              .toLowerCase() + '.' + fileExtension;
-          
-          activeLink.download = fileName;
-          document.body.appendChild(activeLink);
-          activeLink.click();
-          break;
-        } catch (error) {
-          console.warn(`Download failed with proxy ${proxy}:`, error);
-          downloadError = error;
-          
-          // Clean up failed attempt
-          if (activeUrl) {
-            window.URL.revokeObjectURL(activeUrl);
-            activeUrl = null;
+      } catch (directError) {
+        console.warn('Direct download failed, trying CORS proxies:', directError);
+        
+        let downloaded = false;
+        for (const proxy of CORS_PROXIES) {
+          try {
+            const proxyUrl = `${proxy}${encodeURIComponent(downloadUrl)}`;
+            const response = await fetch(proxyUrl);
+            
+            if (!response.ok) continue;
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+              window.URL.revokeObjectURL(url);
+              document.body.removeChild(a);
+            }, 1000);
+
+            downloaded = true;
+            break;
+          } catch (proxyError) {
+            console.warn(`Download failed with proxy ${proxy}:`, proxyError);
+            continue;
           }
-          if (activeLink && activeLink.parentNode) {
-            activeLink.parentNode.removeChild(activeLink);
-            activeLink = null;
-          }
-          continue;
+        }
+
+        if (!downloaded) {
+          throw new Error('All download attempts failed');
         }
       }
-
-      if (downloadError && !activeLink) {
-        console.error('All download attempts failed:', downloadError);
-        setError('Failed to download certificate. Please try again.');
-      }
+    } catch (error) {
+      console.error('Download error:', error);
+      setError('Failed to download certificate. Please try again.');
     } finally {
-      // Clean up resources after delay
-      setTimeout(() => {
-        if (activeUrl) {
-          window.URL.revokeObjectURL(activeUrl);
-        }
-        if (activeLink && activeLink.parentNode) {
-          activeLink.parentNode.removeChild(activeLink);
-        }
-        setIsDownloading(false);
-      }, 1500);
+      setIsDownloading(false);
     }
   };
 
@@ -212,16 +252,16 @@ function CredentialVerification() {
           <form onSubmit={handleVerification} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Credential ID or Hash
+                Credential ID
               </label>
               <input 
                 type="text"
-                value={credentialId}
-                onChange={(e) => setCredentialId(e.target.value)}
+                value={shortId}
+                onChange={(e) => setShortId(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
                          bg-white dark:bg-gray-700 text-gray-900 dark:text-white
                          focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
-                placeholder="Enter metadata CID (starts with bafk...)"
+                placeholder="Enter Credential ID"
                 required
               />
             </div>
@@ -353,7 +393,7 @@ function CredentialVerification() {
                 description: "Get verification results in seconds"
               },
               {
-                icon: "M9 12h6m-6 1h6m-6 1h6m-6 1h6m-6 1h6m-6 1h6m-6 1h6",
+                icon: "M9 12h6m-6 1h6m-6 1h6m-6 1h6m-6 1h6m-6 1h6",
                 title: "Detailed Information",
                 description: "View complete credential details"
               }

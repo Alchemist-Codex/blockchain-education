@@ -14,6 +14,7 @@ jobs:
       - name: Checkout source repository
         uses: actions/checkout@v2
         with:
+          repository: Alchemist-Codex/blockchain-education
           fetch-depth: 0 # Clone with complete history
 
       - name: Generate timestamp
@@ -30,8 +31,8 @@ jobs:
           TOKEN: ${{ secrets.BACKUP_TOKEN }}
           TIMESTAMP: ${{ steps.timestamp.outputs.timestamp }}
         run: |
-          # Clone backup repository
-          git clone https://$TOKEN@github.com/ritaban06/blockchain-education-backup.git backup-repo
+          # Clone backup repository from personal GitHub account
+          git clone https://$TOKEN@github.com/ritaban06/blockchain-education-backup-iit.git backup-repo
           
           # Create timestamped directory
           cd backup-repo

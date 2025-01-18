@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion'
-import { PageTransition } from '../components/PageTransition'
+import { ThemeProvider } from '../components/ThemeProvider';
+import ParticleBackground from '../components/ParticleBackground';
+// import BackgroundAnimation from '../components/BackgroundAnimation'
 
 /**
  * About Page Component
@@ -49,13 +51,14 @@ function About() {
     },
     {
       name: "Sougata Mondal",
-      role: "Junior Backend Developer",
+      role: "Backend Developer",
       image: "/sougata.png",
     }
   ]
 
   return (
-    <PageTransition>
+    <ThemeProvider>
+      <ParticleBackground />
       <div className="relative min-h-screen py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Hero Section with animated entrance */}
@@ -144,7 +147,12 @@ function About() {
                     {member.name}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-300">
-                    {member.role}
+                    {member.role.split('\n').map((line, i) => (
+                      <span key={i}>
+                        {line}
+                        {i !== member.role.split('\n').length - 1 && <br />}
+                      </span>
+                    ))}
                   </p>
                 </motion.div>
               ))}
@@ -152,7 +160,7 @@ function About() {
           </motion.div>
         </div>
       </div>
-    </PageTransition>
+    </ThemeProvider>
   )
 }
 

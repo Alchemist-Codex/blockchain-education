@@ -1,0 +1,14 @@
+#particles-js {
+  pointer-events: none;
+  z-index: 0;
+}
+
+#particles-js canvas {
+  pointer-events: auto;
+}
+
+/* Add styles to ensure content stays above particles */
+.content-wrapper {
+  position: relative;
+  z-index: 1;
+} 

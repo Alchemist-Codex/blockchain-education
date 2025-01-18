@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth0 } from '@auth0/auth0-react'
+import { signOut } from 'firebase/auth'
+import { auth } from '../config/firebase'
 import ThemeToggle from './ThemeToggle'
 import { useAuth } from '../contexts/AuthContext'
 import { userTypes } from '../utils/schema'
@@ -16,7 +17,6 @@ function Navbar() {
   // State and hooks
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { user, setUser, userType } = useAuth()
-  const { logout } = useAuth0()
   const navigate = useNavigate()
 
   /**
@@ -24,6 +24,7 @@ function Navbar() {
    */
   const handleSignOut = async () => {
     try {
+      await signOut(auth)
       // Clear user data from context
       setUser(null)
       // Clear local storage
@@ -32,8 +33,8 @@ function Navbar() {
       localStorage.removeItem('walletConnected')
       // Show success message
       toast.success('Signed out successfully')
-      // Use Auth0 logout
-      logout({ returnTo: window.location.origin })
+      // Redirect to signin page
+      navigate('/signin')
     } catch (error) {
       console.error('Error signing out:', error)
       toast.error('Failed to sign out')
@@ -67,14 +68,30 @@ function Navbar() {
   }
 
   // Navigation links configuration
-  const navLinks = [
-    ['Dashboard', getDashboardPath()],
-    ['Upload Credential', '/institution/upload-credential'],
-    ['Verify Credential', '/verify'],
-    ['Profile', getProfilePath()],
-    ['About', '/about'],
-    ['FAQ', '/faq']
-  ]
+  const getNavLinks = () => {
+    const commonLinks = [
+      ['Dashboard', getDashboardPath()],
+      ['Profile', getProfilePath()],
+      ['About', '/about'],
+      ['FAQ', '/faq']
+    ];
+
+    if (userType === userTypes.INSTITUTE) {
+      return [
+        ...commonLinks,
+        ['Upload Credential', '/institution/upload-credential']
+      ];
+    }
+
+    if (userType === userTypes.STUDENT) {
+      return [
+        ...commonLinks,
+        ['Verify Credential', '/verify']
+      ];
+    }
+
+    return commonLinks;
+  };
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-md">
@@ -83,17 +100,30 @@ function Navbar() {
           {/* Logo and brand name */}
           <div className="flex items-center">
             <Link 
-            to="/home" 
-            className="flex items-center text-xl font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+              to="/home" 
+              className="flex items-center"
             >
-            <img src="public\logo-dark.png" alt="Academic Chain" className="h-8 w-8 mr-2" />
-            Academic Chain
-          </Link>
-        </div>  
+              {/* Light mode logo */}
+              <img
+                src="/logo-white.png"
+                alt="Academic Chain Logo"
+                className="h-8 w-8 mr-2 dark:hidden"
+              />
+              {/* Dark mode logo */}
+              <img
+                src="/logo-dark.png"
+                alt="Academic Chain Logo"
+                className="h-8 w-8 mr-2 hidden dark:block"
+              />
+              <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
+                Academic Chain
+              </span>
+            </Link>
+          </div>
   
           {/* Desktop Navigation Links */}
           <div className="hidden sm:flex sm:items-center sm:space-x-8">
-            {user && navLinks.map(([title, path]) => (
+            {user && getNavLinks().map(([title, path]) => (
               <Link
                 key={path}
                 to={path}
@@ -111,11 +141,19 @@ function Navbar() {
               <div className="flex items-center space-x-4">
                 {/* User avatar and name */}
                 <div className="flex items-center space-x-2">
-                  <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                    {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
-                  </div>
+                  {user.photoURL ? (
+                    <img 
+                      src={user.photoURL} 
+                      alt={user.displayName || 'User avatar'} 
+                      className="h-8 w-8 rounded-full"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
+                      {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  )}
                   <span className="text-gray-700 dark:text-gray-300 hidden sm:inline">
-                    {user.name?.split(' ')[0] || user.email?.split('@')[0]}
+                    {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}
                   </span>
                 </div>
                 <motion.button
@@ -171,7 +209,7 @@ function Navbar() {
               onClick={e => e.stopPropagation()}
             >
               <div className="p-4 space-y-3">
-                {navLinks.map(([title, path]) => (
+                {getNavLinks().map(([title, path]) => (
                   <Link
                     key={path}
                     to={path}
