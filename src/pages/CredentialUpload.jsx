@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
 import { ethers } from 'ethers'
@@ -56,6 +56,11 @@ function CredentialUpload() {
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6 }
   }
+
+  useEffect(() => {
+    console.log('Current step:', step);
+    console.log('isBlockchainUploading:', isBlockchainUploading);
+  }, [step, isBlockchainUploading]);
 
   /**
    * Handles file upload and validation
@@ -129,6 +134,7 @@ function CredentialUpload() {
     try {
       setIsSubmitting(true);
       setIsBlockchainUploading(true);
+      console.log('Starting upload process...');
 
       // MetaMask connection check
       const accounts = await window.ethereum.request({ 
@@ -181,20 +187,24 @@ function CredentialUpload() {
           const querySnapshot = await getDocs(q);
           
           if (querySnapshot.empty) {
-            console.warn(`No student found with wallet address: ${formData.studentAddress}`);
-            toast.warning("Student record not found. Credential created but not linked to student.");
+            // Create a new student document if none exists
+            const newStudentRef = doc(db, "students", generateShortFriendlyId("stud"));
+            await setDoc(newStudentRef, {
+              walletAddress: formData.studentAddress,
+              credentials: [short_id],
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            });
+            toast.success("New student record created and credential linked");
             return;
           }
           
-          // Update all matching student documents
+          // Update existing student documents
           const updatePromises = querySnapshot.docs.map(async (docSnapshot) => {
             const studentRef = doc(db, "students", docSnapshot.id);
-            
-            // Get current credentials array
             const studentData = docSnapshot.data();
             const currentCredentials = studentData.credentials || [];
             
-            // Check for duplicates before updating
             if (!currentCredentials.includes(short_id)) {
               return updateDoc(studentRef, {
                 credentials: arrayUnion(short_id),
@@ -208,7 +218,7 @@ function CredentialUpload() {
           
         } catch (error) {
           console.error("Error updating credentials:", error);
-          toast.error("Failed to link credential to student");
+          toast.error(`Failed to link credential: ${error.message}`);
           throw error;
         }
       }
@@ -231,14 +241,17 @@ function CredentialUpload() {
       );
 
       await tx.wait();
-      
+      console.log('Transaction completed, updating step...');
       setStep(2);
+      console.log('Step updated to:', 2);
       toast.success('Certificate issued successfully!');
 
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Upload error:', error);
       toast.error(`Failed: ${error.message}`);
+      setStep(1);
     } finally {
+      console.log('Upload process completed, step:', step);
       setIsSubmitting(false);
       setIsBlockchainUploading(false);
     }

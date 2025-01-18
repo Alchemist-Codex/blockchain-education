@@ -179,7 +179,7 @@ function StudentDashboard() {
                           className="text-primary-600 hover:text-primary-700 dark:text-primary-400"
                           onClick={() => window.open(`https://ipfs.io/ipfs/${credential.cid}`, '_blank')}
                         >
-                          View
+                          
                         </button>
                       )}
                     </div>
