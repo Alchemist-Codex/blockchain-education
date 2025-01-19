@@ -4,9 +4,9 @@
  */
 const config = {
     // Local blockchain RPC endpoint (Ganache default)
-    rpcUrl: 'http://localhost:7545',
-    networkId: 1337,
-    networkName: 'Ganache',
+    rpcUrl: 'https://api.avax-test.network/ext/bc/C/rpc',
+    networkId: 43113,
+    networkName: 'Fuji',
     contractAddress: import.meta.env.VITE_CONTRACT_ADDRESS,
   };
   

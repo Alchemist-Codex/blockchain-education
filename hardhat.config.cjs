@@ -25,6 +25,11 @@ module.exports = {
     localhost: {
       url: "http://127.0.0.1:7545",  // Ganache RPC URL
       chainId: 1337,                 // Chain ID matching Ganache
+    },
+    fuji: {
+      url: "https://api.avax-test.network/ext/bc/C/rpc",
+      accounts: [`0x` + process.env.PRIVATE_KEY],
+      chainId: 43113,
     }
   },
 
