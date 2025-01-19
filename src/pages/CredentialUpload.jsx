@@ -34,16 +34,22 @@ const copyToClipboard = async (text) => {
 
 const convertToBytes32 = (ipfsCid) => {
   try {
-    // Remove IPFS-specific prefixes and get first 32 characters
-    const cleanCid = ipfsCid.replace(/^(bafy|baf|Qm|ipfs:\/\/|\/ipfs\/)/, '').slice(0, 32)
+    // Encode the IPFS hash as UTF-8 bytes
+    const bytes = ethers.utils.toUtf8Bytes(ipfsCid);
     
-    // Convert to bytes32 using keccak256 hash
-    const hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(cleanCid))
+    // Create a properly formatted bytes32 value
+    const paddedHash = ethers.utils.hexZeroPad(
+      ethers.utils.hexlify(bytes.slice(0, 32)), 
+      32
+    );
     
-    return hash
+    console.log('Original IPFS CID:', ipfsCid);
+    console.log('Converted bytes32:', paddedHash);
+    
+    return paddedHash;
   } catch (error) {
-    console.error('Error converting to bytes32:', error, 'Input CID:', ipfsCid)
-    throw new Error('Failed to convert IPFS hash to bytes32')
+    console.error('Error converting to bytes32:', error, 'Input CID:', ipfsCid);
+    throw new Error('Failed to convert IPFS hash to bytes32');
   }
 }
 
