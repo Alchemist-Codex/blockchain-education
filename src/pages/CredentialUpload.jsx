@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '../contexts/Web3Context'
 import { ethers } from 'ethers'
+import { utils } from 'ethers'
 import { toast } from 'react-hot-toast'
 import { ipfsService } from '../services/ipfsService'
 import BlockchainVideo from '../components/BlockchainVideo'
@@ -33,9 +34,19 @@ const copyToClipboard = async (text) => {
 }
 
 const convertToBytes32 = (ipfsCid) => {
-  const cleanCid = ipfsCid.startsWith('baf') ? ipfsCid.slice(3) : ipfsCid
-  const paddedCid = cleanCid.padEnd(64, '0').slice(0, 64)
-  return ethers.utils.hexlify('0x' + paddedCid)
+  try {
+    // Remove the "baf" prefix if present
+    const cleanCid = ipfsCid.startsWith('baf') ? ipfsCid.slice(3) : ipfsCid
+    
+    // Ensure the string is exactly 32 bytes (64 characters) by padding or truncating
+    const paddedCid = cleanCid.padEnd(64, '0').slice(0, 64)
+    
+    // Add '0x' prefix and convert to bytes32
+    return utils.hexlify('0x' + paddedCid)
+  } catch (error) {
+    console.error('Error converting to bytes32:', error)
+    throw new Error('Failed to convert IPFS hash to bytes32')
+  }
 }
 
 function CredentialUpload() {
