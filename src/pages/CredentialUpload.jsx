@@ -34,24 +34,19 @@ const copyToClipboard = async (text) => {
 
 const convertToBytes32 = (ipfsCid) => {
   try {
-    // Encode the IPFS hash as UTF-8 bytes
-    const bytes = ethers.utils.toUtf8Bytes(ipfsCid);
-    
-    // Create a properly formatted bytes32 value
-    const paddedHash = ethers.utils.hexZeroPad(
-      ethers.utils.hexlify(bytes.slice(0, 32)), 
-      32
-    );
-    
+    // Hash the IPFS CID with keccak256 to get a 32-byte value
+    const hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(ipfsCid));
+
     console.log('Original IPFS CID:', ipfsCid);
-    console.log('Converted bytes32:', paddedHash);
-    
-    return paddedHash;
+    console.log('Keccak256 Hash (bytes32):', hash);
+
+    return hash;
   } catch (error) {
-    console.error('Error converting to bytes32:', error, 'Input CID:', ipfsCid);
+    console.error('Error converting IPFS CID to bytes32:', error);
     throw new Error('Failed to convert IPFS hash to bytes32');
   }
-}
+};
+
 
 function CredentialUpload() {
   // Web3 context for blockchain interaction
