@@ -14,39 +14,22 @@ import {db} from '../config/firebase';
  * Handles the upload and issuance of academic credentials to the blockchain
  */
 
-// Helper functions
-const generateShortFriendlyId = (prefix = "user") => {
-  const words = ["brave", "bright", "calm", "clever", "kind", "swift", "lion", "fox", "hawk", "owl"]
-  const randomWord = words[Math.floor(Math.random() * words.length)]
-  const uniquePart = Math.random().toString(36).substring(2, 5)
-  return `${prefix}-${randomWord}-${uniquePart}`
+function generateShortFriendlyId(prefix = "user") {
+  const words = ["brave", "bright", "calm", "clever", "kind", "swift", "lion", "fox", "hawk", "owl"];
+  const randomWord = words[Math.floor(Math.random() * words.length)];
+  const uniquePart = Math.random().toString(36).substring(2, 5); // 3-char random alphanumeric
+  return `${prefix}-${randomWord}-${uniquePart}`;
 }
 
 const copyToClipboard = async (text) => {
   try {
-    await navigator.clipboard.writeText(text)
-    toast.success('Copied to clipboard!')
+    await navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
   } catch (err) {
-    toast.error('Failed to copy to clipboard')
-    console.error('Failed to copy:', err)
-  }
-}
-
-const convertToBytes32 = (ipfsCid) => {
-  try {
-    // Hash the IPFS CID with keccak256 to get a 32-byte value
-    const hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(ipfsCid));
-
-    console.log('Original IPFS CID:', ipfsCid);
-    console.log('Keccak256 Hash (bytes32):', hash);
-
-    return hash;
-  } catch (error) {
-    console.error('Error converting IPFS CID to bytes32:', error);
-    throw new Error('Failed to convert IPFS hash to bytes32');
+    toast.error('Failed to copy to clipboard');
+    console.error('Failed to copy:', err);
   }
 };
-
 
 function CredentialUpload() {
   // Web3 context for blockchain interaction
@@ -162,18 +145,18 @@ function CredentialUpload() {
         throw new Error('No authorized account found');
       }
 
-      // Upload image to IPFS
-      const { hash: imageHash, url: imageUrl } = await ipfsService.uploadImage(formData.file);
+      // IPFS upload process
+      const { hash, url } = await ipfsService.uploadImage(formData.file);
 
-      // Create metadata
+      // Create and upload metadata
       const metadata = {
         studentName: formData.studentName,
         studentAddress: formData.studentAddress,
         credentialType: formData.credentialType,
         institution: formData.institution,
         issuerAddress: account,
-        imageHash: imageHash,
-        imageUrl: imageUrl,
+        imageHash: hash,
+        imageUrl: url,
         issueDate: new Date().toISOString()
       };
 
@@ -181,55 +164,42 @@ function CredentialUpload() {
       const metadataHash = await ipfsService.uploadJSON(metadata);
 
       if (metadataHash) {
-        // Generate certificate hash using keccak256
-        const certificateBytes32 = convertToBytes32(imageHash)
-        const metadataBytes32 = convertToBytes32(metadataHash)
-
-        console.log('Debug - Certificate Hash:', certificateBytes32)
-        console.log('Debug - Metadata Hash:', metadataBytes32)
-
-        // Issue credential on blockchain
-        const tx = await contract.issueCredential(
-          formData.studentAddress,
-          certificateBytes32,      // bytes32 certificate hash
-          imageHash,              // original IPFS hash as string
-          metadataBytes32,        // bytes32 metadata hash
-          formData.credentialType,
-          0,                      // No expiry date
-          ethers.utils.formatBytes32String('') // Empty program hash
-        )
-
-        await tx.wait()
-
-        // Generate short ID and store in Firestore
-        const short_id = generateShortFriendlyId("cred");
-        
-        await setDoc(doc(db, "credentials", short_id), {
-          cid: metadataHash,
-          id: short_id,
-          studentAddress: formData.studentAddress,
-          createdAt: new Date().toISOString(),
-          type: formData.credentialType,
-          institution: formData.institution
-        });
-        
-        setCertificateId(short_id);
-        
-        // Update student records
-        const studentsRef = collection(db, "students");
-        const q = query(studentsRef, where("walletAddress", "==", formData.studentAddress));
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-          const newStudentRef = doc(db, "students", generateShortFriendlyId("stud"));
-          await setDoc(newStudentRef, {
-            walletAddress: formData.studentAddress,
-            credentials: [short_id],
+        try {
+          // Generate a unique short ID
+          const short_id = generateShortFriendlyId("cred");
+          
+          // First, create the credential document
+          await setDoc(doc(db, "credentials", short_id), {
+            cid: metadataHash,
+            id: short_id,
+            studentAddress: formData.studentAddress,
             createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            type: formData.credentialType,
+            institution: formData.institution
           });
-          toast.success("New student record created and credential linked");
-        } else {
+          
+          // Set the certificate ID in state
+          setCertificateId(short_id);
+          
+          // Query for the student document
+          const studentsRef = collection(db, "students");
+          const q = query(studentsRef, where("walletAddress", "==", formData.studentAddress));
+          const querySnapshot = await getDocs(q);
+          
+          if (querySnapshot.empty) {
+            // Create a new student document if none exists
+            const newStudentRef = doc(db, "students", generateShortFriendlyId("stud"));
+            await setDoc(newStudentRef, {
+              walletAddress: formData.studentAddress,
+              credentials: [short_id],
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            });
+            toast.success("New student record created and credential linked");
+            return;
+          }
+          
+          // Update existing student documents
           const updatePromises = querySnapshot.docs.map(async (docSnapshot) => {
             const studentRef = doc(db, "students", docSnapshot.id);
             const studentData = docSnapshot.data();
@@ -245,11 +215,37 @@ function CredentialUpload() {
           
           await Promise.all(updatePromises);
           toast.success("Credential linked to student successfully");
+          
+        } catch (error) {
+          console.error("Error updating credentials:", error);
+          toast.error(`Failed to link credential: ${error.message}`);
+          throw error;
         }
-
-        setStep(2);
-        toast.success('Certificate issued successfully!');
       }
+      
+
+      // Generate certificate hash
+      const certificateString = JSON.stringify(metadata);
+      const encoder = new TextEncoder();
+      const data = encoder.encode(certificateString);
+      const certificateHash = await window.crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(certificateHash));
+      const hashHex = '0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // Record on blockchain
+      const tx = await contract.issueCredential(
+        formData.studentAddress,
+        hashHex,
+        hash,
+        metadataHash
+      );
+
+      await tx.wait();
+      console.log('Transaction completed, updating step...');
+      setStep(2);
+      console.log('Step updated to:', 2);
+      toast.success('Certificate issued successfully!');
+
     } catch (error) {
       console.error('Upload error:', error);
       toast.error(`Failed: ${error.message}`);
@@ -368,7 +364,7 @@ function CredentialUpload() {
                   </div>
 
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Upload Certificate
                     </label>
                     {isBlockchainUploading ? (
