@@ -21,7 +21,7 @@ contract AcademicCredentials is Ownable, Pausable {
         address student;          // Address of the student receiving the credential
         bytes32 certificateHash;  // Hash of the certificate content
         string ipfsHash;          // IPFS hash where the full certificate is stored
-        bytes32 encryptedMetadata;  // Changed from string to bytes32 for encrypted metadata
+        string metadata;          // Additional metadata about the credential
         uint256 timestamp;        // Time when the credential was issued
         bool isRevoked;          // Flag to indicate if the credential has been revoked
     }
@@ -31,7 +31,6 @@ contract AcademicCredentials is Ownable, Pausable {
     mapping(address => bool) private institutions;               // Maps institution address to their registration status
     mapping(address => uint256[]) private studentCredentials;    // Maps student address to their credential IDs
     mapping(address => uint256[]) private institutionCredentials; // Maps institution address to their issued credential IDs
-    mapping(bytes32 => bool) private studentCredentialAccess;    // Maps hash of (student, credentialId) to access permission
 
     // Events
     event InstitutionRegistered(address indexed institution);
@@ -45,85 +44,174 @@ contract AcademicCredentials is Ownable, Pausable {
     );
     event CredentialRevoked(uint256 indexed credentialId, address indexed institution);
 
-    // Functions
-    /// @notice Registers an institution to issue credentials
-    /// @param institution The address of the institution to register
+    // Modifiers
+    /// @notice Ensures caller is a registered institution
+    modifier onlyInstitution() {
+        require(institutions[msg.sender], "Caller is not a registered institution");
+        _;
+    }
+
+    /// @notice Ensures the credential exists
+    modifier credentialExists(uint256 credentialId) {
+        require(credentials[credentialId].timestamp != 0, "Credential does not exist");
+        _;
+    }
+
+    /// @notice Initializes the contract with credential IDs starting from 1
+    constructor() {
+        _credentialIds.increment(); // Start IDs from 1
+    }
+
+    // Institution Management
+    /// @notice Registers a new academic institution
+    /// @param institution Address of the institution to register
     function registerInstitution(address institution) external onlyOwner {
         require(!institutions[institution], "Institution already registered");
         institutions[institution] = true;
         emit InstitutionRegistered(institution);
     }
 
-    /// @notice Removes an institution from the list of registered institutions
-    /// @param institution The address of the institution to remove
+    /// @notice Removes a registered institution
+    /// @param institution Address of the institution to remove
     function removeInstitution(address institution) external onlyOwner {
         require(institutions[institution], "Institution not registered");
         institutions[institution] = false;
         emit InstitutionRemoved(institution);
     }
 
-    /// @notice Issues a new credential
-    /// @param student The address of the student receiving the credential
-    /// @param certificateHash The hash of the certificate content
-    /// @param ipfsHash The IPFS hash where the full certificate is stored
-    /// @param encryptedMetadata Additional encrypted metadata about the credential
+    /// @notice Checks if an address belongs to a registered institution
+    /// @return bool indicating if the address is a registered institution
+    function isInstitution(address account) external view returns (bool) {
+        return institutions[account];
+    }
+
+    // Credential Management
+    /// @notice Issues a new academic credential
+    /// @dev Only registered institutions can issue credentials
     function issueCredential(
         address student,
         bytes32 certificateHash,
-        string memory ipfsHash,
-        bytes32 encryptedMetadata
-    ) external whenNotPaused {
-        require(institutions[msg.sender], "Only registered institutions can issue credentials");
+        string calldata ipfsHash,
+        string calldata metadata
+    ) external onlyInstitution whenNotPaused returns (uint256) {
+        require(student != address(0), "Invalid student address");
+        require(certificateHash != bytes32(0), "Invalid certificate hash");
+        require(bytes(ipfsHash).length > 0, "Invalid IPFS hash");
 
-        _credentialIds.increment();
-        uint256 newCredentialId = _credentialIds.current();
-
+        uint256 credentialId = _credentialIds.current();
+        
         Credential memory newCredential = Credential({
-            id: newCredentialId,
+            id: credentialId,
             institution: msg.sender,
             student: student,
             certificateHash: certificateHash,
             ipfsHash: ipfsHash,
-            encryptedMetadata: encryptedMetadata,
+            metadata: metadata,
             timestamp: block.timestamp,
             isRevoked: false
         });
 
-        credentials[newCredentialId] = newCredential;
-        studentCredentials[student].push(newCredentialId);
-        institutionCredentials[msg.sender].push(newCredentialId);
+        credentials[credentialId] = newCredential;
+        studentCredentials[student].push(credentialId);
+        institutionCredentials[msg.sender].push(credentialId);
 
-        // Grant access to student
-        bytes32 accessHash = _generateAccessHash(student, newCredentialId);
-        studentCredentialAccess[accessHash] = true;
+        emit CredentialIssued(
+            credentialId,
+            msg.sender,
+            student,
+            certificateHash,
+            ipfsHash
+        );
 
-        emit CredentialIssued(newCredentialId, msg.sender, student, certificateHash, ipfsHash);
+        _credentialIds.increment();
+        return credentialId;
     }
 
-    /// @notice Revokes an existing credential
-    /// @param credentialId The ID of the credential to revoke
-    function revokeCredential(uint256 credentialId) external whenNotPaused {
+    /// @notice Revokes a previously issued credential
+    /// @dev Only the issuing institution can revoke their own credentials
+    function revokeCredential(uint256 credentialId) 
+        external 
+        onlyInstitution 
+        credentialExists(credentialId) 
+    {
         Credential storage credential = credentials[credentialId];
-        require(credential.institution == msg.sender, "Only the issuing institution can revoke this credential");
+        require(credential.institution == msg.sender, "Not the issuing institution");
         require(!credential.isRevoked, "Credential already revoked");
 
         credential.isRevoked = true;
         emit CredentialRevoked(credentialId, msg.sender);
     }
 
-    // Add helper function to generate access control hash
-    function _generateAccessHash(address student, uint256 credentialId) private pure returns (bytes32) {
-        return keccak256(abi.encodePacked(student, credentialId));
+    // View Functions
+    /// @notice Retrieves credential information by ID
+    /// @return Credential struct containing all credential information
+    function getCredential(uint256 credentialId) 
+        external 
+        view 
+        credentialExists(credentialId) 
+        returns (Credential memory) 
+    {
+        return credentials[credentialId];
     }
 
-    // Add function to access metadata (only by student)
-    function getCredentialMetadata(uint256 credentialId) external view returns (bytes32) {
-        Credential memory credential = credentials[credentialId];
-        bytes32 accessHash = _generateAccessHash(msg.sender, credentialId);
-        
-        require(studentCredentialAccess[accessHash], "Only the credential owner can access metadata");
-        require(!credential.isRevoked, "Credential has been revoked");
-        
-        return credential.encryptedMetadata;
+    /// @notice Gets all credential IDs associated with a student
+    /// @return Array of credential IDs
+    function getStudentCredentials(address student) 
+        external 
+        view 
+        returns (uint256[] memory) 
+    {
+        return studentCredentials[student];
+    }
+
+    /// @notice Gets all credential IDs issued by an institution
+    /// @return Array of credential IDs
+    function getInstitutionCredentials(address institution) 
+        external 
+        view 
+        returns (uint256[] memory) 
+    {
+        return institutionCredentials[institution];
+    }
+
+    // Emergency Functions
+    /// @notice Pauses all credential issuance
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Resumes credential issuance
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    // Batch Operations
+    /// @notice Issues multiple credentials in a single transaction
+    /// @dev All input arrays must be of equal length
+    function batchIssueCredentials(
+        address[] calldata students,
+        bytes32[] calldata certificateHashes,
+        string[] calldata ipfsHashes,
+        string[] calldata metadataArray
+    ) external onlyInstitution whenNotPaused returns (uint256[] memory) {
+        require(
+            students.length == certificateHashes.length &&
+            certificateHashes.length == ipfsHashes.length &&
+            ipfsHashes.length == metadataArray.length,
+            "Array lengths do not match"
+        );
+
+        uint256[] memory issuedIds = new uint256[](students.length);
+
+        for (uint256 i = 0; i < students.length; i++) {
+            issuedIds[i] = this.issueCredential(
+                students[i],
+                certificateHashes[i],
+                ipfsHashes[i],
+                metadataArray[i]
+            );
+        }
+
+        return issuedIds;
     }
 }
