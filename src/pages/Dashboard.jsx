@@ -214,7 +214,10 @@ function Dashboard() {
                         <p className="text-gray-600 dark:text-gray-300">
                           Issued on: March 15, 2024
                         </p>
-                      </div>                      
+                      </div>
+                      <button className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
+                        View Details
+                      </button>
                     </div>
                   </motion.div>
                 ))}
