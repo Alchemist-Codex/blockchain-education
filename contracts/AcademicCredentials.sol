@@ -21,7 +21,7 @@ contract AcademicCredentials is Ownable, Pausable {
         address student;          // Address of the student receiving the credential
         bytes32 certificateHash;  // Hash of the certificate content
         string ipfsHash;          // IPFS hash where the full certificate is stored
-        string metadata;          // Additional metadata about the credential
+        bytes32 encryptedMetadata;  // Changed from string to bytes32 for encrypted metadata
         uint256 timestamp;        // Time when the credential was issued
         bool isRevoked;          // Flag to indicate if the credential has been revoked
     }
@@ -31,6 +31,7 @@ contract AcademicCredentials is Ownable, Pausable {
     mapping(address => bool) private institutions;               // Maps institution address to their registration status
     mapping(address => uint256[]) private studentCredentials;    // Maps student address to their credential IDs
     mapping(address => uint256[]) private institutionCredentials; // Maps institution address to their issued credential IDs
+    mapping(bytes32 => bool) private studentCredentialAccess;    // Maps hash of (student, credentialId) to access permission
 
     // Events
     event InstitutionRegistered(address indexed institution);
@@ -65,12 +66,12 @@ contract AcademicCredentials is Ownable, Pausable {
     /// @param student The address of the student receiving the credential
     /// @param certificateHash The hash of the certificate content
     /// @param ipfsHash The IPFS hash where the full certificate is stored
-    /// @param metadata Additional metadata about the credential
+    /// @param encryptedMetadata Additional encrypted metadata about the credential
     function issueCredential(
         address student,
         bytes32 certificateHash,
         string memory ipfsHash,
-        string memory metadata
+        bytes32 encryptedMetadata
     ) external whenNotPaused {
         require(institutions[msg.sender], "Only registered institutions can issue credentials");
 
@@ -83,7 +84,7 @@ contract AcademicCredentials is Ownable, Pausable {
             student: student,
             certificateHash: certificateHash,
             ipfsHash: ipfsHash,
-            metadata: metadata,
+            encryptedMetadata: encryptedMetadata,
             timestamp: block.timestamp,
             isRevoked: false
         });
@@ -91,6 +92,10 @@ contract AcademicCredentials is Ownable, Pausable {
         credentials[newCredentialId] = newCredential;
         studentCredentials[student].push(newCredentialId);
         institutionCredentials[msg.sender].push(newCredentialId);
+
+        // Grant access to student
+        bytes32 accessHash = _generateAccessHash(student, newCredentialId);
+        studentCredentialAccess[accessHash] = true;
 
         emit CredentialIssued(newCredentialId, msg.sender, student, certificateHash, ipfsHash);
     }
@@ -104,5 +109,21 @@ contract AcademicCredentials is Ownable, Pausable {
 
         credential.isRevoked = true;
         emit CredentialRevoked(credentialId, msg.sender);
+    }
+
+    // Add helper function to generate access control hash
+    function _generateAccessHash(address student, uint256 credentialId) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(student, credentialId));
+    }
+
+    // Add function to access metadata (only by student)
+    function getCredentialMetadata(uint256 credentialId) external view returns (bytes32) {
+        Credential memory credential = credentials[credentialId];
+        bytes32 accessHash = _generateAccessHash(msg.sender, credentialId);
+        
+        require(studentCredentialAccess[accessHash], "Only the credential owner can access metadata");
+        require(!credential.isRevoked, "Credential has been revoked");
+        
+        return credential.encryptedMetadata;
     }
 }
