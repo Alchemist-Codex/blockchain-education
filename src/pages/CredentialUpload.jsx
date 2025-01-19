@@ -34,21 +34,13 @@ const copyToClipboard = async (text) => {
 
 const convertToBytes32 = (ipfsCid) => {
   try {
-    // Remove the 'baf' prefix and any other IPFS-specific prefixes
-    const cleanCid = ipfsCid.replace(/^(bafy|baf|Qm|ipfs:\/\/|\/ipfs\/)/, '')
+    // Remove IPFS-specific prefixes and get first 32 characters
+    const cleanCid = ipfsCid.replace(/^(bafy|baf|Qm|ipfs:\/\/|\/ipfs\/)/, '').slice(0, 32)
     
-    // Convert the CID to bytes
-    const bytes = ethers.utils.toUtf8Bytes(cleanCid)
+    // Convert to bytes32 using keccak256 hash
+    const hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(cleanCid))
     
-    // Take first 32 bytes and pad if necessary
-    const paddedBytes = ethers.utils.hexlify(
-      ethers.utils.concat([
-        bytes.slice(0, 32),
-        ethers.utils.hexZeroPad('0x', 32 - (bytes.length > 32 ? 32 : bytes.length))
-      ])
-    )
-    
-    return paddedBytes
+    return hash
   } catch (error) {
     console.error('Error converting to bytes32:', error, 'Input CID:', ipfsCid)
     throw new Error('Failed to convert IPFS hash to bytes32')
@@ -188,22 +180,25 @@ function CredentialUpload() {
       const metadataHash = await ipfsService.uploadJSON(metadata);
 
       if (metadataHash) {
-        // Convert IPFS hash to bytes32 for smart contract
-        const certificateBytes32 = convertToBytes32(imageHash);
-        const metadataBytes32 = convertToBytes32(metadataHash);
+        // Generate certificate hash using keccak256
+        const certificateBytes32 = convertToBytes32(imageHash)
+        const metadataBytes32 = convertToBytes32(metadataHash)
+
+        console.log('Debug - Certificate Hash:', certificateBytes32)
+        console.log('Debug - Metadata Hash:', metadataBytes32)
 
         // Issue credential on blockchain
         const tx = await contract.issueCredential(
           formData.studentAddress,
-          certificateBytes32,
-          imageHash, // Original IPFS hash
-          metadataBytes32,
+          certificateBytes32,      // bytes32 certificate hash
+          imageHash,              // original IPFS hash as string
+          metadataBytes32,        // bytes32 metadata hash
           formData.credentialType,
-          0, // No expiry date
+          0,                      // No expiry date
           ethers.utils.formatBytes32String('') // Empty program hash
-        );
+        )
 
-        await tx.wait();
+        await tx.wait()
 
         // Generate short ID and store in Firestore
         const short_id = generateShortFriendlyId("cred");
@@ -372,7 +367,7 @@ function CredentialUpload() {
                   </div>
 
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Upload Certificate
                     </label>
                     {isBlockchainUploading ? (
