@@ -34,16 +34,23 @@ const copyToClipboard = async (text) => {
 
 const convertToBytes32 = (ipfsCid) => {
   try {
-    // Remove the "baf" prefix if present
-    const cleanCid = ipfsCid.startsWith('baf') ? ipfsCid.slice(3) : ipfsCid
+    // Remove the 'baf' prefix and any other IPFS-specific prefixes
+    const cleanCid = ipfsCid.replace(/^(bafy|baf|Qm|ipfs:\/\/|\/ipfs\/)/, '')
     
-    // Ensure the string is exactly 32 bytes (64 characters) by padding or truncating
-    const paddedCid = cleanCid.padEnd(64, '0').slice(0, 64)
+    // Convert the CID to bytes
+    const bytes = ethers.utils.toUtf8Bytes(cleanCid)
     
-    // Add '0x' prefix and convert to bytes32
-    return ethers.utils.hexlify('0x' + paddedCid)
+    // Take first 32 bytes and pad if necessary
+    const paddedBytes = ethers.utils.hexlify(
+      ethers.utils.concat([
+        bytes.slice(0, 32),
+        ethers.utils.hexZeroPad('0x', 32 - (bytes.length > 32 ? 32 : bytes.length))
+      ])
+    )
+    
+    return paddedBytes
   } catch (error) {
-    console.error('Error converting to bytes32:', error)
+    console.error('Error converting to bytes32:', error, 'Input CID:', ipfsCid)
     throw new Error('Failed to convert IPFS hash to bytes32')
   }
 }
