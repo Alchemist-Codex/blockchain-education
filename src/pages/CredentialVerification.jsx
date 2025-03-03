@@ -24,7 +24,7 @@ const CORS_PROXIES = [
  */
 
 function CredentialVerification() {
-  const { web3Service } = useWeb3();
+  const { contract } = useWeb3();
   
   // State management
   const [verificationStatus, setVerificationStatus] = useState(null)  // Status of verification process
@@ -40,86 +40,15 @@ function CredentialVerification() {
    * Validates CID and fetches metadata from IPFS
    */
 
-  const fetching = async (credentialId) => {
+  const handleVerify = async () => {
     try {
-      // Fetching the document from Firestore
-      const docRef = doc(db, "credentials", credentialId);
-      const docSnap = await getDoc(docRef);  // Await the document retrieval
-  
-      if (docSnap.exists()) {
-        // If document exists, update the credentialId state
-        setCredentialId(docSnap.data().cid);
-      } else {
-        // If document does not exist, log an error and notify the user
-        setError("Credential not found in Firestore.");
-        throw new Error("Credential not found in Firestore.");
-      }
+      const credential = await contract.getCredential(credentialId);
+      setCredentialDetails(credential);
     } catch (error) {
-      console.error("Error fetching credential:", error);
-      setError("Error fetching credential from Firestore.");
-      throw error;  // Propagate error to handle it in the caller
+      console.error('Error verifying credential:', error);
+      setError('Failed to verify credential');
     }
-  }
-
-
-  const handleVerification = async (e) => {
-    e.preventDefault()
-    setIsVerifying(true)
-    setError(null)
-
-    try {
-      // First validate if shortId is provided
-      if (!shortId.trim()) {
-        throw new Error('Please enter a valid Certificate ID')
-      }
-
-      try {
-        await fetching(shortId);
-      } catch (firestoreError) {
-        // Handle Firestore-specific errors
-        throw new Error('Invalid Certificate ID. Please check and try again.')
-      }
-      
-      // Now validate the CID we got from Firestore
-      if (!credentialId) {
-        throw new Error('No valid credential found for this Certificate ID')
-      }
-
-      console.log('Fetching metadata from Pinata:', credentialId)
-      
-      try {
-        // Fetch and validate metadata
-        const metadata = await pinataService.main(credentialId)
-        
-        if (!metadata) {
-          throw new Error('No metadata found')
-        }
-
-        // Validate image hash format
-        if (!metadata.imageHash?.startsWith('baf')) {
-          console.warn('Image hash format unexpected:', metadata.imageHash)
-        }
-
-        // Set verification details
-        setCredentialDetails({
-          ...metadata,
-          blockchainHash: 'Verified from IPFS',
-          verificationTime: new Date().toLocaleString()
-        })
-        
-        setVerificationStatus('success')
-      } catch (pinataError) {
-        console.error('Pinata Error:', pinataError)
-        throw new Error(`Pinata Error: ${pinataError.message || 'Content not found or invalid'}`)
-      }
-    } catch (error) {
-      console.error('Error verifying credential:', error)
-      setError(error.message || 'Failed to verify credential')
-      setVerificationStatus('error')
-    } finally {
-      setIsVerifying(false)
-    }
-  }
+  };
 
   /**
    * Handles certificate download
@@ -249,7 +178,7 @@ function CredentialVerification() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <form onSubmit={handleVerification} className="space-y-6">
+          <form onSubmit={handleVerify} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Credential ID

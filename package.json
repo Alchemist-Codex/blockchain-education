@@ -17,7 +17,7 @@
     "@react-three/drei": "^9.120.2",
     "@react-three/fiber": "^8.17.10",
     "buffer": "^6.0.3",
-    "ethers": "^6.13.4",
+    "ethers": "^6.13.5",
     "firebase": "^11.0.2",
     "framer-motion": "^11.13.1",
     "particles.js": "^2.0.0",
