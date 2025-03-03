@@ -19,7 +19,12 @@ const CORS_PROXIES = [
 ];
 
 export const pinataService = {
-  // Main function to fetch metadata from IPFS using CID (Content Identifier)
+  async uploadImage(file) {
+    // Logic to upload image to IPFS
+  },
+  async uploadJSON(metadata) {
+    // Logic to upload JSON metadata to IPFS
+  },
   async main(cid) {
     try {
       console.log('Starting fetch from gateway:', new Date().toISOString());

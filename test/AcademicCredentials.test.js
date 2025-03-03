@@ -54,14 +54,12 @@ describe("AcademicCredentials", function () {
         ipfsHash,
         metadata
       );
-
       const receipt = await tx.wait();
       const event = receipt.events?.find(e => e.event === 'CredentialIssued');
       expect(event).to.not.be.undefined;
 
       const credentialId = event.args.credentialId;
       const credential = await academicCredentials.getCredential(credentialId);
-
       expect(credential.student).to.equal(student.address);
       expect(credential.institution).to.equal(institution.address);
       expect(credential.certificateHash).to.equal(certificateHash);
